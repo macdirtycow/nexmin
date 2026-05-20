@@ -29,14 +29,14 @@ export function FeaturesManager({
         body: JSON.stringify({ feature, enabled: !enabled }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Wijzigen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Update failed.");
       setFeatures((prev) =>
         prev.map((f) =>
           f.feature === feature ? { ...f, enabled: !enabled } : f,
         ),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(null);
     }
@@ -47,7 +47,7 @@ export function FeaturesManager({
       <DomainPageHeader
         domain={domain}
         title="Features"
-        description="Welke onderdelen zijn actief op dit domein"
+        description="Which components are active on this domain"
       />
       {error && <Alert>{error}</Alert>}
       <Card className="divide-y divide-panel-border p-0">
@@ -66,16 +66,16 @@ export function FeaturesManager({
               onClick={() => toggle(f.feature, f.enabled)}
             >
               {loading === f.feature
-                ? "Bezig…"
+                ? "Working…"
                 : f.enabled
-                  ? "Uitschakelen"
-                  : "Inschakelen"}
+                  ? "Disable"
+                  : "Enable"}
             </Button>
           </div>
         ))}
         {features.length === 0 && (
           <p className="px-6 py-8 text-center text-panel-muted">
-            Geen features gevonden.
+            No features found.
           </p>
         )}
       </Card>

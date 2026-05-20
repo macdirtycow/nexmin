@@ -11,7 +11,7 @@ export default async function LogsPage({ params }: Props) {
   try {
     log = await getWebsiteLogs(domain, "access", session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon logs niet laden.";
+    error = e instanceof Error ? e.message : "Could not load logs.";
   }
   return (
     <LogsManager

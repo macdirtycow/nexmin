@@ -20,7 +20,7 @@ export async function POST(request: Request, { params }: Params) {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { from?: string; to?: string };
     if (!body.from || !body.to) {
-      return jsonError("Van en naar zijn verplicht.");
+      return jsonError("From and to are required.");
     }
     await createAlias(domain, body.from, body.to, session);
     await auditLog(session.username, "create-simple-alias", domain, body.from);
@@ -34,7 +34,7 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { from?: string };
-    if (!body.from) return jsonError("Alias (van) is verplicht.");
+    if (!body.from) return jsonError("Alias (from) is required.");
     await deleteAlias(domain, body.from, session);
     await auditLog(session.username, "delete-alias", domain, body.from);
     return jsonOk({ ok: true });

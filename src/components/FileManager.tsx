@@ -52,7 +52,7 @@ export function FileManager({
       const cwd = dir ?? listing.cwd;
       const res = await fetch(`/api/domains/${enc}/files?dir=${encodeURIComponent(cwd)}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kon map niet laden.");
+      if (!res.ok) throw new Error(data.error ?? "Could not load directory.");
       setListing(data);
     },
     [enc, listing.cwd],
@@ -63,10 +63,10 @@ export function FileManager({
     try {
       const res = await fetch(`/api/domains/${enc}/virtualmin-link?dest=fileman`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Link mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Link failed.");
       window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     }
   }
 
@@ -77,7 +77,7 @@ export function FileManager({
     try {
       await refresh(dir);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -95,10 +95,10 @@ export function FileManager({
         `/api/domains/${enc}/files/content?path=${encodeURIComponent(entry.path)}`,
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kon bestand niet openen.");
+      if (!res.ok) throw new Error(data.error ?? "Could not open file.");
       if (data.encoding === "base64") {
         setError(
-          "Dit is een binair bestand. Gebruik Download — bewerken kan alleen voor tekstbestanden.",
+          "This is a binary file. Use Download — editing is only available for text files.",
         );
         return;
       }
@@ -107,7 +107,7 @@ export function FileManager({
       setEditLanguage(data.language ?? "plaintext");
       setEditReadOnly(forceReadOnly || data.readOnly === true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -128,11 +128,11 @@ export function FileManager({
         body: JSON.stringify({ action: "save", path: editPath, content: editContent }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess("Bestand opgeslagen.");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess("File saved.");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,7 @@ export function FileManager({
 
   async function uploadFiles(fileList: FileList | File[]) {
     if (!listing.writable) {
-      setError("Deze map is alleen-lezen.");
+      setError("This directory is read-only.");
       return;
     }
     const files = Array.from(fileList);
@@ -158,15 +158,15 @@ export function FileManager({
         body: form,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
       setSuccess(
         files.length === 1
-          ? `${files[0]!.name} geüpload.`
-          : `${files.length} bestanden geüpload.`,
+          ? `${files[0]!.name} uploaded.`
+          : `${files.length} files uploaded.`,
       );
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -188,13 +188,13 @@ export function FileManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Map aanmaken mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Create directory failed.");
       setShowNewDir(false);
       setNewDirName("");
-      setSuccess("Map aangemaakt.");
+      setSuccess("Directory created.");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -216,10 +216,10 @@ export function FileManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Bestand aanmaken mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Create file failed.");
       setShowNewFile(false);
       setNewFileName("");
-      setSuccess("Bestand aangemaakt.");
+      setSuccess("File created.");
       await refresh();
       if (data.path) {
         await openEditor({
@@ -230,7 +230,7 @@ export function FileManager({
         });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -246,14 +246,14 @@ export function FileManager({
         body: JSON.stringify({ path: deletePath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       if (editPath === deletePath) setEditPath(null);
       setDeletePath(null);
       setConfirmTyped("");
-      setSuccess("Verwijderd.");
+      setSuccess("Deleted.");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -266,7 +266,7 @@ export function FileManager({
     <div className="space-y-6">
       <DomainPageHeader
         domain={domain}
-        title="Bestanden"
+        title="Files"
         description={`${listing.home} · document root: public_html`}
       />
       {error && <Alert>{error}</Alert>}
@@ -289,19 +289,19 @@ export function FileManager({
           disabled={loading}
           onClick={() => window.location.assign(`/domains/${enc}/webmin`)}
         >
-          Alle Webmin-modules
+          All Webmin modules
         </Button>
         <Button variant="ghost" onClick={openFileManager} disabled={loading}>
-          {isPanel ? "File manager (direct)" : "Open bestandsbeheer"}
+          {isPanel ? "File manager (direct)" : "Open file manager"}
         </Button>
       </div>
 
       {!isPanel && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Bestandsbeheer op de server</h2>
+          <h2 className="text-lg font-medium text-white">File management on the server</h2>
           <p className="mt-2 text-sm text-panel-muted">
-            Op een live VirtualMin-server gebruik je de ingebouwde file manager voor upload,
-            download en bewerken. Het panel opent een eenmalige inloglink.
+            On a live VirtualMin server, use the built-in file manager for upload,
+            download, and editing. The panel opens a one-time login link.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={openFileManager} disabled={loading}>
@@ -343,7 +343,7 @@ export function FileManager({
                 <div>
                   <p className="font-medium text-white">Upload</p>
                   <p className="text-sm text-panel-muted">
-                    Sleep bestanden hierheen of kies vanaf je computer (max. 10 MB per bestand).
+                    Drag files here or choose from your computer (max. 10 MB per file).
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -361,13 +361,13 @@ export function FileManager({
                     disabled={loading}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    Bestanden kiezen
+                    Choose files
                   </Button>
                   <Button variant="secondary" disabled={loading} onClick={() => setShowNewFile(true)}>
-                    Nieuw bestand
+                    New file
                   </Button>
                   <Button variant="secondary" disabled={loading} onClick={() => setShowNewDir(true)}>
-                    Nieuwe map
+                    New directory
                   </Button>
                   <Button variant="ghost" disabled={loading} onClick={() => refresh()}>
                     Vernieuwen
@@ -394,16 +394,16 @@ export function FileManager({
                 ))}
               </nav>
               {!writable && (
-                <span className="text-xs text-amber-400/90">Alleen-lezen map</span>
+                <span className="text-xs text-amber-400/90">Read-only directory</span>
               )}
             </div>
             <table className="w-full text-left text-sm">
               <thead className="border-b border-panel-border bg-panel-bg/40 text-panel-muted">
                 <tr>
-                  <th className="px-4 py-3">Naam</th>
-                  <th className="px-4 py-3">Grootte</th>
-                  <th className="px-4 py-3">Gewijzigd</th>
-                  <th className="px-4 py-3 text-right">Acties</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Size</th>
+                  <th className="px-4 py-3">Modified</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -436,7 +436,7 @@ export function FileManager({
                         onClick={() => openEditor(entry)}
                       >
                         <span className="mr-2 inline-block w-14 text-xs uppercase text-panel-muted">
-                          {entry.type === "dir" ? "map" : "bestand"}
+                          {entry.type === "dir" ? "dir" : "file"}
                         </span>
                         {entry.name}
                       </button>
@@ -478,7 +478,7 @@ export function FileManager({
                               className="!px-2 !py-1 text-xs text-red-300"
                               onClick={() => setDeletePath(entry.path)}
                             >
-                              Verwijderen
+                              Delete
                             </Button>
                           )}
                       </div>
@@ -489,23 +489,23 @@ export function FileManager({
             </table>
             {(listing.entries ?? []).length === 0 && (
               <p className="px-4 py-8 text-center text-sm text-panel-muted">
-                Deze map is leeg. Upload bestanden of maak een nieuw bestand aan.
+                This directory is empty. Upload files or create a new file.
               </p>
             )}
           </Card>
 
           {showNewDir && (
             <Card>
-              <h2 className="text-lg font-medium text-white">Nieuwe map</h2>
+              <h2 className="text-lg font-medium text-white">New directory</h2>
               <form onSubmit={createDir} className="mt-4 flex flex-wrap gap-2">
                 <Input
-                  placeholder="mapnaam"
+                  placeholder="directory name"
                   value={newDirName}
                   onChange={(e) => setNewDirName(e.target.value)}
                   required
                 />
                 <Button type="submit" disabled={loading}>
-                  Aanmaken
+                  Create
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setShowNewDir(false)}>
                   Annuleren
@@ -516,16 +516,16 @@ export function FileManager({
 
           {showNewFile && (
             <Card>
-              <h2 className="text-lg font-medium text-white">Nieuw bestand</h2>
+              <h2 className="text-lg font-medium text-white">New file</h2>
               <form onSubmit={createFile} className="mt-4 flex flex-wrap gap-2">
                 <Input
-                  placeholder="bijv. pagina.html of script.js"
+                  placeholder="e.g. page.html or script.js"
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
                   required
                 />
                 <Button type="submit" disabled={loading}>
-                  Aanmaken en bewerken
+                  Create and edit
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setShowNewFile(false)}>
                   Annuleren
@@ -551,9 +551,9 @@ export function FileManager({
 
       <ConfirmDialog
         open={!!deletePath}
-        title="Bestand verwijderen"
-        description={`Verwijder ${deletePath}? Dit kan niet ongedaan worden gemaakt.`}
-        confirmLabel="Verwijderen"
+        title="Delete file"
+        description={`Delete ${deletePath}? This cannot be undone.`}
+        confirmLabel="Delete"
         confirmValue={deletePath?.split("/").pop() ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

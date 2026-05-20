@@ -9,7 +9,7 @@ export default async function AdminResellersPage() {
   try {
     resellers = await listResellers(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon resellers niet laden.";
+    error = e instanceof Error ? e.message : "Could not load resellers.";
   }
   return (
     <AdminResellersView initialResellers={resellers} initialError={error} />

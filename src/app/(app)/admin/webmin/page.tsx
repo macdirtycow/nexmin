@@ -11,7 +11,7 @@ export default async function AdminWebminPage() {
   return (
     <WebminHub
       title="Webmin"
-      description="Volledige serverbeheerinterface naast het panel — Apache, DNS, firewall, logs en meer."
+      description="Full server management interface alongside the panel — Apache, DNS, firewall, logs, and more."
       modules={webminModulesForAdmin()}
       linkApiPath="/api/admin/webmin/link"
       showRootBanner

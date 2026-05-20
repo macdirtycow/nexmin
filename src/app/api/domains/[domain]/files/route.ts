@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: Params) {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (!isPanelFilesMode()) {
       return jsonError(
-        "Bestandsacties op de server doe je via de VirtualMin file manager. Open Bestanden in het panel.",
+        "File actions on the server are done via the VirtualMin file manager. Open Files in the panel.",
         501,
       );
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: Params) {
     };
 
     if (body.action === "mkdir") {
-      if (!body.name) return jsonError("Mapnaam is verplicht.");
+      if (!body.name) return jsonError("Directory name is required.");
       const path = createDomainDirectory(body.parent ?? "", body.name);
       await auditLog(session.username, "create-directory", domain, path);
       return jsonOk({ path });
@@ -57,7 +57,7 @@ export async function POST(request: Request, { params }: Params) {
 
     if (body.action === "save") {
       if (!body.path || body.content === undefined) {
-        return jsonError("Pad en inhoud zijn verplicht.");
+        return jsonError("Path and content are required.");
       }
       saveDomainFileContent(body.path, body.content);
       await auditLog(session.username, "save-file", domain, body.path);
@@ -65,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (body.action === "create-file") {
-      if (!body.name) return jsonError("Bestandsnaam is verplicht.");
+      if (!body.name) return jsonError("File name is required.");
       const path = createDomainFile(
         body.parent ?? "",
         body.name,
@@ -75,7 +75,7 @@ export async function POST(request: Request, { params }: Params) {
       return jsonOk({ path });
     }
 
-    return jsonError("Onbekende actie.");
+    return jsonError("Unknown action.");
   } catch (err) {
     return handleApiError(err);
   }
@@ -85,10 +85,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (!isPanelFilesMode()) {
-      return jsonError("Verwijderen via het panel is niet beschikbaar op de live server.", 501);
+      return jsonError("Deleting via the panel is not available on the live server.", 501);
     }
     const body = (await request.json()) as { path?: string };
-    if (!body.path) return jsonError("Pad is verplicht.");
+    if (!body.path) return jsonError("Path is required.");
     deleteDomainFilePath(body.path);
     await auditLog(session.username, "delete-file", domain, body.path);
     return jsonOk({ ok: true });

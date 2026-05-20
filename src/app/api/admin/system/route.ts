@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     if (body.action === "feature") {
       if (!body.feature || body.enabled === undefined) {
-        return jsonError("feature en enabled zijn verplicht.");
+        return jsonError("feature and enabled are required.");
       }
       await setGlobalFeature(body.feature, body.enabled, session);
       await auditLog(
@@ -45,13 +45,13 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "config-system") {
-      if (!body.bundle?.trim()) return jsonError("Bundle is verplicht.");
+      if (!body.bundle?.trim()) return jsonError("Bundle is required.");
       const result = await runConfigSystem(body.bundle.trim(), session);
       await auditLog(session.username, "config-system", undefined, body.bundle);
       return jsonOk({ ok: true, result });
     }
 
-    return jsonError("Onbekende actie.");
+    return jsonError("Unknown action.");
   } catch (err) {
     return handleApiError(err);
   }

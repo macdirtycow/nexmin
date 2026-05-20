@@ -14,7 +14,7 @@ export default async function FeaturesPage({ params }: Props) {
   try {
     features = await listDomainFeatures(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon features niet laden.";
+    error = e instanceof Error ? e.message : "Could not load features.";
   }
   return (
     <FeaturesManager

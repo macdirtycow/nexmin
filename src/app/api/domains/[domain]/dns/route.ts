@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: Params) {
       priority?: string;
     };
     if (!body.name || !body.type || !body.value) {
-      return jsonError("Naam, type en waarde zijn verplicht.");
+      return jsonError("Name, type, and value are required.");
     }
     await addDnsRecord(
       domain,

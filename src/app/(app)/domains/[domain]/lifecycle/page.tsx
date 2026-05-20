@@ -17,7 +17,7 @@ export default async function LifecyclePage({ params }: Props) {
   try {
     validation = await validateDomain(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon validatie niet laden.";
+    error = e instanceof Error ? e.message : "Could not load validation.";
   }
   return (
     <LifecycleManager

@@ -14,7 +14,7 @@ export default async function LimitsPage({ params }: Props) {
   try {
     limits = await getDomainLimits(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon limieten niet laden.";
+    error = e instanceof Error ? e.message : "Could not load limits.";
   }
   return (
     <LimitsManager domain={domain} initialLimits={limits} initialError={error} />

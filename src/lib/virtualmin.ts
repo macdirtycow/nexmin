@@ -62,7 +62,7 @@ const MOCK_DOMAINS: VirtualMinDomain[] = [
   {
     name: "voorbeeld.nl",
     disabled: "0",
-    plan: "Standaard",
+    plan: "Standard",
     user: "voorbeeld",
     disk_used: "120",
     disk_limit: "1000",
@@ -92,7 +92,7 @@ export async function virtualMinCall(
   actor: { role: Role; domains: string[] },
 ): Promise<unknown> {
   if (!isProgramAllowed(actor.role, program)) {
-    throw new VirtualMinError("Deze actie is niet toegestaan voor jouw rol.");
+    throw new VirtualMinError("This action is not allowed for your role.");
   }
   assertDomainAccess(actor.role, actor.domains, params.domain, program);
 
@@ -109,7 +109,7 @@ export async function virtualMinCall(
   const pass = process.env.VIRTUALMIN_PASS;
   if (!url || !user || !pass) {
     throw new VirtualMinError(
-      "VirtualMin is niet geconfigureerd. Zet VIRTUALMIN_URL, VIRTUALMIN_USER en VIRTUALMIN_PASS in .env.local, of VIRTUALMIN_MOCK=true voor ontwikkeling.",
+      "VirtualMin is not configured. Set VIRTUALMIN_URL, VIRTUALMIN_USER, and VIRTUALMIN_PASS in .env.local, or VIRTUALMIN_MOCK=true for development.",
     );
   }
 
@@ -146,7 +146,7 @@ export async function virtualMinCall(
       typeof parsed === "object" && parsed && "error" in parsed
         ? String((parsed as { error: unknown }).error)
         : text.slice(0, 500);
-    throw new VirtualMinError(msg || "VirtualMin-commando mislukt.", exitCode, text);
+    throw new VirtualMinError(msg || "VirtualMin command failed.", exitCode, text);
   }
 
   return parsed;
@@ -252,10 +252,10 @@ function mockCall(
         { id: "2", schedule: "Wekelijks zo 03:00", dest: "s3", enabled: "0" },
       ];
     case "backup-domain":
-      return { status: "ok", message: "Back-up gestart (mock)" };
+      return { status: "ok", message: "Backup started (mock)" };
     case "get-logs":
       return {
-        log: `[${new Date().toISOString()}] GET / HTTP/1.1 200\n[mock] access log voor ${params.domain}\n[mock] 192.0.2.1 - - "GET /wp-admin" 404`,
+        log: `[${new Date().toISOString()}] GET / HTTP/1.1 200\n[mock] access log for ${params.domain}\n[mock] 192.0.2.1 - - "GET /wp-admin" 404`,
         type: params["log-type"] ?? "access",
       };
     case "list-php-versions":
@@ -281,7 +281,7 @@ function mockCall(
     case "delete-protected-directory":
       return { status: "ok" };
     case "list-protected-users":
-      return [{ user: "beheerder", path: params.path ?? "/admin" }];
+      return [{ user: "admin", path: params.path ?? "/admin" }];
     case "create-protected-user":
     case "delete-protected-user":
       return { status: "ok" };
@@ -293,7 +293,7 @@ function mockCall(
       return [
         { feature: "web", enabled: "1", label: "Website" },
         { feature: "dns", enabled: "1", label: "DNS" },
-        { feature: "mail", enabled: "1", label: "E-mail" },
+        { feature: "mail", enabled: "1", label: "Email" },
         { feature: "mysql", enabled: "1", label: "MySQL" },
         { feature: "postgres", enabled: "0", label: "PostgreSQL" },
       ];
@@ -311,9 +311,9 @@ function mockCall(
     case "create-domain":
       return { status: "ok", domain: params.domain };
     case "validate-domains":
-      return { valid: true, messages: ["Mock: domein configuratie OK"] };
+      return { valid: true, messages: ["Mock: domain configuration OK"] };
     case "check-config":
-      return { status: "ok", message: "Mock: systeemconfiguratie OK" };
+      return { status: "ok", message: "Mock: system configuration OK" };
     case "list-available-scripts":
       return [
         { name: "wordpress", desc: "WordPress blog/CMS", version: "6.4" },
@@ -386,7 +386,7 @@ function mockCall(
       return { status: "ok" };
     case "list-plans":
       return [
-        { name: "Standaard", id: "0", quota: "1000" },
+        { name: "Standard", id: "0", quota: "1000" },
         { name: "Basis", id: "1", quota: "500" },
       ];
     case "create-plan":
@@ -395,11 +395,11 @@ function mockCall(
       return { status: "ok" };
     case "list-templates":
       return [
-        { name: "Standaard template", id: "0" },
+        { name: "Standard template", id: "0" },
         { name: "Minimaal", id: "1" },
       ];
     case "get-template":
-      return { name: "Standaard template", id: "0", desc: "Default features" };
+      return { name: "Standard template", id: "0", desc: "Default features" };
     case "modify-template":
       return { status: "ok" };
     case "list-admins":
@@ -415,7 +415,7 @@ function mockCall(
     case "modify-scheduled-backup":
       return { status: "ok" };
     case "restore-domain":
-      return { status: "ok", message: "Restore gestart (mock)" };
+      return { status: "ok", message: "Restore started (mock)" };
     case "list-s3-buckets":
       return [
         { name: "panel-backups", region: "eu-west-1" },
@@ -429,7 +429,7 @@ function mockCall(
     case "upload-s3-file":
       return { status: "ok", key: params.key ?? params.file ?? "uploaded" };
     case "config-system":
-      return { status: "ok", message: "Systeemconfiguratie uitgevoerd (mock)" };
+      return { status: "ok", message: "System configuration applied (mock)" };
     case "set-global-feature":
       return { status: "ok" };
     case "list-global-features":
@@ -1294,7 +1294,7 @@ export async function validateDomain(
   if (typeof data === "string") {
     return { valid: !data.toLowerCase().includes("error"), messages: [data] };
   }
-  return { valid: true, messages: ["Validatie uitgevoerd."] };
+  return { valid: true, messages: ["Validation completed."] };
 }
 
 export async function checkServerConfig(
@@ -1306,7 +1306,7 @@ export async function checkServerConfig(
     const obj = data as Record<string, unknown>;
     return String(obj.message ?? obj.output ?? JSON.stringify(obj));
   }
-  return "Configuratie gecontroleerd.";
+  return "Configuration checked.";
 }
 
 export interface AvailableScript {

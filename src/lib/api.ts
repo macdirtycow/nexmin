@@ -11,16 +11,16 @@ export function jsonError(message: string, status = 400) {
 
 export function handleApiError(err: unknown) {
   if (err instanceof Error && err.message === "UNAUTHORIZED") {
-    return jsonError("Je bent niet ingelogd.", 401);
+    return jsonError("You are not logged in.", 401);
   }
   if (err instanceof VirtualMinError) {
     return jsonError(err.message, 502);
   }
   if (err instanceof Error) {
-    if (err.message.includes("niet gevonden")) {
+    if (err.message.includes("not found")) {
       return jsonError(err.message, 404);
     }
     return jsonError(err.message, 400);
   }
-  return jsonError("Onbekende fout.", 500);
+  return jsonError("Unknown error.", 500);
 }

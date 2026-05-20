@@ -23,7 +23,7 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Verzoek mislukt.");
+    if (!res.ok) throw new Error(data.error ?? "Request failed.");
     return data;
   }
 
@@ -41,7 +41,7 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
       setFiles([]);
       setSelectedBucket("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
       setSelectedBucket(bucket);
       setFiles(data.files ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -79,10 +79,10 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
         key: uploadKey,
         source: uploadSource,
       });
-      setSuccess("Upload gestart.");
+      setSuccess("Upload started.");
       if (selectedBucket) await loadFiles(selectedBucket);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -94,9 +94,9 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">S3-credentials</h2>
+        <h2 className="text-lg font-medium text-white">S3 credentials</h2>
         <p className="mt-1 text-sm text-panel-muted">
-          Keys worden niet opgeslagen; alleen gebruikt voor dit verzoek.
+          Keys are not stored; only used for this request.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
@@ -122,7 +122,7 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
           </div>
         </div>
         <Button className="mt-4" onClick={loadBuckets} disabled={loading}>
-          Buckets laden
+          Load buckets
         </Button>
       </Card>
 
@@ -143,7 +143,7 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
                   disabled={loading}
                   onClick={() => loadFiles(b.name)}
                 >
-                  Bestanden
+                  Files
                 </Button>
               </li>
             ))}
@@ -154,14 +154,14 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
       {selectedBucket && (
         <Card className="overflow-hidden p-0">
           <h2 className="px-6 pt-6 text-lg font-medium text-white">
-            Bestanden in {selectedBucket}
+            Files in {selectedBucket}
           </h2>
           <table className="mt-4 w-full text-left text-sm">
             <thead className="border-t border-panel-border text-panel-muted">
               <tr>
-                <th className="px-6 py-3">Naam</th>
-                <th className="px-6 py-3">Grootte</th>
-                <th className="px-6 py-3">Datum</th>
+                <th className="px-6 py-3">Name</th>
+                <th className="px-6 py-3">Size</th>
+                <th className="px-6 py-3">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -175,27 +175,27 @@ export function AdminCloudView({ initialError }: { initialError: string }) {
             </tbody>
           </table>
           {files.length === 0 && (
-            <p className="px-6 py-8 text-center text-panel-muted">Geen bestanden.</p>
+            <p className="px-6 py-8 text-center text-panel-muted">No files.</p>
           )}
         </Card>
       )}
 
       {selectedBucket && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Upload naar bucket</h2>
+          <h2 className="text-lg font-medium text-white">Upload to bucket</h2>
           <div className="mt-4 flex flex-wrap gap-2">
             <Input
-              placeholder="bestandsnaam in bucket"
+              placeholder="file name in bucket"
               value={uploadKey}
               onChange={(e) => setUploadKey(e.target.value)}
             />
             <Input
-              placeholder="lokaal pad (optioneel)"
+              placeholder="local path (optional)"
               value={uploadSource}
               onChange={(e) => setUploadSource(e.target.value)}
             />
             <Button onClick={upload} disabled={loading || !uploadKey.trim()}>
-              Uploaden
+              Upload
             </Button>
           </div>
         </Card>

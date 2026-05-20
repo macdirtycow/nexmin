@@ -11,7 +11,7 @@ export default async function SharedPage({ params }: Props) {
   try {
     addresses = await listSharedAddresses(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon adressen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load addresses.";
   }
   return (
     <SharedAddressesManager

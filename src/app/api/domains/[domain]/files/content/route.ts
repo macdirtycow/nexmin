@@ -8,11 +8,11 @@ export async function GET(request: Request, { params }: Params) {
   try {
     await requireDomainApi((await params).domain);
     if (!isPanelFilesMode()) {
-      return jsonError("Bestanden bekijken via het panel is alleen in mock-modus.", 501);
+      return jsonError("Viewing files via the panel is only available in mock mode.", 501);
     }
     const url = new URL(request.url);
     const path = url.searchParams.get("path");
-    if (!path) return jsonError("Pad is verplicht.");
+    if (!path) return jsonError("Path is required.");
     const file = getDomainFile(path);
     return jsonOk(file);
   } catch (err) {

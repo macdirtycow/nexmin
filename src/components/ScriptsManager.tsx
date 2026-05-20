@@ -55,11 +55,11 @@ export function ScriptsManager({
         body: JSON.stringify({ script: installScript, path: installPath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Installeren mislukt.");
-      setSuccess(`${installScript} geïnstalleerd.`);
+      if (!res.ok) throw new Error(data.error ?? "Install failed.");
+      setSuccess(`${installScript} installed.`);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -75,13 +75,13 @@ export function ScriptsManager({
         body: JSON.stringify({ script: deleteTarget }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
-      setSuccess("Script verwijderd.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setSuccess("Script deleted.");
       setDeleteTarget(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -92,15 +92,15 @@ export function ScriptsManager({
       <DomainPageHeader
         domain={domain}
         title="Script installers"
-        description="WordPress, Drupal en andere apps"
+        description="WordPress, Drupal, and other apps"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Geïnstalleerd</h2>
+        <h2 className="text-lg font-medium text-white">Installed</h2>
         {installed.length === 0 ? (
-          <p className="mt-3 text-sm text-panel-muted">Geen scripts geïnstalleerd.</p>
+          <p className="mt-3 text-sm text-panel-muted">No scripts installed.</p>
         ) : (
           <ul className="mt-4 divide-y divide-panel-border">
             {installed.map((s) => (
@@ -127,7 +127,7 @@ export function ScriptsManager({
                 </div>
                 {isAdmin && (
                   <Button variant="danger" onClick={() => setDeleteTarget(s.name)}>
-                    Verwijderen
+                    Delete
                   </Button>
                 )}
               </li>
@@ -138,7 +138,7 @@ export function ScriptsManager({
 
       {isAdmin && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Installeren</h2>
+          <h2 className="text-lg font-medium text-white">Install</h2>
           <form onSubmit={doInstall} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <Label>Script</Label>
@@ -164,7 +164,7 @@ export function ScriptsManager({
               />
             </div>
             <Button type="submit" disabled={loading}>
-              {loading ? "Bezig…" : "Installeren"}
+              {loading ? "Working…" : "Install"}
             </Button>
           </form>
         </Card>
@@ -172,9 +172,9 @@ export function ScriptsManager({
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Script verwijderen"
-        description={`Verwijder ${deleteTarget} van ${domain}?`}
-        confirmLabel="Verwijderen"
+        title="Delete script"
+        description={`Delete ${deleteTarget} from ${domain}?`}
+        confirmLabel="Delete"
         confirmValue={deleteTarget ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

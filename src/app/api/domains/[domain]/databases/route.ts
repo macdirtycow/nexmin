@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: Params) {
       type?: string;
     };
     if (!body.name || !body.pass) {
-      return jsonError("Database naam en wachtwoord zijn verplicht.");
+      return jsonError("Database name and password are required.");
     }
     await createDatabase(
       domain,
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const domain = decodeURIComponent(encoded);
     const body = (await request.json()) as { name?: string; pass?: string };
     if (!body.name || !body.pass) {
-      return jsonError("Database naam en wachtwoord zijn verplicht.");
+      return jsonError("Database name and password are required.");
     }
     await updateDatabasePassword(domain, body.name, body.pass, session);
     await auditLog(session.username, "modify-database-pass", domain, body.name);

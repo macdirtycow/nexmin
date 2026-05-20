@@ -11,7 +11,7 @@ export default async function MailboxesPage({ params }: Props) {
   try {
     mailboxes = await listImapMailboxes(domain, "info", session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon mailboxen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load mailboxes.";
   }
   return (
     <ImapMailboxesManager

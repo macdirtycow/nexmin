@@ -7,7 +7,7 @@ const COOKIE_NAME = "panel_session";
 function secretKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 16) {
-    throw new Error("SESSION_SECRET ontbreekt of is te kort (min. 16 tekens).");
+    throw new Error("SESSION_SECRET is missing or too short (min. 16 characters).");
   }
   return new TextEncoder().encode(secret);
 }

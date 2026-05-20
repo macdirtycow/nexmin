@@ -29,7 +29,7 @@ export async function requireDomainAccess(encodedDomain: string) {
 /** For API route handlers */
 export async function requireDomainApi(encodedDomain: string) {
   return resolveDomain(encodedDomain, () => {
-    throw new Error("Domein niet gevonden.");
+    throw new Error("Domain not found.");
   });
 }
 

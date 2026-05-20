@@ -11,7 +11,7 @@ export default async function FtpPage({ params }: Props) {
   try {
     accounts = await listFtpAccountsSafe(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon FTP-accounts niet laden.";
+    error = e instanceof Error ? e.message : "Could not load FTP accounts.";
   }
   return (
     <FtpManager domain={domain} initialAccounts={accounts} initialError={error} />

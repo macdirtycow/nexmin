@@ -9,17 +9,17 @@ export default async function AdminAdminsPage() {
   try {
     admins = await listAdmins(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon beheerders niet laden.";
+    error = e instanceof Error ? e.message : "Could not load administrators.";
   }
   return (
     <AdminListView
-      title="Beheerder"
+      title="Administrator"
       apiPath="/api/admin/admins"
       itemsKey="admins"
       nameKey="user"
       items={admins}
       initialError={error}
-      createLabel="Extra beheerder aanmaken"
+      createLabel="Create additional administrator"
       isAdminUser
     />
   );

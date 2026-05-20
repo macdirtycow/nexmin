@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const features = await listDomainFeatures(domain, session);
     return jsonOk({ features });
@@ -22,14 +22,14 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const body = (await request.json()) as {
       feature?: string;
       enabled?: boolean;
     };
     if (!body.feature || body.enabled === undefined) {
-      return jsonError("Feature en enabled zijn verplicht.");
+      return jsonError("Feature and enabled are required.");
     }
     await setDomainFeature(domain, body.feature, body.enabled, session);
     await auditLog(

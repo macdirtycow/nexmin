@@ -31,13 +31,13 @@ export function SslManager({
         body: JSON.stringify({ host: domain }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanvraag mislukt.");
-      setSuccess("Let's Encrypt-certificaat aangevraagd. Dit kan enkele minuten duren.");
+      if (!res.ok) throw new Error(data.error ?? "Request failed.");
+      setSuccess("Let's Encrypt certificate requested. This may take a few minutes.");
       const listRes = await fetch(`/api/domains/${enc}/ssl`);
       const listData = await listRes.json();
       if (listRes.ok) setCerts(listData.certs ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -45,13 +45,13 @@ export function SslManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="SSL-certificaten" />
+      <DomainPageHeader domain={domain} title="SSL certificates" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <div className="flex justify-end">
         <Button onClick={requestLe} disabled={loading}>
-          {loading ? "Bezig…" : "Let's Encrypt aanvragen"}
+          {loading ? "Working…" : "Request Let's Encrypt"}
         </Button>
       </div>
 
@@ -60,8 +60,8 @@ export function SslManager({
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
               <th className="px-6 py-3">Host</th>
-              <th className="px-6 py-3">Uitgever</th>
-              <th className="px-6 py-3">Verloopt</th>
+              <th className="px-6 py-3">Issuer</th>
+              <th className="px-6 py-3">Expires</th>
               <th className="px-6 py-3">Type</th>
             </tr>
           </thead>
@@ -79,7 +79,7 @@ export function SslManager({
           </tbody>
         </table>
         {certs.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen certificaten gevonden.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No certificates found.</p>
         )}
       </Card>
     </div>

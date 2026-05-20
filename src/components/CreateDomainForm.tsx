@@ -39,14 +39,14 @@ export function CreateDomainForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess(`Domein ${domain} aangemaakt.`);
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess(`Domain ${domain} created.`);
       setTimeout(() => {
         router.push(`/domains/${encodeURIComponent(domain)}`);
         router.refresh();
       }, 800);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -54,9 +54,9 @@ export function CreateDomainForm({
 
   return (
     <Card>
-      <h1 className="text-2xl font-semibold text-white">Nieuw virtual server</h1>
+      <h1 className="text-2xl font-semibold text-white">New virtual server</h1>
       <p className="mt-1 text-sm text-panel-muted">
-        Maakt een domein aan via VirtualMin create-domain
+        Creates a domain via VirtualMin create-domain
       </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         {error && <Alert>{error}</Alert>}
@@ -68,14 +68,14 @@ export function CreateDomainForm({
             value={type}
             onChange={(e) => setType(e.target.value as "top" | "sub" | "alias")}
           >
-            <option value="top">Hoofddomein (virtual server)</option>
-            <option value="sub">Subdomein</option>
-            <option value="alias">Alias-domein</option>
+            <option value="top">Primary domain (virtual server)</option>
+            <option value="sub">Subdomain</option>
+            <option value="alias">Alias domain</option>
           </select>
         </div>
         {type !== "top" && (
           <div>
-            <Label>Parent domein</Label>
+            <Label>Parent domain</Label>
             <select
               className="mt-1 w-full rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-sm"
               value={parent}
@@ -90,7 +90,7 @@ export function CreateDomainForm({
           </div>
         )}
         <div>
-          <Label htmlFor="domain">Domeinnaam</Label>
+          <Label htmlFor="domain">Domain name</Label>
           <Input
             id="domain"
             value={domain}
@@ -100,11 +100,11 @@ export function CreateDomainForm({
           />
         </div>
         <div>
-          <Label htmlFor="user">Eigenaar (Unix-user, optioneel)</Label>
+          <Label htmlFor="user">Owner (Unix user, optional)</Label>
           <Input id="user" value={user} onChange={(e) => setUser(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="pass">Wachtwoord eigenaar</Label>
+          <Label htmlFor="pass">Password eigenaar</Label>
           <Input
             id="pass"
             type="password"
@@ -114,11 +114,11 @@ export function CreateDomainForm({
           />
         </div>
         <div>
-          <Label htmlFor="plan">Plan (optioneel)</Label>
+          <Label htmlFor="plan">Plan (optional)</Label>
           <Input id="plan" value={plan} onChange={(e) => setPlan(e.target.value)} />
         </div>
         <Button type="submit" disabled={loading}>
-          {loading ? "Bezig…" : "Domein aanmaken"}
+          {loading ? "Working…" : "Create domain"}
         </Button>
       </form>
     </Card>

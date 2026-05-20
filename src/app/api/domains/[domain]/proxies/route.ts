@@ -19,11 +19,11 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen proxies aanmaken.", 403);
+      return jsonError("Only administrators may create proxies.", 403);
     }
     const body = (await request.json()) as { path?: string; dest?: string };
     if (!body.path || !body.dest) {
-      return jsonError("Pad en bestemming zijn verplicht.");
+      return jsonError("Path and destination are required.");
     }
     await createProxy(domain, body.path, body.dest, session);
     await auditLog(session.username, "create-proxy", domain, body.path);
@@ -37,10 +37,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen proxies verwijderen.", 403);
+      return jsonError("Only administrators may delete proxies.", 403);
     }
     const body = (await request.json()) as { path?: string };
-    if (!body.path) return jsonError("Pad is verplicht.");
+    if (!body.path) return jsonError("Path is required.");
     await deleteProxy(domain, body.path, session);
     await auditLog(session.username, "delete-proxy", domain, body.path);
     return jsonOk({ ok: true });

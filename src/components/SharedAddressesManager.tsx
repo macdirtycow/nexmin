@@ -51,13 +51,13 @@ export function SharedAddressesManager({
         body: JSON.stringify({ address, users }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Gedeeld adres aangemaakt.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("Shared address created.");
       setAddress("");
       setUsers("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +73,12 @@ export function SharedAddressesManager({
         body: JSON.stringify({ address: deleteTarget }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       setDeleteTarget(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -86,23 +86,23 @@ export function SharedAddressesManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="Gedeelde adressen" />
+      <DomainPageHeader domain={domain} title="Shared addresses" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       {isAdmin && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Adres toevoegen</h2>
+          <h2 className="text-lg font-medium text-white">Add address</h2>
           <form onSubmit={create} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Adres (lokaal deel)</Label>
+              <Label>Address (local part)</Label>
               <Input value={address} onChange={(e) => setAddress(e.target.value)} required />
             </div>
             <div>
-              <Label>Gebruikers (komma-gescheiden)</Label>
+              <Label>Users (comma-separated)</Label>
               <Input value={users} onChange={(e) => setUsers(e.target.value)} placeholder="info,support" required />
             </div>
-            <Button type="submit" disabled={loading}>Toevoegen</Button>
+            <Button type="submit" disabled={loading}>Add</Button>
           </form>
         </Card>
       )}
@@ -112,8 +112,8 @@ export function SharedAddressesManager({
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
               <th className="px-6 py-3">Adres</th>
-              <th className="px-6 py-3">Gebruikers</th>
-              {isAdmin && <th className="px-6 py-3 text-right">Acties</th>}
+              <th className="px-6 py-3">Users</th>
+              {isAdmin && <th className="px-6 py-3 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -124,7 +124,7 @@ export function SharedAddressesManager({
                 {isAdmin && (
                   <td className="px-6 py-4 text-right">
                     <Button variant="danger" onClick={() => setDeleteTarget(a.address)}>
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 )}
@@ -133,15 +133,15 @@ export function SharedAddressesManager({
           </tbody>
         </table>
         {addresses.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen gedeelde adressen.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No shared addresses.</p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Adres verwijderen"
-        description={`Verwijder ${deleteTarget}?`}
-        confirmLabel="Verwijderen"
+        title="Delete address"
+        description={`Delete ${deleteTarget}?`}
+        confirmLabel="Delete"
         confirmValue={deleteTarget ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

@@ -12,7 +12,7 @@ export default async function DnsPage({ params }: Props) {
     const result = await getDns(domain, session);
     records = result.records;
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon DNS niet laden.";
+    error = e instanceof Error ? e.message : "Could not load DNS.";
   }
   return <DnsManager domain={domain} initialRecords={records} initialError={error} />;
 }

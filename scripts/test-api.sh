@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test VirtualMin Remote API connectivity (Fase 0).
+# Test VirtualMin Remote API connectivity (Phase 0).
 # Usage: cp .env.example .env.local && edit credentials, then: npm run test-api
 
 set -euo pipefail

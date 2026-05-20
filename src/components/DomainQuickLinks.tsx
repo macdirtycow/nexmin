@@ -42,7 +42,7 @@ export function DomainQuickLinks({
       </div>
       {rest.length > 0 && (
         <Card>
-          <h2 className="text-sm font-medium text-panel-muted">Overige onderdelen</h2>
+          <h2 className="text-sm font-medium text-panel-muted">Other components</h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {rest.map((f) => (
               <li key={f.id}>

@@ -9,29 +9,29 @@ export default async function AdminLicensePage() {
   try {
     license = await getLicenseInfo(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon licentie niet laden.";
+    error = e instanceof Error ? e.message : "Could not load license.";
   }
   return (
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card>
-        <h2 className="text-lg font-medium text-white">VirtualMin-licentie</h2>
+        <h2 className="text-lg font-medium text-white">VirtualMin license</h2>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-sm text-panel-muted">Type</dt>
             <dd className="text-white">{license.type ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-panel-muted">Domeinen</dt>
+            <dt className="text-sm text-panel-muted">Domains</dt>
             <dd className="text-white">{license.domains ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-panel-muted">Vervaldatum</dt>
+            <dt className="text-sm text-panel-muted">Expiry date</dt>
             <dd className="text-white">{license.expiry ?? "—"}</dd>
           </div>
         </dl>
         <p className="mt-6 text-sm text-panel-muted">
-          Repository-setup (`setup-repos`) voer je uit in VirtualMin of via de CLI.
+          Run repository setup (`setup-repos`) in VirtualMin or via the CLI.
         </p>
       </Card>
     </div>

@@ -4,7 +4,7 @@ import { requireSession } from "./session";
 export async function requireAdmin() {
   const session = await requireSession();
   if (session.role !== "admin") {
-    throw new Error("Alleen beheerders mogen deze actie uitvoeren.");
+    throw new Error("Only administrators may perform this action.");
   }
   return session;
 }

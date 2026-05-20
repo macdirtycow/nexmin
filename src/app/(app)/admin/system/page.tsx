@@ -9,7 +9,7 @@ export default async function AdminSystemPage() {
   try {
     features = await listGlobalFeatures(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon systeemfeatures niet laden.";
+    error = e instanceof Error ? e.message : "Could not load system features.";
   }
   return (
     <AdminSystemView

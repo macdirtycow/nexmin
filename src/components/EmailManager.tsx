@@ -59,8 +59,8 @@ export function EmailManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess(`Mailbox ${newUser}@${domain} aangemaakt.`);
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess(`Mailbox ${newUser}@${domain} created.`);
       setShowCreate(false);
       setNewUser("");
       setNewPass("");
@@ -68,7 +68,7 @@ export function EmailManager({
       await refresh();
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -86,12 +86,12 @@ export function EmailManager({
         body: JSON.stringify({ user: resetUser, pass: resetPass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Wijzigen mislukt.");
-      setSuccess(`Wachtwoord voor ${resetUser} bijgewerkt.`);
+      if (!res.ok) throw new Error(data.error ?? "Update failed.");
+      setSuccess(`Password for ${resetUser} updated.`);
       setResetUser(null);
       setResetPass("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -109,13 +109,13 @@ export function EmailManager({
         body: JSON.stringify({ user: deleteTarget }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
-      setSuccess(`Mailbox ${deleteTarget} verwijderd.`);
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setSuccess(`Mailbox ${deleteTarget} deleted.`);
       setDeleteTarget(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -132,9 +132,9 @@ export function EmailManager({
             ← {domain}
           </Link>
         </p>
-        <h1 className="mt-2 text-2xl font-semibold text-white">E-mail</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-white">Email</h1>
         <p className="mt-1 text-sm text-panel-muted">
-          Mailboxen voor {domain}
+          Mailboxes for {domain}
         </p>
       </div>
 
@@ -143,16 +143,16 @@ export function EmailManager({
 
       <div className="flex justify-end">
         <Button onClick={() => setShowCreate(!showCreate)}>
-          {showCreate ? "Annuleren" : "Nieuwe mailbox"}
+          {showCreate ? "Cancel" : "New mailbox"}
         </Button>
       </div>
 
       {showCreate && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Mailbox aanmaken</h2>
+          <h2 className="text-lg font-medium text-white">Create mailbox</h2>
           <form onSubmit={createMailbox} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="user">Gebruikersnaam (lokaal deel)</Label>
+              <Label htmlFor="user">Username (local part)</Label>
               <Input
                 id="user"
                 value={newUser}
@@ -162,7 +162,7 @@ export function EmailManager({
               />
             </div>
             <div>
-              <Label htmlFor="pass">Wachtwoord</Label>
+              <Label htmlFor="pass">Password</Label>
               <Input
                 id="pass"
                 type="password"
@@ -172,7 +172,7 @@ export function EmailManager({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="real">Weergavenaam (optioneel)</Label>
+              <Label htmlFor="real">Display name (optional)</Label>
               <Input
                 id="real"
                 value={newReal}
@@ -180,7 +180,7 @@ export function EmailManager({
               />
             </div>
             <Button type="submit" disabled={loading}>
-              {loading ? "Bezig…" : "Aanmaken"}
+              {loading ? "Working…" : "Create"}
             </Button>
           </form>
         </Card>
@@ -191,9 +191,9 @@ export function EmailManager({
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
               <th className="px-6 py-3">Mailbox</th>
-              <th className="px-6 py-3">Naam</th>
+              <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Quota (MB)</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -214,10 +214,10 @@ export function EmailManager({
                         setResetPass("");
                       }}
                     >
-                      Wachtwoord
+                      Password
                     </Button>
                     <Button variant="danger" onClick={() => setDeleteTarget(name)}>
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 </tr>
@@ -227,7 +227,7 @@ export function EmailManager({
         </table>
         {users.length === 0 && (
           <p className="px-6 py-8 text-center text-panel-muted">
-            Geen mailboxen gevonden.
+            No mailboxes found.
           </p>
         )}
       </Card>
@@ -235,17 +235,17 @@ export function EmailManager({
       {resetUser && (
         <Card>
           <h2 className="text-lg font-medium text-white">
-            Wachtwoord wijzigen — {resetUser}
+            Change password — {resetUser}
           </h2>
           <div className="mt-4 flex max-w-md gap-2">
             <Input
               type="password"
-              placeholder="Nieuw wachtwoord"
+              placeholder="New password"
               value={resetPass}
               onChange={(e) => setResetPass(e.target.value)}
             />
             <Button onClick={resetPassword} disabled={loading || !resetPass}>
-              Opslaan
+              Save
             </Button>
             <Button variant="ghost" onClick={() => setResetUser(null)}>
               Annuleren
@@ -256,9 +256,9 @@ export function EmailManager({
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Mailbox verwijderen"
-        description={`Je staat op het punt ${deleteTarget}@${domain} permanent te verwijderen.`}
-        confirmLabel="Verwijderen"
+        title="Delete mailbox"
+        description={`You are about to permanently delete ${deleteTarget}@${domain}.`}
+        confirmLabel="Delete"
         confirmValue={deleteTarget ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

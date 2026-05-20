@@ -14,9 +14,9 @@ export default async function AdminLayout({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Serverbeheer</h1>
+        <h1 className="text-2xl font-semibold text-white">Server admin</h1>
         <p className="mt-1 text-sm text-panel-muted">
-          Resellers, plannen, templates en systeemstatus
+          Resellers, plans, templates, and system status
         </p>
       </div>
       <AdminNav />

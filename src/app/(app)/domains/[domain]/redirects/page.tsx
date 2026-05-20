@@ -11,7 +11,7 @@ export default async function RedirectsPage({ params }: Props) {
   try {
     redirects = await listRedirects(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon redirects niet laden.";
+    error = e instanceof Error ? e.message : "Could not load redirects.";
   }
   return (
     <RedirectsManager

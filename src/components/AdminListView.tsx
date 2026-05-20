@@ -56,12 +56,12 @@ export function AdminListView({
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setNewName("");
       setPass("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -78,12 +78,12 @@ export function AdminListView({
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setDeleteName(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export function AdminListView({
         <h2 className="text-lg font-medium text-white">{createLabel}</h2>
         <form onSubmit={create} className="mt-4 flex flex-wrap gap-2">
           <Input
-            placeholder={isAdminUser ? "gebruiker" : "naam"}
+            placeholder={isAdminUser ? "user" : "name"}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             required
@@ -104,13 +104,13 @@ export function AdminListView({
           {isAdminUser && (
             <Input
               type="password"
-              placeholder="wachtwoord"
+              placeholder="password"
               value={pass}
               onChange={(e) => setPass(e.target.value)}
               required
             />
           )}
-          <Button type="submit" disabled={loading}>Aanmaken</Button>
+          <Button type="submit" disabled={loading}>Create</Button>
         </form>
       </Card>
       <Card className="overflow-hidden p-0">
@@ -124,7 +124,7 @@ export function AdminListView({
                   <td className="px-6 py-4 text-white">{label}</td>
                   <td className="px-6 py-4 text-right">
                     <Button variant="danger" onClick={() => setDeleteName(label)}>
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 </tr>
@@ -133,14 +133,14 @@ export function AdminListView({
           </tbody>
         </table>
         {list.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen items.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No items.</p>
         )}
       </Card>
       <ConfirmDialog
         open={!!deleteName}
-        title={`${title} verwijderen`}
-        description={`Verwijder ${deleteName}?`}
-        confirmLabel="Verwijderen"
+        title={`Delete ${title}`}
+        description={`Delete ${deleteName}?`}
+        confirmLabel="Delete"
         confirmValue={deleteName ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

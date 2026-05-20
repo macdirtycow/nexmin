@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const accessKey = body.accessKey?.trim();
     const secretKey = body.secretKey?.trim();
     if (!accessKey || !secretKey) {
-      return jsonError("Access key en secret key zijn verplicht.");
+      return jsonError("Access key and secret key are required.");
     }
 
     if (body.action === "buckets") {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "files") {
-      if (!body.bucket?.trim()) return jsonError("Bucket is verplicht.");
+      if (!body.bucket?.trim()) return jsonError("Bucket is required.");
       const files = await listS3Files(
         body.bucket.trim(),
         accessKey,
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     if (body.action === "upload") {
       if (!body.bucket?.trim() || !body.key?.trim()) {
-        return jsonError("Bucket en bestandsnaam zijn verplicht.");
+        return jsonError("Bucket and file name are required.");
       }
       const result = await uploadS3File(
         {
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       return jsonOk({ ok: true, result });
     }
 
-    return jsonError("Onbekende actie.");
+    return jsonError("Unknown action.");
   } catch (err) {
     return handleApiError(err);
   }

@@ -26,12 +26,12 @@ export function assertDomainAccess(
     return;
   }
   if (!domain) {
-    throw new Error("Domeinparameter ontbreekt.");
+    throw new Error("Domain parameter is missing.");
   }
   if (role === "admin") return;
   const normalized = domain.toLowerCase();
   const allowed = allowedDomains.map((d) => d.toLowerCase());
   if (!allowed.includes(normalized)) {
-    throw new Error("Geen toegang tot dit domein.");
+    throw new Error("No access to this domain.");
   }
 }

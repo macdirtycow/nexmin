@@ -27,7 +27,7 @@ export function DomainNav({
             : "text-panel-muted hover:bg-panel-card hover:text-white"
         }`}
       >
-        Overzicht
+        Overview
       </Link>
       {features.map((f) => {
         const href = `${base}/${f.path}`;

@@ -57,11 +57,11 @@ export function PhpManager({
         body: JSON.stringify({ dir, version }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess(`PHP ${version} gekoppeld aan ${dir}.`);
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess(`PHP ${version} linked to ${dir}.`);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -77,11 +77,11 @@ export function PhpManager({
         body: JSON.stringify({ dir: targetDir }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
-      setSuccess("PHP-mapping verwijderd.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setSuccess("PHP mapping deleted.");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -105,13 +105,13 @@ export function PhpManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess(`php.ini: ${iniName} bijgewerkt.`);
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess(`php.ini: ${iniName} updated.`);
       setIniName("");
       setIniValue("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -124,14 +124,14 @@ export function PhpManager({
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">PHP per map</h2>
+        <h2 className="text-lg font-medium text-white">PHP per directory</h2>
         <form onSubmit={setDirectory} className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
-            <Label htmlFor="dir">Map</Label>
+            <Label htmlFor="dir">Directory</Label>
             <Input id="dir" value={dir} onChange={(e) => setDir(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="ver">Versie</Label>
+            <Label htmlFor="ver">Version</Label>
             <select
               id="ver"
               className="w-full rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-sm"
@@ -147,17 +147,17 @@ export function PhpManager({
           </div>
           <div className="flex items-end">
             <Button type="submit" disabled={loading}>
-              Toepassen
+              Apply
             </Button>
           </div>
         </form>
         <table className="mt-6 w-full text-left text-sm">
           <thead className="text-panel-muted">
             <tr>
-              <th className="py-2">Map</th>
-              <th className="py-2">Versie</th>
-              <th className="py-2">Modus</th>
-              {isAdmin && <th className="py-2 text-right">Acties</th>}
+              <th className="py-2">Directory</th>
+              <th className="py-2">Version</th>
+              <th className="py-2">Mode</th>
+              {isAdmin && <th className="py-2 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -173,7 +173,7 @@ export function PhpManager({
                       onClick={() => removeDirectory(d.dir)}
                       disabled={loading}
                     >
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 )}
@@ -184,7 +184,7 @@ export function PhpManager({
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">php.ini-instelling</h2>
+        <h2 className="text-lg font-medium text-white">php.ini setting</h2>
         <form onSubmit={saveIni} className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="ininame">Directive</Label>
@@ -196,7 +196,7 @@ export function PhpManager({
             />
           </div>
           <div>
-            <Label htmlFor="inival">Waarde</Label>
+            <Label htmlFor="inival">Value</Label>
             <Input
               id="inival"
               value={iniValue}
@@ -205,7 +205,7 @@ export function PhpManager({
           </div>
           <div className="flex items-end">
             <Button type="submit" disabled={loading || !isAdmin}>
-              Opslaan
+              Save
             </Button>
           </div>
         </form>

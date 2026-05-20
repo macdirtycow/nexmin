@@ -9,7 +9,7 @@ export default async function AdminPlansPage() {
   try {
     plans = await listPlans(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon plannen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load plans.";
   }
   return (
     <AdminListView
@@ -19,7 +19,7 @@ export default async function AdminPlansPage() {
       nameKey="name"
       items={plans}
       initialError={error}
-      createLabel="Accountplan aanmaken"
+      createLabel="Create account plan"
     />
   );
 }

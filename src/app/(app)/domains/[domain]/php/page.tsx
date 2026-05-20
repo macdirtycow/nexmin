@@ -21,7 +21,7 @@ export default async function PhpPage({ params }: Props) {
       listPhpIni(domain, undefined, session),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon PHP-gegevens niet laden.";
+    error = e instanceof Error ? e.message : "Could not load PHP data.";
   }
   return (
     <PhpManager

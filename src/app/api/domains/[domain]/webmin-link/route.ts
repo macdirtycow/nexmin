@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: Params) {
 
     if (moduleId) {
       const mod = moduleById(webminModulesForDomain(), moduleId);
-      if (!mod) return jsonError("Onbekende module.");
+      if (!mod) return jsonError("Unknown module.");
       redirectPath = mod.path;
       if (mod.usermin) {
         target = "usermin";

@@ -9,7 +9,7 @@ export async function POST(_request: Request, { params }: Params) {
   try {
     const session = await requireSession();
     if (session.role !== "admin") {
-      return handleApiError(new Error("Alleen beheerders mogen domeinen in- of uitschakelen."));
+      return handleApiError(new Error("Only administrators may enable or disable domains."));
     }
     const { domain: encoded } = await params;
     const domain = decodeURIComponent(encoded);

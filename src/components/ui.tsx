@@ -152,7 +152,7 @@ export function ConfirmDialog({
         <h3 className="text-lg font-semibold text-white">{title}</h3>
         <p className="mt-2 text-sm text-panel-muted">{description}</p>
         <p className="mt-4 text-sm">
-          Typ <strong className="text-white">{confirmValue}</strong> om te bevestigen:
+          Type <strong className="text-white">{confirmValue}</strong> to confirm:
         </p>
         <Input
           className="mt-2"
@@ -169,7 +169,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={!canConfirm || loading}
           >
-            {loading ? "Bezig…" : confirmLabel}
+            {loading ? "Working…" : confirmLabel}
           </Button>
         </div>
       </Card>

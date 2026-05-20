@@ -2,33 +2,33 @@
 
 Panel calls go through `src/lib/virtualmin.ts` with RBAC. Direct `remote.cgi` access is server-side only.
 
-## Domeinen
+## Domains
 
-| Actie | program | Belangrijke parameters |
-|-------|---------|------------------------|
-| Lijst | `list-domains` | `multiline=` |
-| Detail | `list-domains` | filter client-side op `name` |
-| Uitschakelen | `disable-domain` | `domain` |
-| Inschakelen | `enable-domain` | `domain` |
-| VirtualMin link | `create-login-link` | `domain`, `user` (optioneel) |
+| Action | program | Key parameters |
+|--------|---------|----------------|
+| List | `list-domains` | `multiline=` |
+| Detail | `list-domains` | filter client-side on `name` |
+| Disable | `disable-domain` | `domain` |
+| Enable | `enable-domain` | `domain` |
+| VirtualMin link | `create-login-link` | `domain`, `user` (optional) |
 
 Help: `get-command` + `name=<program>`
 
-## E-mail
+## Email
 
-| Actie | program | Parameters |
-|-------|---------|------------|
-| Lijst | `list-users` | `domain`, `multiline=` |
-| Aanmaken | `create-user` | `domain`, `user`, `pass`, `quota` (optioneel) |
-| Wijzigen | `modify-user` | `domain`, `user`, `pass` |
-| Verwijderen | `delete-user` | `domain`, `user` |
+| Action | program | Parameters |
+|--------|---------|------------|
+| List | `list-users` | `domain`, `multiline=` |
+| Create | `create-user` | `domain`, `user`, `pass`, `quota` (optional) |
+| Update | `modify-user` | `domain`, `user`, `pass` |
+| Delete | `delete-user` | `domain`, `user` |
 
 ## Databases
 
-| Actie | program | Parameters |
-|-------|---------|------------|
-| Lijst | `list-databases` | `domain`, `multiline=` |
-| Aanmaken | `create-database` | `domain`, `name`, `pass`, `type` (mysql/postgres) |
-| Wachtwoord | `modify-database-pass` | `domain`, `name`, `pass` |
+| Action | program | Parameters |
+|--------|---------|------------|
+| List | `list-databases` | `domain`, `multiline=` |
+| Create | `create-database` | `domain`, `name`, `pass`, `type` (mysql/postgres) |
+| Password | `modify-database-pass` | `domain`, `name`, `pass` |
 
 Test locally: `npm run test-api` (requires curl + `.env.local`).

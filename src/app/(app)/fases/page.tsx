@@ -1,29 +1,29 @@
 import { Card } from "@/components/ui";
 import { DOMAIN_FEATURES, IMPLEMENTED_PHASE } from "@/lib/features";
 const PHASE_LABELS: Record<number, string> = {
-  1: "Kern",
-  2: "DNS, SSL, aliassen, redirects, back-ups",
+  1: "Core",
+  2: "DNS, SSL, aliases, redirects, backups",
   3: "Website & PHP",
-  4: "Domeinlevenscyclus",
+  4: "Domain lifecycle",
   5: "Scripts & proxies",
-  6: "Mail & FTP uitgebreid",
+  6: "Mail & FTP extended",
   7: "Server & reseller",
-  8: "Cloud & geavanceerd",
+  8: "Cloud & advanced",
 };
 
-export default function FasesPage() {
+export default function PhasesPage() {
   const phases = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Integratiefases</h1>
+        <h1 className="text-2xl font-semibold text-white">Integration phases</h1>
         <p className="mt-1 text-panel-muted">
-          Volledige VirtualMin-dekking in opeenvolgende releases. Nu actief: fase{" "}
+          Full VirtualMin coverage in successive releases. Currently active: phase{" "}
           {IMPLEMENTED_PHASE}.
         </p>
         <p className="mt-2 text-sm text-panel-muted">
-          Zie <code className="text-white">docs/PHASES.md</code> in het project voor de volledige API-lijst per fase.
+          See <code className="text-white">docs/PHASES.md</code> in the project for the full API list per phase.
         </p>
       </div>
 
@@ -34,7 +34,7 @@ export default function FasesPage() {
           <Card key={phase}>
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-lg font-medium text-white">
-                Fase {phase} — {PHASE_LABELS[phase]}
+                Phase {phase} — {PHASE_LABELS[phase]}
               </h2>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -43,7 +43,7 @@ export default function FasesPage() {
                     : "bg-slate-800 text-panel-muted"
                 }`}
               >
-                {done ? "Geïmplementeerd" : "Gepland"}
+                {done ? "Implemented" : "Planned"}
               </span>
             </div>
             {features.length > 0 ? (
@@ -56,7 +56,7 @@ export default function FasesPage() {
               </ul>
             ) : (
               <p className="mt-4 text-sm text-panel-muted">
-                Server-brede functies — zie docs/PHASES.md
+                Server-wide features — see docs/PHASES.md
               </p>
             )}
           </Card>

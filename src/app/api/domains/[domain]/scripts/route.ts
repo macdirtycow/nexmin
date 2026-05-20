@@ -27,10 +27,10 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen scripts installeren.", 403);
+      return jsonError("Only administrators may install scripts.", 403);
     }
     const body = (await request.json()) as { script?: string; path?: string };
-    if (!body.script) return jsonError("Scriptnaam is verplicht.");
+    if (!body.script) return jsonError("Script name is required.");
     await installScript(domain, body.script, body.path, session);
     await auditLog(session.username, "install-script", domain, body.script);
     return jsonOk({ ok: true });
@@ -43,10 +43,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen scripts verwijderen.", 403);
+      return jsonError("Only administrators may delete scripts.", 403);
     }
     const body = (await request.json()) as { script?: string };
-    if (!body.script) return jsonError("Scriptnaam is verplicht.");
+    if (!body.script) return jsonError("Script name is required.");
     await deleteInstalledScript(domain, body.script, session);
     await auditLog(session.username, "delete-script", domain, body.script);
     return jsonOk({ ok: true });

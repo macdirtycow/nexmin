@@ -21,7 +21,7 @@ export default async function DatabasesPage({ params }: Props) {
   try {
     databases = await listDatabases(domainName, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon databases niet laden.";
+    error = e instanceof Error ? e.message : "Could not load databases.";
   }
 
   return (

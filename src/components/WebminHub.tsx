@@ -56,10 +56,10 @@ export function WebminHub({
         `${linkApiPath}?module=${encodeURIComponent(mod.id)}`,
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kon inloglink niet maken.");
+      if (!res.ok) throw new Error(data.error ?? "Could not create login link.");
       window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(null);
     }
@@ -71,10 +71,10 @@ export function WebminHub({
     try {
       const res = await fetch(linkApiPath);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kon inloglink niet maken.");
+      if (!res.ok) throw new Error(data.error ?? "Could not create login link.");
       window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(null);
     }
@@ -91,9 +91,9 @@ export function WebminHub({
 
       <Card>
         <p className="text-sm text-panel-muted">
-          Webmin opent in een nieuw tabblad via een eenmalige inloglink (
-          <code className="text-white">create-login-link</code>). Geen wachtwoord
-          wordt in het panel opgeslagen.
+          Webmin opens in a new tab via a one-time login link (
+          <code className="text-white">create-login-link</code>). No password
+          is stored in the panel.
         </p>
         <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
           <div>
@@ -108,7 +108,7 @@ export function WebminHub({
         {showRootBanner && (
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={openRootDashboard} disabled={loading !== null}>
-              {loading === "_root" ? "Bezig…" : "Webmin dashboard (root)"}
+              {loading === "_root" ? "Working…" : "Webmin dashboard (root)"}
             </Button>
           </div>
         )}
@@ -117,7 +117,7 @@ export function WebminHub({
       <div>
         <input
           type="search"
-          placeholder="Zoek module…"
+          placeholder="Search module…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full max-w-md rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-sm text-white placeholder:text-panel-muted focus:border-panel-accent focus:outline-none"
@@ -146,7 +146,7 @@ export function WebminHub({
                   disabled={loading !== null}
                   onClick={() => openModule(mod)}
                 >
-                  {loading === mod.id ? "Bezig…" : "Openen"}
+                  {loading === mod.id ? "Working…" : "Open"}
                 </Button>
               </Card>
             ))}
@@ -155,7 +155,7 @@ export function WebminHub({
       ))}
 
       {filtered.length === 0 && (
-        <p className="text-sm text-panel-muted">Geen modules gevonden.</p>
+        <p className="text-sm text-panel-muted">No modules found.</p>
       )}
     </div>
   );

@@ -52,14 +52,14 @@ export function DatabaseManager({
         body: JSON.stringify({ name, pass, type: dbType }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess(`Database ${name} aangemaakt.`);
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess(`Database ${name} created.`);
       setShowCreate(false);
       setName("");
       setPass("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -77,13 +77,13 @@ export function DatabaseManager({
         body: JSON.stringify({ name: passTarget, pass: newDbPass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Wijzigen mislukt.");
-      setSuccess(`Wachtwoord voor ${passTarget} bijgewerkt.`);
+      if (!res.ok) throw new Error(data.error ?? "Update failed.");
+      setSuccess(`Password for ${passTarget} updated.`);
       setPassTarget(null);
       setNewDbPass("");
       setConfirmTyped("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export function DatabaseManager({
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-white">Databases</h1>
         <p className="mt-1 text-sm text-panel-muted">
-          Databases voor {domain}
+          Databases for {domain}
         </p>
       </div>
 
@@ -108,16 +108,16 @@ export function DatabaseManager({
 
       <div className="flex justify-end">
         <Button onClick={() => setShowCreate(!showCreate)}>
-          {showCreate ? "Annuleren" : "Nieuwe database"}
+          {showCreate ? "Cancel" : "New database"}
         </Button>
       </div>
 
       {showCreate && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Database aanmaken</h2>
+          <h2 className="text-lg font-medium text-white">Create database</h2>
           <form onSubmit={createDb} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="dbname">Naam</Label>
+              <Label htmlFor="dbname">Name</Label>
               <Input
                 id="dbname"
                 value={name}
@@ -138,7 +138,7 @@ export function DatabaseManager({
               </select>
             </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="dbpass">Wachtwoord</Label>
+              <Label htmlFor="dbpass">Password</Label>
               <Input
                 id="dbpass"
                 type="password"
@@ -148,7 +148,7 @@ export function DatabaseManager({
               />
             </div>
             <Button type="submit" disabled={loading}>
-              {loading ? "Bezig…" : "Aanmaken"}
+              {loading ? "Working…" : "Create"}
             </Button>
           </form>
         </Card>
@@ -158,10 +158,10 @@ export function DatabaseManager({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Naam</th>
+              <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Type</th>
               <th className="px-6 py-3">Host</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -179,7 +179,7 @@ export function DatabaseManager({
                       setConfirmTyped("");
                     }}
                   >
-                    Wachtwoord wijzigen
+                    Change password
                   </Button>
                 </td>
               </tr>
@@ -188,16 +188,16 @@ export function DatabaseManager({
         </table>
         {databases.length === 0 && (
           <p className="px-6 py-8 text-center text-panel-muted">
-            Geen databases gevonden.
+            No databases found.
           </p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!passTarget}
-        title="Database wachtwoord wijzigen"
-        description={`Bevestig het wijzigen van het wachtwoord voor database ${passTarget} op ${domain}.`}
-        confirmLabel="Wachtwoord opslaan"
+        title="Change database password"
+        description={`Confirm changing the password for database ${passTarget} on ${domain}.`}
+        confirmLabel="Save password"
         confirmValue={passTarget ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}
@@ -212,7 +212,7 @@ export function DatabaseManager({
 
       {passTarget && (
         <Card>
-          <Label htmlFor="newpass">Nieuw wachtwoord</Label>
+          <Label htmlFor="newpass">New password</Label>
           <Input
             id="newpass"
             type="password"

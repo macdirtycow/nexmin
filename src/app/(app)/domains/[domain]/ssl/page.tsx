@@ -11,7 +11,7 @@ export default async function SslPage({ params }: Props) {
   try {
     certs = await listSslCerts(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon certificaten niet laden.";
+    error = e instanceof Error ? e.message : "Could not load certificates.";
   }
   return <SslManager domain={domain} initialCerts={certs} initialError={error} />;
 }

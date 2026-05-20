@@ -42,12 +42,12 @@ export function AdminResellersView({
         body: JSON.stringify({ name, pass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setName("");
       setPass("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -63,12 +63,12 @@ export function AdminResellersView({
         body: JSON.stringify({ name: deleteName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setDeleteName(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -78,20 +78,20 @@ export function AdminResellersView({
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card>
-        <h2 className="text-lg font-medium text-white">Reseller aanmaken</h2>
+        <h2 className="text-lg font-medium text-white">Create reseller</h2>
         <form onSubmit={create} className="mt-4 flex flex-wrap gap-2">
           <Input placeholder="naam" value={name} onChange={(e) => setName(e.target.value)} required />
-          <Input type="password" placeholder="wachtwoord" value={pass} onChange={(e) => setPass(e.target.value)} required />
-          <Button type="submit" disabled={loading}>Aanmaken</Button>
+          <Input type="password" placeholder="password" value={pass} onChange={(e) => setPass(e.target.value)} required />
+          <Button type="submit" disabled={loading}>Create</Button>
         </form>
       </Card>
       <Card className="overflow-hidden p-0">
         <table className="w-full text-sm text-left">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Naam</th>
-              <th className="px-6 py-3">Domeinen</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Domains</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -101,7 +101,7 @@ export function AdminResellersView({
                 <td className="px-6 py-4">{r.domains ?? "—"}</td>
                 <td className="px-6 py-4 text-right">
                   <Button variant="danger" onClick={() => setDeleteName(r.name)}>
-                    Verwijderen
+                    Delete
                   </Button>
                 </td>
               </tr>
@@ -111,9 +111,9 @@ export function AdminResellersView({
       </Card>
       <ConfirmDialog
         open={!!deleteName}
-        title="Reseller verwijderen"
-        description={`Verwijder reseller ${deleteName}?`}
-        confirmLabel="Verwijderen"
+        title="Delete reseller"
+        description={`Delete reseller ${deleteName}?`}
+        confirmLabel="Delete"
         confirmValue={deleteName ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

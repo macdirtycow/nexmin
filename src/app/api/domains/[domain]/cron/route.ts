@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen cron-jobs aanmaken.", 403);
+      return jsonError("Only administrators may create cron jobs.", 403);
     }
     const body = (await request.json()) as {
       schedule?: string;
@@ -31,7 +31,7 @@ export async function POST(request: Request, { params }: Params) {
       user?: string;
     };
     if (!body.schedule || !body.command) {
-      return jsonError("Schema en commando zijn verplicht.");
+      return jsonError("Schedule and command are required.");
     }
     await createCronJob(
       domain,
@@ -51,10 +51,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen cron-jobs verwijderen.", 403);
+      return jsonError("Only administrators may delete cron jobs.", 403);
     }
     const body = (await request.json()) as { id?: string };
-    if (!body.id) return jsonError("Job-id is verplicht.");
+    if (!body.id) return jsonError("Job id is required.");
     await deleteCronJob(domain, body.id, session);
     await auditLog(session.username, "delete-cron-job", domain, body.id);
     return jsonOk({ ok: true });

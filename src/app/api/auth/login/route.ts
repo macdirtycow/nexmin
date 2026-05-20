@@ -14,12 +14,12 @@ export async function POST(request: Request) {
       password?: string;
     };
     if (!body.username || !body.password) {
-      return jsonError("Gebruikersnaam en wachtwoord zijn verplicht.");
+      return jsonError("Username and password are required.");
     }
 
     const user = await findUserByUsername(body.username);
     if (!user || !(await verifyPassword(user, body.password))) {
-      return jsonError("Onjuiste inloggegevens.", 401);
+      return jsonError("Invalid credentials.", 401);
     }
 
     const token = await createSession({
@@ -43,6 +43,6 @@ export async function POST(request: Request) {
     if (err instanceof Error && err.message.includes("SESSION_SECRET")) {
       return jsonError(err.message, 500);
     }
-    return jsonError("Inloggen mislukt.", 500);
+    return jsonError("Sign-in failed.", 500);
   }
 }

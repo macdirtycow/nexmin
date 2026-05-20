@@ -9,14 +9,14 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen een restore uitvoeren.", 403);
+      return jsonError("Only administrators may perform a restore.", 403);
     }
     const body = (await request.json()) as {
       source?: string;
       test?: boolean;
     };
     if (!body.source?.trim()) {
-      return jsonError("Bronpad of S3-URL is verplicht.");
+      return jsonError("Source path or S3 URL is required.");
     }
     const result = await restoreDomain(
       domain,

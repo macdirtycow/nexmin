@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const session = await requireAdmin();
     const body = (await request.json()) as { name?: string; pass?: string };
     if (!body.name || !body.pass) {
-      return jsonError("Naam en wachtwoord zijn verplicht.");
+      return jsonError("Name and password are required.");
     }
     await createReseller(body.name, body.pass, session);
     await auditLog(session.username, "create-reseller", undefined, body.name);
@@ -32,7 +32,7 @@ export async function DELETE(request: Request) {
   try {
     const session = await requireAdmin();
     const body = (await request.json()) as { name?: string };
-    if (!body.name) return jsonError("Naam is verplicht.");
+    if (!body.name) return jsonError("Name is required.");
     await deleteReseller(body.name, session);
     await auditLog(session.username, "delete-reseller", undefined, body.name);
     return jsonOk({ ok: true });

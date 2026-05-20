@@ -11,7 +11,7 @@ export default async function ProtectedPage({ params }: Props) {
   try {
     directories = await listProtectedDirectories(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon mappen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load directories.";
   }
   return (
     <ProtectedManager

@@ -29,11 +29,11 @@ export function AdminSystemView({
         body: JSON.stringify({ action: "feature", feature, enabled }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setFeatures(data.features ?? []);
-      setSuccess("Feature bijgewerkt.");
+      setSuccess("Feature updated.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -51,10 +51,10 @@ export function AdminSystemView({
         body: JSON.stringify({ action: "config-system", bundle }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
-      setSuccess(`config-system uitgevoerd voor bundle ${bundle}.`);
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
+      setSuccess(`config-system executed for bundle ${bundle}.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export function AdminSystemView({
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={f.enabled === "1" ? "success" : "warning"}>
-                  {f.enabled === "1" ? "Aan" : "Uit"}
+                  {f.enabled === "1" ? "On" : "Off"}
                 </Badge>
                 <Button
                   variant="secondary"
@@ -85,22 +85,22 @@ export function AdminSystemView({
                     toggleFeature(f.feature, f.enabled !== "1")
                   }
                 >
-                  {f.enabled === "1" ? "Uitzetten" : "Aanzetten"}
+                  {f.enabled === "1" ? "Turn off" : "Turn on"}
                 </Button>
               </div>
             </li>
           ))}
         </ul>
         {features.length === 0 && (
-          <p className="mt-4 text-sm text-panel-muted">Geen features geladen.</p>
+          <p className="mt-4 text-sm text-panel-muted">No features loaded.</p>
         )}
       </Card>
 
       <Card>
         <h2 className="text-lg font-medium text-white">Systeemconfiguratie</h2>
         <p className="mt-2 text-sm text-panel-muted">
-          Voert VirtualMin <code className="text-white">config-system</code> uit met een bundle.
-          Alleen op een onderhoudsvenster — kan diensten herconfigureren.
+          Runs VirtualMin <code className="text-white">config-system</code> with a bundle.
+          Only during a maintenance window — may reconfigure services.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <select
@@ -115,7 +115,7 @@ export function AdminSystemView({
             ))}
           </select>
           <Button variant="danger" onClick={runConfig} disabled={loading || !bundle}>
-            Bundle uitvoeren
+            Run bundle
           </Button>
         </div>
       </Card>

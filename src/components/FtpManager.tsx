@@ -51,13 +51,13 @@ export function FtpManager({
         body: JSON.stringify({ user: newUser, pass: newPass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess(`FTP-account ${newUser} aangemaakt.`);
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess(`FTP account ${newUser} created.`);
       setNewUser("");
       setNewPass("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +73,12 @@ export function FtpManager({
         body: JSON.stringify({ user: resetUser, pass: resetPass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Failed.");
       setResetUser(null);
       setResetPass("");
-      setSuccess("Wachtwoord bijgewerkt.");
+      setSuccess("Password updated.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -94,12 +94,12 @@ export function FtpManager({
         body: JSON.stringify({ user: deleteUser }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       setDeleteUser(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -107,16 +107,16 @@ export function FtpManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="FTP-accounts" />
+      <DomainPageHeader domain={domain} title="FTP accounts" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Account aanmaken</h2>
+        <h2 className="text-lg font-medium text-white">Create account</h2>
         <form onSubmit={create} className="mt-4 flex flex-wrap gap-2">
-          <Input placeholder="gebruiker" value={newUser} onChange={(e) => setNewUser(e.target.value)} required />
-          <Input type="password" placeholder="wachtwoord" value={newPass} onChange={(e) => setNewPass(e.target.value)} required />
-          <Button type="submit" disabled={loading}>Aanmaken</Button>
+          <Input placeholder="user" value={newUser} onChange={(e) => setNewUser(e.target.value)} required />
+          <Input type="password" placeholder="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} required />
+          <Button type="submit" disabled={loading}>Create</Button>
         </form>
       </Card>
 
@@ -124,10 +124,10 @@ export function FtpManager({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Gebruiker</th>
+              <th className="px-6 py-3">User</th>
               <th className="px-6 py-3">Home</th>
               <th className="px-6 py-3">Quota</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -137,24 +137,24 @@ export function FtpManager({
                 <td className="px-6 py-4 text-panel-muted">{a.dir ?? "—"}</td>
                 <td className="px-6 py-4">{a.quota ?? "—"}</td>
                 <td className="px-6 py-4 text-right space-x-2">
-                  <Button variant="secondary" onClick={() => setResetUser(a.user)}>Wachtwoord</Button>
-                  <Button variant="danger" onClick={() => setDeleteUser(a.user)}>Verwijderen</Button>
+                  <Button variant="secondary" onClick={() => setResetUser(a.user)}>Password</Button>
+                  <Button variant="danger" onClick={() => setDeleteUser(a.user)}>Delete</Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         {accounts.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen FTP-accounts.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No FTP accounts.</p>
         )}
       </Card>
 
       {resetUser && (
         <Card>
-          <Label>Wachtwoord voor {resetUser}</Label>
+          <Label>Password for {resetUser}</Label>
           <div className="mt-2 flex gap-2">
             <Input type="password" value={resetPass} onChange={(e) => setResetPass(e.target.value)} />
-            <Button onClick={savePassword} disabled={!resetPass}>Opslaan</Button>
+            <Button onClick={savePassword} disabled={!resetPass}>Save</Button>
             <Button variant="ghost" onClick={() => setResetUser(null)}>Annuleren</Button>
           </div>
         </Card>
@@ -162,9 +162,9 @@ export function FtpManager({
 
       <ConfirmDialog
         open={!!deleteUser}
-        title="FTP-account verwijderen"
-        description={`Verwijder FTP-gebruiker ${deleteUser}?`}
-        confirmLabel="Verwijderen"
+        title="Delete FTP account"
+        description={`Delete FTP user ${deleteUser}?`}
+        confirmLabel="Delete"
         confirmValue={deleteUser ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

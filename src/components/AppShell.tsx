@@ -33,12 +33,12 @@ export function AppShell({ children, username, role }: AppShellProps) {
                 Dashboard
               </NavLink>
               <NavLink href="/domains" active={pathname.startsWith("/domains")}>
-                Domeinen
+                Domains
               </NavLink>
               {role === "admin" && (
                 <>
                   <NavLink href="/admin" active={pathname.startsWith("/admin") && !pathname.startsWith("/admin/webmin")}>
-                    Serverbeheer
+                    Server admin
                   </NavLink>
                   <NavLink href="/admin/webmin" active={pathname.startsWith("/admin/webmin")}>
                     Webmin
@@ -46,7 +46,7 @@ export function AppShell({ children, username, role }: AppShellProps) {
                 </>
               )}
               <NavLink href="/fases" active={pathname === "/fases"}>
-                Fases
+                Phases
               </NavLink>
             </nav>
           </div>
@@ -54,11 +54,11 @@ export function AppShell({ children, username, role }: AppShellProps) {
             <span className="text-panel-muted">
               {username}
               <span className="ml-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs">
-                {role === "admin" ? "beheerder" : "klant"}
+                {role === "admin" ? "admin" : "client"}
               </span>
             </span>
             <Button variant="ghost" onClick={logout}>
-              Uitloggen
+              Sign out
             </Button>
           </div>
         </div>

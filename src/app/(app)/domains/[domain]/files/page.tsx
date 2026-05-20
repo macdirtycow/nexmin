@@ -19,7 +19,7 @@ export default async function DomainFilesPage({ params }: Props) {
       };
     }
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon bestandsbeheer niet laden.";
+    error = e instanceof Error ? e.message : "Could not load file manager.";
   }
   return (
     <FileManager domain={domain} initialListing={listing} initialError={error} />

@@ -14,7 +14,7 @@ export default async function DomainWebminPage({ params }: Props) {
   return (
     <WebminHub
       title="Webmin & Usermin"
-      description={`Virtualmin en Usermin voor ${domain} — naast de panel-schermen.`}
+      description={`Virtualmin and Usermin for ${domain} — alongside the panel screens.`}
       modules={webminModulesForDomain()}
       linkApiPath={`/api/domains/${enc}/webmin-link`}
       webminBase={webminUiBase()}

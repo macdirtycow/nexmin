@@ -28,10 +28,10 @@ export function LogsManager({
     try {
       const res = await fetch(`/api/domains/${enc}/logs?type=${type}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Laden mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Load failed.");
       setLog(data.log ?? "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -41,8 +41,8 @@ export function LogsManager({
     <div className="space-y-6">
       <DomainPageHeader
         domain={domain}
-        title="Website-logs"
-        description="Access- en errorlogs van de webserver"
+        title="Website logs"
+        description="Access and error logs from the webserver"
       />
       {error && <Alert>{error}</Alert>}
       <div className="flex gap-2">
@@ -63,7 +63,7 @@ export function LogsManager({
       </div>
       <Card>
         <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-all text-xs text-slate-300 font-mono">
-          {loading ? "Laden…" : log || "Geen logregels."}
+          {loading ? "Loading…" : log || "No log lines."}
         </pre>
       </Card>
     </div>

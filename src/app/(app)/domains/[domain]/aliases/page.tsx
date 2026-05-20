@@ -11,7 +11,7 @@ export default async function AliasesPage({ params }: Props) {
   try {
     aliases = await listAliases(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon aliassen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load aliases.";
   }
   return (
     <AliasesManager domain={domain} initialAliases={aliases} initialError={error} />
