@@ -1,5 +1,7 @@
 # Nexmin
 
+**Website:** [nexmin.net](https://nexmin.net)
+
 **Nexmin** is a modern English UI layer **on top of** [VirtualMin](https://virtualmin.com) / Webmin — not a fork. Domains, email, databases, DNS, SSL, server management, and Webmin login links with role-based access (admin / client).
 
 > **Status:** Work in progress — UI phases 1–8 are implemented; production testing on a separate VPS is planned.
@@ -13,7 +15,7 @@
 ## Quick start (local, mock)
 
 ```bash
-git clone <your-private-repo-url>
+git clone https://github.com/macdirtycow/nexmin.git
 cd nexmin
 cp .env.example .env.local
 ```
@@ -45,13 +47,15 @@ node scripts/hash-password.mjs your-password
 
 ## Production (real VirtualMin)
 
+Deploy the panel at **https://nexmin.net** (see [deploy/nginx-nexmin.conf](deploy/nginx-nexmin.conf)).
+
 1. `.env.local` on the server (do not commit) — see [.env.example](.env.example).
 2. `VIRTUALMIN_MOCK=false`
-3. `VIRTUALMIN_URL`, `VIRTUALMIN_USER`, `VIRTUALMIN_PASS`
-4. `WEBMIN_UI_URL` / `USERMIN_UI_URL` for Webmin/Usermin links
+3. `VIRTUALMIN_URL`, `VIRTUALMIN_USER`, `VIRTUALMIN_PASS` (often `127.0.0.1:10000` when Nexmin and VirtualMin share a VPS)
+4. `WEBMIN_UI_URL` / `USERMIN_UI_URL` — public URLs of Webmin/Usermin on your host (not necessarily `nexmin.net`)
 5. API test: `npm run test-api`
 6. Build: `npm run build && npm run start`
-7. Reverse proxy: [deploy/nginx-nexmin.conf](deploy/nginx-nexmin.conf)
+7. Nginx + TLS for `nexmin.net`: [deploy/nginx-nexmin.conf](deploy/nginx-nexmin.conf)
 
 For self-signed TLS on port 10000: prefer a valid certificate; otherwise temporarily `NODE_TLS_REJECT_UNAUTHORIZED=0` (testing only).
 
