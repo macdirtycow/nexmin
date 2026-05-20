@@ -1,0 +1,569 @@
+"use client";
+
+import { FileCodeEditor } from "@/components/FileCodeEditor";
+import {
+  Alert,
+  Button,
+  Card,
+  ConfirmDialog,
+  Input,
+} from "@/components/ui";
+import {
+  DOMAIN_FILE_QUICK_PATHS,
+  type DomainFileEntry,
+  type DomainFilesListing,
+} from "@/lib/domain-files";
+import Link from "next/link";
+import { useCallback, useRef, useState } from "react";
+import { DomainPageHeader } from "./DomainPageHeader";
+
+export function FileManager({
+  domain,
+  initialListing,
+  initialError,
+}: {
+  domain: string;
+  initialListing: DomainFilesListing;
+  initialError: string;
+}) {
+  const enc = encodeURIComponent(domain);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [listing, setListing] = useState(initialListing);
+  const [error, setError] = useState(initialError);
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const [newDirName, setNewDirName] = useState("");
+  const [showNewDir, setShowNewDir] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+  const [showNewFile, setShowNewFile] = useState(false);
+
+  const [editPath, setEditPath] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editLanguage, setEditLanguage] = useState("plaintext");
+  const [editReadOnly, setEditReadOnly] = useState(false);
+
+  const [deletePath, setDeletePath] = useState<string | null>(null);
+  const [confirmTyped, setConfirmTyped] = useState("");
+
+  const refresh = useCallback(
+    async (dir?: string) => {
+      const cwd = dir ?? listing.cwd;
+      const res = await fetch(`/api/domains/${enc}/files?dir=${encodeURIComponent(cwd)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Kon map niet laden.");
+      setListing(data);
+    },
+    [enc, listing.cwd],
+  );
+
+  async function openFileManager() {
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/virtualmin-link?dest=fileman`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Link mislukt.");
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    }
+  }
+
+  async function navigate(dir: string) {
+    setLoading(true);
+    setError("");
+    setEditPath(null);
+    try {
+      await refresh(dir);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openEditor(entry: DomainFileEntry, forceReadOnly = false) {
+    if (entry.type === "dir") {
+      await navigate(entry.path);
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/domains/${enc}/files/content?path=${encodeURIComponent(entry.path)}`,
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Kon bestand niet openen.");
+      if (data.encoding === "base64") {
+        setError(
+          "Dit is een binair bestand. Gebruik Download — bewerken kan alleen voor tekstbestanden.",
+        );
+        return;
+      }
+      setEditPath(entry.path);
+      setEditContent(data.content ?? "");
+      setEditLanguage(data.language ?? "plaintext");
+      setEditReadOnly(forceReadOnly || data.readOnly === true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function downloadUrl(path: string) {
+    return `/api/domains/${enc}/files/download?path=${encodeURIComponent(path)}`;
+  }
+
+  async function saveFile() {
+    if (!editPath || editReadOnly) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", path: editPath, content: editContent }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
+      setSuccess("Bestand opgeslagen.");
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function uploadFiles(fileList: FileList | File[]) {
+    if (!listing.writable) {
+      setError("Deze map is alleen-lezen.");
+      return;
+    }
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const form = new FormData();
+      form.set("dir", listing.cwd);
+      for (const f of files) form.append("files", f);
+      const res = await fetch(`/api/domains/${enc}/files/upload`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload mislukt.");
+      setSuccess(
+        files.length === 1
+          ? `${files[0]!.name} geüpload.`
+          : `${files.length} bestanden geüpload.`,
+      );
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function createDir(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "mkdir",
+          parent: listing.cwd,
+          name: newDirName,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Map aanmaken mislukt.");
+      setShowNewDir(false);
+      setNewDirName("");
+      setSuccess("Map aangemaakt.");
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createFile(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create-file",
+          parent: listing.cwd,
+          name: newFileName,
+          content: "",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Bestand aanmaken mislukt.");
+      setShowNewFile(false);
+      setNewFileName("");
+      setSuccess("Bestand aangemaakt.");
+      await refresh();
+      if (data.path) {
+        await openEditor({
+          name: newFileName,
+          path: data.path,
+          type: "file",
+          editable: true,
+        });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deletePath) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/domains/${enc}/files`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: deletePath }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (editPath === deletePath) setEditPath(null);
+      setDeletePath(null);
+      setConfirmTyped("");
+      setSuccess("Verwijderd.");
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isPanel = listing.mode === "panel";
+  const writable = listing.writable !== false;
+
+  return (
+    <div className="space-y-6">
+      <DomainPageHeader
+        domain={domain}
+        title="Bestanden"
+        description={`${listing.home} · document root: public_html`}
+      />
+      {error && <Alert>{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
+      <div className="flex flex-wrap gap-2">
+        {DOMAIN_FILE_QUICK_PATHS.map((q) => (
+          <Button
+            key={q.id}
+            variant="secondary"
+            disabled={loading}
+            onClick={() => navigate(q.id)}
+            title={q.description}
+          >
+            {q.label}
+          </Button>
+        ))}
+        <Button
+          variant="ghost"
+          disabled={loading}
+          onClick={() => window.location.assign(`/domains/${enc}/webmin`)}
+        >
+          Alle Webmin-modules
+        </Button>
+        <Button variant="ghost" onClick={openFileManager} disabled={loading}>
+          {isPanel ? "File manager (direct)" : "Open bestandsbeheer"}
+        </Button>
+      </div>
+
+      {!isPanel && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Bestandsbeheer op de server</h2>
+          <p className="mt-2 text-sm text-panel-muted">
+            Op een live VirtualMin-server gebruik je de ingebouwde file manager voor upload,
+            download en bewerken. Het panel opent een eenmalige inloglink.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button onClick={openFileManager} disabled={loading}>
+              Open public_html in VirtualMin
+            </Button>
+            {listing.fileManagerUrl && (
+              <Link
+                href={listing.fileManagerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-lg border border-panel-border px-4 py-2 text-sm text-panel-muted hover:text-white"
+              >
+                Directe link
+              </Link>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {isPanel && (
+        <>
+          {writable && (
+            <Card
+              className={`border-dashed transition ${dragOver ? "border-panel-accent bg-panel-accent/5" : ""}`}
+            >
+              <div
+                className="flex flex-wrap items-center justify-between gap-3"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+                }}
+              >
+                <div>
+                  <p className="font-medium text-white">Upload</p>
+                  <p className="text-sm text-panel-muted">
+                    Sleep bestanden hierheen of kies vanaf je computer (max. 10 MB per bestand).
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.length) uploadFiles(e.target.files);
+                    }}
+                  />
+                  <Button
+                    variant="secondary"
+                    disabled={loading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Bestanden kiezen
+                  </Button>
+                  <Button variant="secondary" disabled={loading} onClick={() => setShowNewFile(true)}>
+                    Nieuw bestand
+                  </Button>
+                  <Button variant="secondary" disabled={loading} onClick={() => setShowNewDir(true)}>
+                    Nieuwe map
+                  </Button>
+                  <Button variant="ghost" disabled={loading} onClick={() => refresh()}>
+                    Vernieuwen
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <Card className="overflow-hidden p-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-panel-border px-4 py-3">
+              <nav className="flex flex-wrap items-center gap-1 text-sm">
+                {listing.breadcrumbs.map((crumb, i) => (
+                  <span key={crumb.path} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-panel-muted">/</span>}
+                    <button
+                      type="button"
+                      className="text-panel-accent hover:underline"
+                      onClick={() => navigate(crumb.path)}
+                    >
+                      {crumb.label}
+                    </button>
+                  </span>
+                ))}
+              </nav>
+              {!writable && (
+                <span className="text-xs text-amber-400/90">Alleen-lezen map</span>
+              )}
+            </div>
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-panel-border bg-panel-bg/40 text-panel-muted">
+                <tr>
+                  <th className="px-4 py-3">Naam</th>
+                  <th className="px-4 py-3">Grootte</th>
+                  <th className="px-4 py-3">Gewijzigd</th>
+                  <th className="px-4 py-3 text-right">Acties</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listing.cwd && (
+                  <tr className="border-b border-panel-border/50">
+                    <td className="px-4 py-3" colSpan={4}>
+                      <button
+                        type="button"
+                        className="text-panel-accent hover:underline"
+                        onClick={() => {
+                          const parts = listing.cwd.split("/");
+                          parts.pop();
+                          navigate(parts.join("/"));
+                        }}
+                      >
+                        ..
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                {(listing.entries ?? []).map((entry) => (
+                  <tr
+                    key={entry.path}
+                    className="border-b border-panel-border/50 hover:bg-panel-bg/30"
+                  >
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        className="text-left font-medium text-white hover:text-panel-accent"
+                        onClick={() => openEditor(entry)}
+                      >
+                        <span className="mr-2 inline-block w-14 text-xs uppercase text-panel-muted">
+                          {entry.type === "dir" ? "map" : "bestand"}
+                        </span>
+                        {entry.name}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-panel-muted">
+                      {entry.type === "dir" ? "—" : entry.size ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-panel-muted">{entry.modified ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        {entry.type === "file" && entry.downloadable !== false && (
+                          <a
+                            href={downloadUrl(entry.path)}
+                            className="rounded-lg px-2 py-1 text-xs text-panel-muted hover:bg-panel-card hover:text-white"
+                            download
+                          >
+                            Download
+                          </a>
+                        )}
+                        {entry.type === "file" && (
+                          <Button
+                            variant="ghost"
+                            className="!px-2 !py-1 text-xs"
+                            onClick={() =>
+                              openEditor(
+                                entry,
+                                entry.editable === false,
+                              )
+                            }
+                          >
+                            {entry.editable === false ? "Bekijken" : "Bewerken"}
+                          </Button>
+                        )}
+                        {entry.type === "file" &&
+                          entry.editable !== false &&
+                          writable && (
+                            <Button
+                              variant="ghost"
+                              className="!px-2 !py-1 text-xs text-red-300"
+                              onClick={() => setDeletePath(entry.path)}
+                            >
+                              Verwijderen
+                            </Button>
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(listing.entries ?? []).length === 0 && (
+              <p className="px-4 py-8 text-center text-sm text-panel-muted">
+                Deze map is leeg. Upload bestanden of maak een nieuw bestand aan.
+              </p>
+            )}
+          </Card>
+
+          {showNewDir && (
+            <Card>
+              <h2 className="text-lg font-medium text-white">Nieuwe map</h2>
+              <form onSubmit={createDir} className="mt-4 flex flex-wrap gap-2">
+                <Input
+                  placeholder="mapnaam"
+                  value={newDirName}
+                  onChange={(e) => setNewDirName(e.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={loading}>
+                  Aanmaken
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowNewDir(false)}>
+                  Annuleren
+                </Button>
+              </form>
+            </Card>
+          )}
+
+          {showNewFile && (
+            <Card>
+              <h2 className="text-lg font-medium text-white">Nieuw bestand</h2>
+              <form onSubmit={createFile} className="mt-4 flex flex-wrap gap-2">
+                <Input
+                  placeholder="bijv. pagina.html of script.js"
+                  value={newFileName}
+                  onChange={(e) => setNewFileName(e.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={loading}>
+                  Aanmaken en bewerken
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowNewFile(false)}>
+                  Annuleren
+                </Button>
+              </form>
+            </Card>
+          )}
+
+          {editPath && (
+            <FileCodeEditor
+              path={editPath}
+              language={editLanguage}
+              readOnly={editReadOnly}
+              content={editContent}
+              onChange={setEditContent}
+              onSave={saveFile}
+              onClose={() => setEditPath(null)}
+              saving={loading}
+            />
+          )}
+        </>
+      )}
+
+      <ConfirmDialog
+        open={!!deletePath}
+        title="Bestand verwijderen"
+        description={`Verwijder ${deletePath}? Dit kan niet ongedaan worden gemaakt.`}
+        confirmLabel="Verwijderen"
+        confirmValue={deletePath?.split("/").pop() ?? ""}
+        typedValue={confirmTyped}
+        onTypedChange={setConfirmTyped}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeletePath(null);
+          setConfirmTyped("");
+        }}
+        loading={loading}
+      />
+    </div>
+  );
+}

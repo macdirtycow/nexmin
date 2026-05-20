@@ -1,0 +1,38 @@
+import { notFound } from "next/navigation";
+import { getSession, requireSession } from "./session";
+import type { VirtualMinDomain } from "./types";
+import { listDomains } from "./virtualmin";
+
+async function resolveDomain(
+  encodedDomain: string,
+  onMissing: () => never,
+): Promise<{
+  session: Awaited<ReturnType<typeof requireSession>>;
+  domain: string;
+  domainInfo: VirtualMinDomain;
+}> {
+  const session = await requireSession();
+  const domainName = decodeURIComponent(encodedDomain);
+  const domains = await listDomains(session);
+  const found = domains.find(
+    (d) => d.name.toLowerCase() === domainName.toLowerCase(),
+  );
+  if (!found) onMissing();
+  return { session, domain: domainName, domainInfo: found };
+}
+
+/** For server components / layouts */
+export async function requireDomainAccess(encodedDomain: string) {
+  return resolveDomain(encodedDomain, () => notFound());
+}
+
+/** For API route handlers */
+export async function requireDomainApi(encodedDomain: string) {
+  return resolveDomain(encodedDomain, () => {
+    throw new Error("Domein niet gevonden.");
+  });
+}
+
+export async function getSessionIfPresent() {
+  return getSession();
+}

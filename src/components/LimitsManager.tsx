@@ -1,0 +1,94 @@
+"use client";
+
+import { Alert, Button, Card, Input, Label } from "@/components/ui";
+import type { DomainLimits } from "@/lib/virtualmin";
+import { useState } from "react";
+import { DomainPageHeader } from "./DomainPageHeader";
+
+export function LimitsManager({
+  domain,
+  initialLimits,
+  initialError,
+}: {
+  domain: string;
+  initialLimits: DomainLimits;
+  initialError: string;
+}) {
+  const enc = encodeURIComponent(domain);
+  const [limits, setLimits] = useState(initialLimits);
+  const [error, setError] = useState(initialError);
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/limits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(limits),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
+      setSuccess("Limieten bijgewerkt.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <DomainPageHeader domain={domain} title="Limieten" />
+      {error && <Alert>{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+      <Card>
+        <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>Schijf (MB)</Label>
+            <Input
+              value={limits.disk ?? ""}
+              onChange={(e) => setLimits({ ...limits, disk: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>Bandbreedte (MB)</Label>
+            <Input
+              value={limits.bandwidth ?? ""}
+              onChange={(e) =>
+                setLimits({ ...limits, bandwidth: e.target.value })
+              }
+            />
+          </div>
+          <div>
+            <Label>Mailboxen</Label>
+            <Input
+              value={limits.mailboxes ?? ""}
+              onChange={(e) =>
+                setLimits({ ...limits, mailboxes: e.target.value })
+              }
+            />
+          </div>
+          <div>
+            <Label>Databases</Label>
+            <Input
+              value={limits.databases ?? ""}
+              onChange={(e) =>
+                setLimits({ ...limits, databases: e.target.value })
+              }
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Bezig…" : "Opslaan"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}

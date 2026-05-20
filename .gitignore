@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+data/users.json
+data/audit.log
+*.log
+.DS_Store
