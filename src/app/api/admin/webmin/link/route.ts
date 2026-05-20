@@ -1,0 +1,33 @@
+import { auditLog } from "@/lib/audit";
+import { requireAdmin } from "@/lib/admin-api";
+import { handleApiError, jsonError, jsonOk } from "@/lib/api";
+import {
+  createWebminLoginLink,
+  moduleById,
+  webminModulesForAdmin,
+} from "@/lib/webmin";
+
+export async function GET(request: Request) {
+  try {
+    const session = await requireAdmin();
+    const url = new URL(request.url);
+    const moduleId = url.searchParams.get("module");
+    const redirect = url.searchParams.get("redirect");
+
+    let redirectPath = redirect ?? undefined;
+    if (moduleId) {
+      const mod = moduleById(webminModulesForAdmin(), moduleId);
+      if (!mod) return jsonError("Onbekende Webmin-module.");
+      redirectPath = mod.path;
+    }
+
+    const link = await createWebminLoginLink(session, {
+      target: "root",
+      redirectPath,
+    });
+    await auditLog(session.username, "webmin-login", undefined, moduleId ?? "root");
+    return jsonOk({ url: link });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}

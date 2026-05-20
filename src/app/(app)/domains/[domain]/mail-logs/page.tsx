@@ -1,0 +1,24 @@
+import { MailLogsManager } from "@/components/MailLogsManager";
+import { requireDomainAccess } from "@/lib/domain-api";
+import { searchMailLogs } from "@/lib/virtualmin";
+
+type Props = { params: Promise<{ domain: string }> };
+
+export default async function MailLogsPage({ params }: Props) {
+  const { session, domain } = await requireDomainAccess((await params).domain);
+  let lines: string[] = [];
+  let error = "";
+  try {
+    lines = await searchMailLogs(domain, "", session);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Kon logs niet laden.";
+  }
+  return (
+    <MailLogsManager
+      domain={domain}
+      initialLines={lines}
+      initialError={error}
+      isAdmin={session.role === "admin"}
+    />
+  );
+}

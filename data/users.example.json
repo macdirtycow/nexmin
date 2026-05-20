@@ -1,0 +1,16 @@
+[
+  {
+    "id": "admin-1",
+    "username": "admin",
+    "passwordHash": "$2b$10$pPmFCHsj/Cpttg2LpVWv6uxGGWu.kapqp42WpuH5QArnGJhe/Ecc2",
+    "role": "admin",
+    "domains": []
+  },
+  {
+    "id": "client-1",
+    "username": "klant",
+    "passwordHash": "$2b$10$pPmFCHsj/Cpttg2LpVWv6uxGGWu.kapqp42WpuH5QArnGJhe/Ecc2",
+    "role": "client",
+    "domains": ["voorbeeld.nl"]
+  }
+]

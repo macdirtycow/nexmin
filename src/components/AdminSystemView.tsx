@@ -1,0 +1,124 @@
+"use client";
+
+import { Alert, Badge, Button, Card } from "@/components/ui";
+import type { GlobalFeature } from "@/lib/virtualmin";
+import { useState } from "react";
+
+export function AdminSystemView({
+  initialFeatures,
+  initialBundles,
+  initialError,
+}: {
+  initialFeatures: GlobalFeature[];
+  initialBundles: string[];
+  initialError: string;
+}) {
+  const [features, setFeatures] = useState(initialFeatures);
+  const [error, setError] = useState(initialError);
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [bundle, setBundle] = useState(initialBundles[0] ?? "");
+
+  async function toggleFeature(feature: string, enabled: boolean) {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "feature", feature, enabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      setFeatures(data.features ?? []);
+      setSuccess("Feature bijgewerkt.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runConfig() {
+    if (!bundle) return;
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch("/api/admin/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "config-system", bundle }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Mislukt.");
+      setSuccess(`config-system uitgevoerd voor bundle ${bundle}.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && <Alert>{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
+      <Card>
+        <h2 className="text-lg font-medium text-white">Globale features</h2>
+        <ul className="mt-4 divide-y divide-panel-border">
+          {features.map((f) => (
+            <li key={f.feature} className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-white">{f.label ?? f.feature}</p>
+                <p className="text-sm text-panel-muted">{f.feature}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge tone={f.enabled === "1" ? "success" : "warning"}>
+                  {f.enabled === "1" ? "Aan" : "Uit"}
+                </Badge>
+                <Button
+                  variant="secondary"
+                  disabled={loading}
+                  onClick={() =>
+                    toggleFeature(f.feature, f.enabled !== "1")
+                  }
+                >
+                  {f.enabled === "1" ? "Uitzetten" : "Aanzetten"}
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        {features.length === 0 && (
+          <p className="mt-4 text-sm text-panel-muted">Geen features geladen.</p>
+        )}
+      </Card>
+
+      <Card>
+        <h2 className="text-lg font-medium text-white">Systeemconfiguratie</h2>
+        <p className="mt-2 text-sm text-panel-muted">
+          Voert VirtualMin <code className="text-white">config-system</code> uit met een bundle.
+          Alleen op een onderhoudsvenster — kan diensten herconfigureren.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <select
+            className="rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-white"
+            value={bundle}
+            onChange={(e) => setBundle(e.target.value)}
+          >
+            {initialBundles.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+          <Button variant="danger" onClick={runConfig} disabled={loading || !bundle}>
+            Bundle uitvoeren
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
