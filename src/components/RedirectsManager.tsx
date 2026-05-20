@@ -50,13 +50,13 @@ export function RedirectsManager({
         body: JSON.stringify({ path, dest, type: rtype }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Redirect aangemaakt.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("Redirect created.");
       setPath("/");
       setDest("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -72,13 +72,13 @@ export function RedirectsManager({
         body: JSON.stringify({ path: deletePath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
-      setSuccess("Redirect verwijderd.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setSuccess("Redirect deleted.");
       setDeletePath(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -91,14 +91,14 @@ export function RedirectsManager({
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Redirect toevoegen</h2>
+        <h2 className="text-lg font-medium text-white">Add redirect</h2>
         <form onSubmit={create} className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="path">Pad</Label>
             <Input id="path" value={path} onChange={(e) => setPath(e.target.value)} required />
           </div>
           <div>
-            <Label htmlFor="dest">Bestemming URL</Label>
+            <Label htmlFor="dest">Destination URL</Label>
             <Input id="dest" value={dest} onChange={(e) => setDest(e.target.value)} required />
           </div>
           <div>
@@ -114,7 +114,7 @@ export function RedirectsManager({
             </select>
           </div>
           <div className="flex items-end">
-            <Button type="submit" disabled={loading}>Toevoegen</Button>
+            <Button type="submit" disabled={loading}>Add</Button>
           </div>
         </form>
       </Card>
@@ -124,9 +124,9 @@ export function RedirectsManager({
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
               <th className="px-6 py-3">Pad</th>
-              <th className="px-6 py-3">Bestemming</th>
+              <th className="px-6 py-3">Destination</th>
               <th className="px-6 py-3">Type</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -137,7 +137,7 @@ export function RedirectsManager({
                 <td className="px-6 py-4">{r.type ?? "301"}</td>
                 <td className="px-6 py-4 text-right">
                   <Button variant="danger" onClick={() => setDeletePath(r.path)}>
-                    Verwijderen
+                    Delete
                   </Button>
                 </td>
               </tr>
@@ -145,15 +145,15 @@ export function RedirectsManager({
           </tbody>
         </table>
         {redirects.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen redirects.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No redirects.</p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!deletePath}
-        title="Redirect verwijderen"
-        description={`Verwijder redirect voor pad ${deletePath}?`}
-        confirmLabel="Verwijderen"
+        title="Delete redirect"
+        description={`Delete redirect for path ${deletePath}?`}
+        confirmLabel="Delete"
         confirmValue={deletePath ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

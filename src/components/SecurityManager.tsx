@@ -36,10 +36,10 @@ export function SecurityManager({
         body: JSON.stringify({ spamEnabled, dkimEnabled }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess("Instellingen opgeslagen in VirtualMin.");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess("Settings saved in VirtualMin.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export function SecurityManager({
       <DomainPageHeader
         domain={domain}
         title="Spam & DKIM"
-        description="E-mailbeveiliging voor dit domein"
+        description="Email security for this domain"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
@@ -60,7 +60,7 @@ export function SecurityManager({
           <div>
             <p className="font-medium text-white">Spamfilter (SpamAssassin)</p>
             <p className="text-sm text-panel-muted">
-              Inkomende mail scannen op spam
+              Scan incoming mail for spam
             </p>
           </div>
           <input
@@ -74,7 +74,7 @@ export function SecurityManager({
           <div>
             <p className="font-medium text-white">DKIM</p>
             <p className="text-sm text-panel-muted">
-              Digitale handtekening voor uitgaande mail
+              Digital signature for outgoing mail
             </p>
           </div>
           <input
@@ -85,14 +85,14 @@ export function SecurityManager({
           />
         </label>
         <Button onClick={save} disabled={loading}>
-          {loading ? "Bezig…" : "Opslaan"}
+          {loading ? "Working…" : "Save"}
         </Button>
       </Card>
 
       <Alert variant="info">
-        Huidige status wordt bij eerste load geschat. Na opslaan past VirtualMin
-        dit op de server toe. Voor geavanceerde webinstellingen gebruik
-        &quot;Open in VirtualMin&quot; op het domeinoverzicht.
+        Current status is estimated on first load. After saving, VirtualMin
+        applies this on the server. For advanced web settings use
+        &quot;Open in VirtualMin&quot; on the domain overview.
       </Alert>
     </div>
   );

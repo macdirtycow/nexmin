@@ -15,7 +15,7 @@ export default async function ScriptsPage({ params }: Props) {
       listInstalledScripts(domain, session),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon scripts niet laden.";
+    error = e instanceof Error ? e.message : "Could not load scripts.";
   }
   return (
     <ScriptsManager

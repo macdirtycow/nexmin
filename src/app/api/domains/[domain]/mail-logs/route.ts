@@ -20,10 +20,10 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const body = (await request.json()) as { messageId?: string };
-    if (!body.messageId) return jsonError("messageId is verplicht.");
+    if (!body.messageId) return jsonError("messageId is required.");
     await resendEmail(domain, body.messageId, session);
     await auditLog(session.username, "resend-email", domain);
     return jsonOk({ ok: true });

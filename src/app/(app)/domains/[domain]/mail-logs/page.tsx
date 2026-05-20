@@ -11,7 +11,7 @@ export default async function MailLogsPage({ params }: Props) {
   try {
     lines = await searchMailLogs(domain, "", session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon logs niet laden.";
+    error = e instanceof Error ? e.message : "Could not load logs.";
   }
   return (
     <MailLogsManager

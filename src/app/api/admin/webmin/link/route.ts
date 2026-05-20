@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     let redirectPath = redirect ?? undefined;
     if (moduleId) {
       const mod = moduleById(webminModulesForAdmin(), moduleId);
-      if (!mod) return jsonError("Onbekende Webmin-module.");
+      if (!mod) return jsonError("Unknown Webmin module.");
       redirectPath = mod.path;
     }
 

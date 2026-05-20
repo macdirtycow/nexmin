@@ -43,10 +43,10 @@ export function BackupsManager({
     try {
       const res = await fetch(`/api/domains/${enc}/backups`, { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Back-up mislukt.");
-      setSuccess("Back-up gestart. Controleer VirtualMin voor voortgang.");
+      if (!res.ok) throw new Error(data.error ?? "Backup failed.");
+      setSuccess("Backup started. Check VirtualMin for progress.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -62,10 +62,10 @@ export function BackupsManager({
         body: JSON.stringify({ id, enabled }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Wijzigen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Update failed.");
       setScheduled(data.scheduled ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -82,16 +82,16 @@ export function BackupsManager({
         body: JSON.stringify({ source: restoreSource, test: restoreTest }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Restore mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Restore failed.");
       setSuccess(
         restoreTest
-          ? "Test-restore uitgevoerd (geen wijzigingen)."
-          : "Restore gestart. Controleer VirtualMin voor voortgang.",
+          ? "Test restore completed (no changes)."
+          : "Restore started. Check VirtualMin for progress.",
       );
       setShowRestoreConfirm(false);
       setConfirmTyped("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -99,33 +99,33 @@ export function BackupsManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="Back-ups" />
+      <DomainPageHeader domain={domain} title="Backups" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       {canBackup && (
         <div className="flex justify-end">
           <Button onClick={startBackup} disabled={loading}>
-            {loading ? "Bezig…" : "Nu back-uppen"}
+            {loading ? "Working…" : "Back up now"}
           </Button>
         </div>
       )}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Geplande back-ups</h2>
+        <h2 className="text-lg font-medium text-white">Scheduled backups</h2>
         {scheduled.length === 0 ? (
-          <p className="mt-4 text-sm text-panel-muted">Geen schema ingesteld.</p>
+          <p className="mt-4 text-sm text-panel-muted">No schedule configured.</p>
         ) : (
           <ul className="mt-4 divide-y divide-panel-border">
             {scheduled.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-white">{s.schedule ?? "Onbekend schema"}</p>
-                  <p className="text-sm text-panel-muted">Bestemming: {s.dest ?? "—"}</p>
+                  <p className="text-white">{s.schedule ?? "Unknown schedule"}</p>
+                  <p className="text-sm text-panel-muted">Destination: {s.dest ?? "—"}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={s.enabled === "1" ? "success" : "warning"}>
-                    {s.enabled === "1" ? "Actief" : "Uit"}
+                    {s.enabled === "1" ? "Active" : "Off"}
                   </Badge>
                   {canBackup && (
                     <Button
@@ -135,7 +135,7 @@ export function BackupsManager({
                         toggleSchedule(s.id, s.enabled !== "1")
                       }
                     >
-                      {s.enabled === "1" ? "Uitzetten" : "Aanzetten"}
+                      {s.enabled === "1" ? "Turn off" : "Turn on"}
                     </Button>
                   )}
                 </div>
@@ -149,11 +149,11 @@ export function BackupsManager({
         <Card>
           <h2 className="text-lg font-medium text-white">Restore</h2>
           <p className="mt-2 text-sm text-panel-muted">
-            Lokaal pad of cloud-URL (bijv. s3://…). Gebruik eerst een test-restore.
+            Local path or cloud URL (e.g. s3://…). Run a test restore first.
           </p>
           <div className="mt-4 space-y-3">
             <div>
-              <Label htmlFor="restore-source">Bron</Label>
+              <Label htmlFor="restore-source">Source</Label>
               <Input
                 id="restore-source"
                 className="mt-1"
@@ -168,14 +168,14 @@ export function BackupsManager({
                 checked={restoreTest}
                 onChange={(e) => setRestoreTest(e.target.checked)}
               />
-              Alleen test (geen echte restore)
+              Test only (no real restore)
             </label>
             <Button
               variant="danger"
               disabled={loading || !restoreSource.trim()}
               onClick={() => setShowRestoreConfirm(true)}
             >
-              Restore starten
+              Start restore
             </Button>
           </div>
         </Card>
@@ -183,19 +183,19 @@ export function BackupsManager({
 
       {!canBackup && (
         <Alert variant="info">
-          Als klant kun je geplande back-ups bekijken. Een handmatige back-up starten kan alleen de beheerder.
+          As a client you can view scheduled backups. Only an administrator can start a manual backup.
         </Alert>
       )}
 
       <ConfirmDialog
         open={showRestoreConfirm}
-        title="Restore bevestigen"
+        title="Confirm restore"
         description={
           restoreTest
-            ? `Test-restore voor ${domain} vanaf ${restoreSource}?`
-            : `WAARSCHUWING: restore overschrijft data voor ${domain}. Bron: ${restoreSource}`
+            ? `Test restore for ${domain} from ${restoreSource}?`
+            : `WARNING: restore overwrites data for ${domain}. Source: ${restoreSource}`
         }
-        confirmLabel={restoreTest ? "Test uitvoeren" : "Restore uitvoeren"}
+        confirmLabel={restoreTest ? "Run test" : "Run restore"}
         confirmValue={domain}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

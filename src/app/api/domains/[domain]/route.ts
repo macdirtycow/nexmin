@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: Params) {
       (d) => d.name.toLowerCase() === domain.toLowerCase(),
     );
     if (!found) {
-      return jsonError("Domein niet gevonden.", 404);
+      return jsonError("Domain not found.", 404);
     }
     return jsonOk({
       domain: found,

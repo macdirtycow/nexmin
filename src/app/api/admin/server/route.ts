@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   try {
     const session = await requireAdmin();
     const body = (await request.json()) as { service?: string };
-    if (!body.service) return jsonError("Service is verplicht.");
+    if (!body.service) return jsonError("Service is required.");
     await restartServer(body.service, session);
     await auditLog(session.username, "restart-server", undefined, body.service);
     return jsonOk({ ok: true });

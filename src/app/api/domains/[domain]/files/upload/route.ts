@@ -11,19 +11,19 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (!isPanelFilesMode()) {
-      return jsonError("Upload is alleen in mock-modus beschikbaar.", 501);
+      return jsonError("Upload is only available in mock mode.", 501);
     }
 
     const form = await request.formData();
     const dir = String(form.get("dir") ?? "");
     const files = form.getAll("files");
-    if (files.length === 0) return jsonError("Geen bestanden ontvangen.");
+    if (files.length === 0) return jsonError("No files received.");
 
     const uploaded: string[] = [];
     for (const item of files) {
       if (!(item instanceof File)) continue;
       if (item.size > MAX_BYTES) {
-        return jsonError(`Bestand ${item.name} is groter dan 10 MB.`);
+        return jsonError(`File ${item.name} is larger than 10 MB.`);
       }
       const bytes = new Uint8Array(await item.arrayBuffer());
       const path = uploadDomainFile(dir, item.name, bytes);
@@ -31,7 +31,7 @@ export async function POST(request: Request, { params }: Params) {
       await auditLog(session.username, "upload-file", domain, path);
     }
 
-    if (uploaded.length === 0) return jsonError("Geen geldige bestanden ontvangen.");
+    if (uploaded.length === 0) return jsonError("No valid files received.");
     return jsonOk({ uploaded });
   } catch (err) {
     return handleApiError(err);

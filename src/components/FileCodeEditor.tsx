@@ -73,13 +73,13 @@ export function FileCodeEditor({
           <p className="truncate font-mono text-sm text-white">{path}</p>
           <p className="text-xs text-panel-muted">
             {language}
-            {readOnly ? " · alleen-lezen" : " · Ctrl+S om op te slaan"}
+            {readOnly ? " · read-only" : " · Ctrl+S to save"}
           </p>
         </div>
         <div className="flex gap-2">
           {!readOnly && (
             <Button onClick={onSave} disabled={saving}>
-              {saving ? "Opslaan…" : "Opslaan"}
+              {saving ? "Save…" : "Save"}
             </Button>
           )}
           <Button variant="ghost" onClick={onClose}>

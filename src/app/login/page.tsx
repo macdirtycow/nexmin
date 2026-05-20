@@ -23,13 +23,13 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Inloggen mislukt.");
+        setError(data.error ?? "Sign-in failed.");
         return;
       }
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Kan de server niet bereiken.");
+      setError("Cannot reach the server.");
     } finally {
       setLoading(false);
     }
@@ -40,12 +40,12 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <h1 className="text-2xl font-semibold text-white">Hosting Panel</h1>
         <p className="mt-1 text-sm text-panel-muted">
-          Eenvoudiger beheer bovenop VirtualMin
+          Simpler management on top of VirtualMin
         </p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           {error && <Alert>{error}</Alert>}
           <div>
-            <Label htmlFor="username">Gebruikersnaam</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
               id="username"
               name="username"
@@ -56,7 +56,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <Label htmlFor="password">Wachtwoord</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               name="password"
@@ -68,12 +68,12 @@ export default function LoginPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Bezig met inloggen…" : "Inloggen"}
+            {loading ? "Signing in…" : "Sign in"}
           </Button>
         </form>
         <p className="mt-6 text-xs text-panel-muted">
-          Standaard na eerste start: admin / changeme of klant / changeme (zie README).
-          Ontwikkeling: zet VIRTUALMIN_MOCK=true in .env.local.
+          Default after first start: admin / changeme or klant / changeme (see README).
+          Development: set VIRTUALMIN_MOCK=true in .env.local.
         </p>
       </Card>
     </div>

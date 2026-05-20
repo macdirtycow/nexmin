@@ -42,12 +42,12 @@ export function DnsManager({
         body: JSON.stringify({ name, type, value, ttl }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess("DNS-record toegevoegd of bijgewerkt.");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess("DNS record added or updated.");
       setValue("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export function DnsManager({
       <DomainPageHeader
         domain={domain}
         title="DNS"
-        description={`Records voor ${domain}`}
+        description={`Records for ${domain}`}
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
@@ -67,9 +67,9 @@ export function DnsManager({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Naam</th>
+              <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Type</th>
-              <th className="px-6 py-3">Waarde</th>
+              <th className="px-6 py-3">Value</th>
               <th className="px-6 py-3">TTL</th>
             </tr>
           </thead>
@@ -85,15 +85,15 @@ export function DnsManager({
           </tbody>
         </table>
         {records.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen records.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No records.</p>
         )}
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Record toevoegen</h2>
+        <h2 className="text-lg font-medium text-white">Add record</h2>
         <form onSubmit={addRecord} className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="dns-name">Naam</Label>
+            <Label htmlFor="dns-name">Name</Label>
             <Input id="dns-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
@@ -110,7 +110,7 @@ export function DnsManager({
             </select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="dns-value">Waarde</Label>
+            <Label htmlFor="dns-value">Value</Label>
             <Input id="dns-value" value={value} onChange={(e) => setValue(e.target.value)} required />
           </div>
           <div>
@@ -118,7 +118,7 @@ export function DnsManager({
             <Input id="dns-ttl" value={ttl} onChange={(e) => setTtl(e.target.value)} />
           </div>
           <div className="flex items-end">
-            <Button type="submit" disabled={loading}>{loading ? "Bezig…" : "Toevoegen"}</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Working…" : "Add"}</Button>
           </div>
         </form>
       </Card>

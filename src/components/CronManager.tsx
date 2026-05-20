@@ -52,12 +52,12 @@ export function CronManager({
         body: JSON.stringify({ schedule, command, user: user || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Cron-job toegevoegd.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("Cron job added.");
       setCommand("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +73,12 @@ export function CronManager({
         body: JSON.stringify({ id: deleteId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       setDeleteId(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -89,21 +89,21 @@ export function CronManager({
       <DomainPageHeader
         domain={domain}
         title="Cron-taken"
-        description="Geplande commando's (cron-syntax: min uur dag maand weekdag)"
+        description="Scheduled commands (cron syntax: min hour day month weekday)"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       {!canEdit && (
-        <Alert variant="info">Alleen bekijken — aanpassen kan de beheerder.</Alert>
+        <Alert variant="info">View only — only administrators can edit.</Alert>
       )}
 
       {canEdit && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Nieuwe taak</h2>
+          <h2 className="text-lg font-medium text-white">New task</h2>
           <form onSubmit={create} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Schema (cron)</Label>
+              <Label>Schedule (cron)</Label>
               <Input
                 value={schedule}
                 onChange={(e) => setSchedule(e.target.value)}
@@ -111,11 +111,11 @@ export function CronManager({
               />
             </div>
             <div>
-              <Label>Gebruiker (optioneel)</Label>
+              <Label>User (optional)</Label>
               <Input value={user} onChange={(e) => setUser(e.target.value)} />
             </div>
             <div className="sm:col-span-2">
-              <Label>Commando</Label>
+              <Label>Command</Label>
               <Input
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
@@ -123,7 +123,7 @@ export function CronManager({
               />
             </div>
             <Button type="submit" disabled={loading}>
-              Toevoegen
+              Add
             </Button>
           </form>
         </Card>
@@ -133,10 +133,10 @@ export function CronManager({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Schema</th>
-              <th className="px-6 py-3">Commando</th>
+              <th className="px-6 py-3">Schedule</th>
+              <th className="px-6 py-3">Command</th>
               <th className="px-6 py-3">User</th>
-              {canEdit && <th className="px-6 py-3 text-right">Acties</th>}
+              {canEdit && <th className="px-6 py-3 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -148,7 +148,7 @@ export function CronManager({
                 {canEdit && (
                   <td className="px-6 py-4 text-right">
                     <Button variant="danger" onClick={() => setDeleteId(j.id)}>
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 )}
@@ -157,15 +157,15 @@ export function CronManager({
           </tbody>
         </table>
         {jobs.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen cron-jobs.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No cron jobs.</p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!deleteId}
-        title="Cron-job verwijderen"
-        description={`Verwijder job ${deleteId}?`}
-        confirmLabel="Verwijderen"
+        title="Delete cron job"
+        description={`Delete job ${deleteId}?`}
+        confirmLabel="Delete"
         confirmValue={deleteId ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

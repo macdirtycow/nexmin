@@ -9,19 +9,19 @@ export default async function AdminTemplatesPage() {
   try {
     templates = await listTemplates(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon templates niet laden.";
+    error = e instanceof Error ? e.message : "Could not load templates.";
   }
   return (
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card className="overflow-hidden p-0">
         <p className="px-6 pt-6 text-sm text-panel-muted">
-          Server templates (alleen bekijken). Wijzigingen via VirtualMin.
+          Server templates (view only). Changes via VirtualMin.
         </p>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="border-t border-panel-border text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Naam</th>
+              <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">ID</th>
             </tr>
           </thead>
@@ -35,7 +35,7 @@ export default async function AdminTemplatesPage() {
           </tbody>
         </table>
         {templates.length === 0 && !error && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen templates.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No templates.</p>
         )}
       </Card>
     </div>

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       type?: "top" | "sub" | "alias";
     };
     if (!body.domain || !body.pass) {
-      return jsonError("Domeinnaam en wachtwoord zijn verplicht.");
+      return jsonError("Domain name and password are required.");
     }
     await createDomain(
       {

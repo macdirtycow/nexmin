@@ -15,10 +15,10 @@ export function ServerConfigButton() {
     try {
       const res = await fetch("/api/server/check-config");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Check mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Check failed.");
       setMessage(data.message ?? "OK");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -26,12 +26,12 @@ export function ServerConfigButton() {
 
   return (
     <Card>
-      <h2 className="text-lg font-medium text-white">Serverconfiguratie</h2>
+      <h2 className="text-lg font-medium text-white">Server configuration</h2>
       <p className="mt-1 text-sm text-panel-muted">
-        VirtualMin check-config (alleen beheerder)
+        VirtualMin check-config (administrators only)
       </p>
       <Button className="mt-4" variant="secondary" onClick={check} disabled={loading}>
-        {loading ? "Bezig…" : "Configuratie controleren"}
+        {loading ? "Working…" : "Check configuration"}
       </Button>
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
       {message && (

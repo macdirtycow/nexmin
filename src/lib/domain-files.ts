@@ -171,15 +171,15 @@ const MOCK_TREE: Record<string, DomainFileEntry[]> = {
 
 const MOCK_TEXT: Record<string, string> = {
   "public_html/index.html": `<!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Welkom</title>
+  <title>Welcome</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <h1>Website</h1>
-  <p>Beheer dit bestand via het panel.</p>
+  <p>Manage this file via the panel.</p>
 </body>
 </html>`,
   "public_html/robots.txt": "User-agent: *\nDisallow:\n",
@@ -215,7 +215,7 @@ function normalizeDir(dir: string): string {
 function safeFileName(name: string): string {
   const base = name.replace(/[/\\]/g, "").trim();
   if (!base || base === "." || base === "..") {
-    throw new VirtualMinError("Ongeldige bestandsnaam.");
+    throw new VirtualMinError("Invalid file name.");
   }
   return base;
 }
@@ -295,7 +295,7 @@ export function isDirWritable(cwd: string): boolean {
 
 function assertWritableDir(cwd: string): void {
   if (!isDirWritable(cwd)) {
-    throw new VirtualMinError("Deze map is alleen-lezen.");
+    throw new VirtualMinError("This directory is read-only.");
   }
 }
 
@@ -359,7 +359,7 @@ export function listDomainFiles(
 export function getDomainFile(path: string): DomainFileContent {
   if (!isPanelFilesMode()) {
     throw new VirtualMinError(
-      "Bestandsinhoud is alleen in het panel beschikbaar met VIRTUALMIN_MOCK=true.",
+      "File content is only available in the panel with VIRTUALMIN_MOCK=true.",
     );
   }
   const name = path.split("/").pop() ?? path;
@@ -375,7 +375,7 @@ export function getDomainFile(path: string): DomainFileContent {
   }
   const text = MOCK_TEXT[path];
   if (text === undefined) {
-    throw new VirtualMinError("Bestand niet gevonden.");
+    throw new VirtualMinError("File not found.");
   }
   const parent = path.includes("/") ? path.replace(/\/[^/]+$/, "") : "";
   const entry = MOCK_TREE[parent]?.find((e) => e.path === path);
@@ -392,14 +392,14 @@ export function getDomainFile(path: string): DomainFileContent {
 export function saveDomainFileContent(path: string, content: string): void {
   if (!isPanelFilesMode()) {
     throw new VirtualMinError(
-      "Opslaan via het panel is niet beschikbaar op de live server.",
+      "Saving via the panel is not available on the live server.",
     );
   }
   const parent = path.includes("/") ? path.replace(/\/[^/]+$/, "") : "";
   assertWritableDir(parent);
   const name = path.split("/").pop() ?? path;
   if (!isTextFileName(name)) {
-    throw new VirtualMinError("Dit bestandstype kun je niet als tekst bewerken.");
+    throw new VirtualMinError("You cannot edit this file type as text.");
   }
   MOCK_TEXT[path] = content;
   delete MOCK_BINARY[path];
@@ -408,17 +408,17 @@ export function saveDomainFileContent(path: string, content: string): void {
 
 export function createDomainFile(parent: string, name: string, content = ""): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Bestanden aanmaken is niet beschikbaar op de live server.");
+    throw new VirtualMinError("Creating files is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
   const safe = safeFileName(name);
   if (!isTextFileName(safe)) {
-    throw new VirtualMinError("Alleen tekstbestanden kun je hier aanmaken. Upload andere types.");
+    throw new VirtualMinError("You can only create text files here. Upload other types.");
   }
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   if (MOCK_TEXT[path] !== undefined || MOCK_BINARY[path]) {
-    throw new VirtualMinError("Bestand bestaat al.");
+    throw new VirtualMinError("File already exists.");
   }
   MOCK_TEXT[path] = content;
   touchEntry(path, new TextEncoder().encode(content).length);
@@ -431,14 +431,14 @@ export function uploadDomainFile(
   data: Uint8Array,
 ): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Upload is niet beschikbaar op de live server.");
+    throw new VirtualMinError("Upload is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
   const safe = safeFileName(name);
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   if (MOCK_TEXT[path] !== undefined || MOCK_BINARY[path]) {
-    throw new VirtualMinError(`Bestand ${safe} bestaat al. Verwijder het eerst of hernoem.`);
+    throw new VirtualMinError(`File ${safe} already exists. Delete it first or rename.`);
   }
 
   const textLike = isTextFileName(safe);
@@ -461,7 +461,7 @@ export function getDomainFileDownload(
   path: string,
 ): { body: Uint8Array; mime: string; filename: string } {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Download is niet beschikbaar op de live server.");
+    throw new VirtualMinError("Download is not available on the live server.");
   }
   const name = path.split("/").pop() ?? "download";
   const binary = MOCK_BINARY[path];
@@ -474,7 +474,7 @@ export function getDomainFileDownload(
   }
   const text = MOCK_TEXT[path];
   if (text === undefined) {
-    throw new VirtualMinError("Bestand niet gevonden.");
+    throw new VirtualMinError("File not found.");
   }
   return {
     body: new TextEncoder().encode(text),
@@ -485,12 +485,12 @@ export function getDomainFileDownload(
 
 export function deleteDomainFilePath(path: string): void {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Verwijderen via het panel is niet beschikbaar op de live server.");
+    throw new VirtualMinError("Deleting via the panel is not available on the live server.");
   }
   const parent = path.includes("/") ? path.replace(/\/[^/]+$/, "") : "";
   const entry = MOCK_TREE[parent]?.find((e) => e.path === path);
   if (entry?.editable === false) {
-    throw new VirtualMinError("Dit bestand is alleen-lezen en kan niet worden verwijderd.");
+    throw new VirtualMinError("This file is read-only and cannot be deleted.");
   }
   assertWritableDir(parent);
   delete MOCK_TEXT[path];
@@ -504,7 +504,7 @@ export function deleteDomainFilePath(path: string): void {
 
 export function createDomainDirectory(parent: string, name: string): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Mappen aanmaken via het panel is niet beschikbaar op de live server.");
+    throw new VirtualMinError("Creating directories via the panel is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
@@ -512,7 +512,7 @@ export function createDomainDirectory(parent: string, name: string): string {
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   if (!MOCK_TREE[parentNorm]) MOCK_TREE[parentNorm] = [];
   if (MOCK_TREE[parentNorm].some((e) => e.name === safe)) {
-    throw new VirtualMinError("Map bestaat al.");
+    throw new VirtualMinError("Directory already exists.");
   }
   MOCK_TREE[parentNorm].push({ name: safe, path, type: "dir" });
   MOCK_TREE[path] = [];
@@ -522,5 +522,5 @@ export function createDomainDirectory(parent: string, name: string): string {
 export const DOMAIN_FILE_QUICK_PATHS = [
   { id: "public_html", label: "public_html", description: "Website (document root)" },
   { id: "cgi-bin", label: "cgi-bin", description: "CGI-scripts" },
-  { id: "logs", label: "logs", description: "Logbestanden (alleen-lezen)" },
+  { id: "logs", label: "logs", description: "Log files (read-only)" },
 ] as const;

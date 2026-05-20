@@ -28,12 +28,12 @@ export function AdminServerView({
         body: JSON.stringify({ service }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Herstart mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Restart failed.");
       const listRes = await fetch("/api/admin/server");
       const listData = await listRes.json();
       if (listRes.ok) setServices(listData.services ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(null);
     }
@@ -43,7 +43,7 @@ export function AdminServerView({
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card>
-        <h2 className="text-lg font-medium text-white">Diensten</h2>
+        <h2 className="text-lg font-medium text-white">Services</h2>
         <ul className="mt-4 divide-y divide-panel-border">
           {services.map((s) => (
             <li key={s.service} className="flex items-center justify-between py-3">
@@ -57,7 +57,7 @@ export function AdminServerView({
                   disabled={loading === s.service}
                   onClick={() => restart(s.service)}
                 >
-                  {loading === s.service ? "Bezig…" : "Herstart"}
+                  {loading === s.service ? "Working…" : "Restart"}
                 </Button>
               </div>
             </li>
@@ -65,13 +65,13 @@ export function AdminServerView({
         </ul>
       </Card>
       <Card className="overflow-hidden p-0">
-        <h2 className="px-6 pt-6 text-lg font-medium text-white">Bandbreedte</h2>
+        <h2 className="px-6 pt-6 text-lg font-medium text-white">Bandwidth</h2>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="border-t border-panel-border text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Domein</th>
-              <th className="px-6 py-3">Gebruikt (MB)</th>
-              <th className="px-6 py-3">Limiet</th>
+              <th className="px-6 py-3">Domain</th>
+              <th className="px-6 py-3">Used (MB)</th>
+              <th className="px-6 py-3">Limit</th>
             </tr>
           </thead>
           <tbody>

@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 
   if (!token || !secret) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Niet ingelogd." }, { status: 401 });
+      return NextResponse.json({ error: "Not logged in." }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Sessie verlopen." }, { status: 401 });
+      return NextResponse.json({ error: "Session expired." }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }

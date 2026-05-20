@@ -10,7 +10,7 @@ export default function AdminOverviewPage() {
         <Link key={item.path} href={item.path}>
           <Card className="transition hover:border-panel-accent">
             <h2 className="font-medium text-white">{item.label}</h2>
-            <p className="mt-1 text-sm text-panel-muted">Beheer →</p>
+            <p className="mt-1 text-sm text-panel-muted">Admin →</p>
           </Card>
         </Link>
       ))}

@@ -55,13 +55,13 @@ export function LifecycleManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Actie mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Action failed.");
       if (data.redirect) {
         router.push(data.redirect);
         router.refresh();
         return;
       }
-      setSuccess("Actie voltooid.");
+      setSuccess("Action completed.");
       if (data.domain) {
         router.push(`/domains/${encodeURIComponent(data.domain)}`);
       }
@@ -69,7 +69,7 @@ export function LifecycleManager({
       setConfirmTyped("");
       await refreshValidation();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -79,14 +79,14 @@ export function LifecycleManager({
     <div className="space-y-6">
       <DomainPageHeader
         domain={domain}
-        title="Levenscyclus"
-        description="Validatie, klonen, migreren, overdragen, verwijderen"
+        title="Lifecycle"
+        description="Validate, clone, migrate, transfer, delete"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Validatie</h2>
+        <h2 className="text-lg font-medium text-white">Validation</h2>
         <div className="mt-3 flex items-center gap-3">
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -95,10 +95,10 @@ export function LifecycleManager({
                 : "bg-red-900/50 text-red-300"
             }`}
           >
-            {validation.valid ? "OK" : "Problemen"}
+            {validation.valid ? "OK" : "Issues"}
           </span>
           <Button variant="ghost" onClick={refreshValidation}>
-            Opnieuw controleren
+            Check again
           </Button>
         </div>
         <ul className="mt-3 list-inside list-disc text-sm text-panel-muted">
@@ -109,10 +109,10 @@ export function LifecycleManager({
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Klonen</h2>
+        <h2 className="text-lg font-medium text-white">Clone</h2>
         <div className="mt-4 flex max-w-md gap-2">
           <Input
-            placeholder="nieuw.domein.nl"
+            placeholder="new.example.com"
             value={newDomain}
             onChange={(e) => setNewDomain(e.target.value)}
           />
@@ -121,16 +121,16 @@ export function LifecycleManager({
             onClick={() => setConfirmAction("clone")}
             disabled={!newDomain}
           >
-            Klonen
+            Clone
           </Button>
         </div>
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Migreren</h2>
+        <h2 className="text-lg font-medium text-white">Migrate</h2>
         <div className="mt-4 flex max-w-md gap-2">
           <Input
-            placeholder="doel-server.example.com"
+            placeholder="target-server.example.com"
             value={destHost}
             onChange={(e) => setDestHost(e.target.value)}
           />
@@ -139,16 +139,16 @@ export function LifecycleManager({
             onClick={() => setConfirmAction("migrate")}
             disabled={!destHost}
           >
-            Migreren
+            Migrate
           </Button>
         </div>
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Eigenaar overdragen</h2>
+        <h2 className="text-lg font-medium text-white">Transfer ownership</h2>
         <div className="mt-4 flex max-w-md gap-2">
           <Input
-            placeholder="nieuwe-gebruiker"
+            placeholder="new-user"
             value={newOwner}
             onChange={(e) => setNewOwner(e.target.value)}
           />
@@ -157,30 +157,30 @@ export function LifecycleManager({
             onClick={() => setConfirmAction("transfer")}
             disabled={!newOwner}
           >
-            Overdragen
+            Transfer
           </Button>
         </div>
       </Card>
 
       <Card className="border-red-900/40">
-        <h2 className="text-lg font-medium text-red-300">Gevarenzone</h2>
+        <h2 className="text-lg font-medium text-red-300">Danger zone</h2>
         <p className="mt-1 text-sm text-panel-muted">
-          Verwijdert het virtual server permanent uit VirtualMin.
+          Permanently removes the virtual server from VirtualMin.
         </p>
         <Button
           className="mt-4"
           variant="danger"
           onClick={() => setConfirmAction("delete")}
         >
-          Domein verwijderen
+          Delete domain
         </Button>
       </Card>
 
       <ConfirmDialog
         open={!!confirmAction}
-        title={`Bevestig: ${confirmAction}`}
-        description={`Typ de domeinnaam ${domain} om ${confirmAction} uit te voeren.`}
-        confirmLabel="Uitvoeren"
+        title={`Confirm: ${confirmAction}`}
+        description={`Type the domain name ${domain} to perform ${confirmAction}.`}
+        confirmLabel="Execute"
         confirmValue={domain}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

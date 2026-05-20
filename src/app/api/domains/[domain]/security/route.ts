@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: Params) {
       await auditLog(session.username, "set-dkim", domain);
     }
     if (body.spamEnabled === undefined && body.dkimEnabled === undefined) {
-      return jsonError("Geef spamEnabled en/of dkimEnabled op.");
+      return jsonError("Provide spamEnabled and/or dkimEnabled.");
     }
     return jsonOk({ ok: true });
   } catch (err) {

@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: Params) {
       real?: string;
     };
     if (!body.user || !body.pass) {
-      return jsonError("Gebruikersnaam en wachtwoord zijn verplicht.");
+      return jsonError("Username and password are required.");
     }
     await createMailbox(domain, body.user, body.pass, body.real, session);
     await auditLog(session.username, "create-user", domain, body.user);
@@ -50,7 +50,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const domain = decodeURIComponent(encoded);
     const body = (await request.json()) as { user?: string; pass?: string };
     if (!body.user || !body.pass) {
-      return jsonError("Gebruiker en nieuw wachtwoord zijn verplicht.");
+      return jsonError("User and new password are required.");
     }
     await updateMailboxPassword(domain, body.user, body.pass, session);
     await auditLog(session.username, "modify-user", domain, body.user);
@@ -67,7 +67,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const domain = decodeURIComponent(encoded);
     const body = (await request.json()) as { user?: string };
     if (!body.user) {
-      return jsonError("Gebruikersnaam is verplicht.");
+      return jsonError("Username is required.");
     }
     await deleteMailbox(domain, body.user, session);
     await auditLog(session.username, "delete-user", domain, body.user);

@@ -1,27 +1,27 @@
 # VirtualMin Panel
 
-Moderne Nederlandse UI-laag **bovenop** [VirtualMin](https://virtualmin.com) / Webmin — geen fork. Domeinen, e-mail, databases, DNS, SSL, serverbeheer en Webmin-inloglinks met rolgebaseerde toegang (beheerder / klant).
+Modern English UI layer **on top of** [VirtualMin](https://virtualmin.com) / Webmin — not a fork. Domains, email, databases, DNS, SSL, server management, and Webmin login links with role-based access (admin / client).
 
-> **Status:** Werk in uitvoering — UI-fases 1–8 zijn ingebouwd; productietest op een aparte VPS staat gepland.
+> **Status:** Work in progress — UI phases 1–8 are implemented; production testing on a separate VPS is planned.
 
-## Vereisten
+## Requirements
 
 - Node.js 20+
-- VirtualMin met Remote API (`remote.cgi`) voor productie
-- Optioneel: eigen VPS alleen voor test ([docs/TEST-VPS.md](docs/TEST-VPS.md))
+- VirtualMin with Remote API (`remote.cgi`) for production
+- Optional: dedicated VPS for testing only ([docs/TEST-VPS.md](docs/TEST-VPS.md))
 
-## Snel starten (lokaal, mock)
+## Quick start (local, mock)
 
 ```bash
-git clone <jouw-private-repo-url>
+git clone <your-private-repo-url>
 cd virtualmin-panel
 cp .env.example .env.local
 ```
 
-Zet in `.env.local`:
+In `.env.local`:
 
 ```env
-SESSION_SECRET=een-lange-willekeurige-string-min-16-tekens
+SESSION_SECRET=a-long-random-string-at-least-16-characters
 VIRTUALMIN_MOCK=true
 ```
 
@@ -30,85 +30,85 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 — na eerste start wordt `data/users.json` aangemaakt vanuit `data/users.example.json`:
+Open http://localhost:3000 — on first start, `data/users.json` is created from `data/users.example.json`:
 
-| Gebruiker | Wachtwoord (standaard) | Rol |
-|-----------|------------------------|-----|
-| `admin` | `changeme` | beheerder |
-| `klant` | `changeme` | klant (mock: `voorbeeld.nl`) |
+| User | Default password | Role |
+|------|------------------|------|
+| `admin` | `changeme` | administrator |
+| `klant` | `changeme` | client (mock: `voorbeeld.nl`) |
 
-**Wijzig deze wachtwoorden** vóór je iets deelt of deployt:
+**Change these passwords** before you share or deploy anything:
 
 ```bash
-node scripts/hash-password.mjs jouw-wachtwoord
+node scripts/hash-password.mjs your-password
 ```
 
-## Productie (echte VirtualMin)
+## Production (real VirtualMin)
 
-1. `.env.local` op de server (niet committen) — zie [.env.example](.env.example).
+1. `.env.local` on the server (do not commit) — see [.env.example](.env.example).
 2. `VIRTUALMIN_MOCK=false`
 3. `VIRTUALMIN_URL`, `VIRTUALMIN_USER`, `VIRTUALMIN_PASS`
-4. `WEBMIN_UI_URL` / `USERMIN_UI_URL` voor Webmin/Usermin-links
-5. API-test: `npm run test-api`
+4. `WEBMIN_UI_URL` / `USERMIN_UI_URL` for Webmin/Usermin links
+5. API test: `npm run test-api`
 6. Build: `npm run build && npm run start`
 7. Reverse proxy: [deploy/nginx-panel.conf](deploy/nginx-panel.conf)
 
-Bij self-signed TLS op poort 10000: liever geldig certificaat; anders tijdelijk `NODE_TLS_REJECT_UNAUTHORIZED=0` (alleen test).
+For self-signed TLS on port 10000: prefer a valid certificate; otherwise temporarily `NODE_TLS_REJECT_UNAUTHORIZED=0` (testing only).
 
-## Documentatie
+## Documentation
 
-| Bestand | Inhoud |
-|---------|--------|
-| [docs/PHASES.md](docs/PHASES.md) | Integratiefases en API-routes |
-| [docs/API.md](docs/API.md) | MVP VirtualMin-commando’s |
-| [docs/TEST-VPS.md](docs/TEST-VPS.md) | Testen op aparte VPS |
+| File | Contents |
+|------|----------|
+| [docs/PHASES.md](docs/PHASES.md) | Integration phases and API routes |
+| [docs/API.md](docs/API.md) | MVP VirtualMin commands |
+| [docs/TEST-VPS.md](docs/TEST-VPS.md) | Testing on a separate VPS |
 
-## Integratiefases (overzicht)
+## Integration phases (overview)
 
-| Fase | Inhoud |
-|------|--------|
-| 1–2 | Domeinen, e-mail, DB, DNS, SSL, aliassen, redirects, back-ups |
-| 3 | Bestanden (panel mock / Webmin live), logs, PHP, beveiligde mappen |
-| 4–6 | Levenscyclus, scripts, cron, mail uitgebreid, FTP |
-| 7–8 | Server/reseller admin, cloud S3, systeemconfig |
+| Phase | Scope |
+|-------|--------|
+| 1–2 | Domains, email, DB, DNS, SSL, aliases, redirects, backups |
+| 3 | Files (panel mock / Webmin live), logs, PHP, protected directories |
+| 4–6 | Lifecycle, scripts, cron, extended mail, FTP |
+| 7–8 | Server/reseller admin, cloud S3, system config |
 
-Actieve fase: `IMPLEMENTED_PHASE` in `src/lib/features.ts`. Overzicht in de app: `/fases`.
+Active phase: `IMPLEMENTED_PHASE` in `src/lib/features.ts`. In-app overview: `/fases`.
 
-## Architectuur
+## Architecture
 
 ```
-Browser → Next.js panel (auth, RBAC, NL-UI)
+Browser → Next.js panel (auth, RBAC, English UI)
               ↓ server-side only
          virtualmin.ts → remote.cgi
               ↓
-         VirtualMin / Webmin op host :10000
+         VirtualMin / Webmin on host :10000
 ```
 
-- **Auth:** JWT (httpOnly), gebruikers in `data/users.json` (lokaal, niet in git)
+- **Auth:** JWT (httpOnly), users in `data/users.json` (local, not in git)
 - **RBAC:** `src/lib/rbac.ts` + `src/lib/features.ts`
-- **Webmin:** `src/lib/webmin.ts` — `create-login-link` (root / domein / Usermin)
+- **Webmin:** `src/lib/webmin.ts` — `create-login-link` (root / domain / Usermin)
 - **Audit:** `data/audit.log`
 
-## Projectstructuur
+## Project structure
 
 ```
 src/app/          Next.js routes (UI + API)
 src/lib/          virtualmin, webmin, rbac, auth
-src/components/   UI per domein / admin
-data/             users.example.json (template), users.json (lokaal)
-deploy/           nginx-voorbeeld
-docs/             fases, API, test-VPS
+src/components/   UI per domain / admin
+data/             users.example.json (template), users.json (local)
+deploy/           nginx example
+docs/             phases, API, test VPS
 scripts/          test-api, hash-password
 ```
 
 ## Scripts
 
-| Commando | Doel |
-|----------|------|
-| `npm run dev` | Ontwikkelserver |
-| `npm run build` | Productie-build |
-| `npm run test-api` | Remote API connectivity (Fase 0) |
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run test-api` | Remote API connectivity (Phase 0) |
 
-## Licentie
+## License
 
-Privé project — geen openbare distributie tenzij je dat later zelf kiest.
+Private project — no public distribution unless you choose otherwise later.

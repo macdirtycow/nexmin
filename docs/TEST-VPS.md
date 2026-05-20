@@ -1,42 +1,42 @@
-# Testen op een aparte VPS
+# Testing on a separate VPS
 
-Gebruik een **eigen testserver** (bijv. 1 maand huren) zodat je productie-VirtualMin met echte domeinen niet raakt.
+Use a **dedicated test server** (e.g. rent one for a month) so you do not touch production VirtualMin with real domains.
 
-## Optie A — Panel + VirtualMin op één test-VPS (aanbevolen om te starten)
+## Option A — Panel + VirtualMin on one test VPS (recommended to start)
 
-1. VPS met Ubuntu, VirtualMin installeren.
-2. Testdomein aanmaken in VirtualMin.
-3. Panel op dezelfde machine:
+1. VPS with Ubuntu, install VirtualMin.
+2. Create a test domain in VirtualMin.
+3. Run the panel on the same machine:
 
 ```env
 VIRTUALMIN_MOCK=false
 VIRTUALMIN_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
-WEBMIN_UI_URL=https://<jouw-test-host>:10000
-USERMIN_UI_URL=https://<jouw-test-host>:20000
+WEBMIN_UI_URL=https://<your-test-host>:10000
+USERMIN_UI_URL=https://<your-test-host>:20000
 ```
 
-4. `npm run test-api` → JSON van `list-domains` moet verschijnen.
+4. `npm run test-api` → JSON from `list-domains` should appear.
 5. Nginx: [deploy/nginx-panel.conf](../deploy/nginx-panel.conf).
 
-## Optie B — Panel op andere machine dan VirtualMin
+## Option B — Panel on a different machine than VirtualMin
 
-- Firewall: alleen het panel-IP mag poort 10000/20000 op de test-VPS.
-- `VIRTUALMIN_URL` wijst naar de **externe** URL van de test-VPS.
+- Firewall: only the panel host IP may reach ports 10000/20000 on the test VPS.
+- `VIRTUALMIN_URL` points to the **external** URL of the test VPS.
 
-## Checklist na installatie
+## Post-install checklist
 
 - [ ] `VIRTUALMIN_MOCK=false`
-- [ ] `SESSION_SECRET` uniek en lang
-- [ ] Standaardwachtwoorden in `data/users.json` gewijzigd
-- [ ] `npm run test-api` slaagt
-- [ ] Inloggen panel, domeinenlijst klopt met VirtualMin
-- [ ] Webmin-tab opent inloglink
-- [ ] Klant-account met beperkte `domains` getest
+- [ ] `SESSION_SECRET` unique and long
+- [ ] Default passwords in `data/users.json` changed
+- [ ] `npm run test-api` succeeds
+- [ ] Sign in to panel; domain list matches VirtualMin
+- [ ] Webmin tab opens login link
+- [ ] Client account with limited `domains` tested
 
 ## Mock vs live
 
-| Functie | Mock (`VIRTUALMIN_MOCK=true`) | Live server |
+| Feature | Mock (`VIRTUALMIN_MOCK=true`) | Live server |
 |---------|-------------------------------|-------------|
-| Domeinen, mail, DNS, … | Gesimuleerd | Via `remote.cgi` |
-| Bestanden in panel | Volledige browser | Link naar Webmin file manager |
-| Webmin-modules | Test-URLs | `create-login-link` |
+| Domains, mail, DNS, … | Simulated | Via `remote.cgi` |
+| Files in panel | Full browser | Link to Webmin file manager |
+| Webmin modules | Test URLs | `create-login-link` |

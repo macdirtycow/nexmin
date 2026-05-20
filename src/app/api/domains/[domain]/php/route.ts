@@ -40,14 +40,14 @@ export async function POST(request: Request, { params }: Params) {
     };
     if (body.action === "ini") {
       if (!body.name || body.value === undefined) {
-        return jsonError("Naam en waarde zijn verplicht voor php.ini.");
+        return jsonError("Name and value are required for php.ini.");
       }
       await modifyPhpIni(domain, body.name, body.value, body.version, session);
       await auditLog(session.username, "modify-php-ini", domain, body.name);
       return jsonOk({ ok: true });
     }
     if (!body.dir || !body.version) {
-      return jsonError("Map en PHP-versie zijn verplicht.");
+      return jsonError("Directory and PHP version are required.");
     }
     await setPhpDirectory(domain, body.dir, body.version, session);
     await auditLog(session.username, "set-php-directory", domain, body.dir);
@@ -61,10 +61,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen PHP-mappings verwijderen.", 403);
+      return jsonError("Only administrators may delete PHP mappings.", 403);
     }
     const body = (await request.json()) as { dir?: string };
-    if (!body.dir) return jsonError("Map (dir) is verplicht.");
+    if (!body.dir) return jsonError("Directory (dir) is required.");
     await deletePhpDirectory(domain, body.dir, session);
     await auditLog(session.username, "delete-php-directory", domain, body.dir);
     return jsonOk({ ok: true });

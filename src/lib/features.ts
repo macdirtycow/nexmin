@@ -22,8 +22,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "email",
     phase: 1,
-    label: "E-mail",
-    description: "Mailboxen beheren",
+    label: "Email",
+    description: "Manage mailboxes",
     path: "email",
     navOrder: 10,
     programs: {
@@ -47,7 +47,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "dns",
     phase: 2,
     label: "DNS",
-    description: "DNS-records bekijken en wijzigen",
+    description: "View and edit DNS records",
     path: "dns",
     programs: {
       admin: ["get-dns", "modify-dns"],
@@ -58,7 +58,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "ssl",
     phase: 2,
     label: "SSL",
-    description: "Certificaten en Let's Encrypt",
+    description: "Certificates and Let's Encrypt",
     path: "ssl",
     programs: {
       admin: [
@@ -73,8 +73,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "aliases",
     phase: 2,
-    label: "Aliassen",
-    description: "E-mail doorsturen en aliassen",
+    label: "Aliases",
+    description: "Email forwarding and aliases",
     path: "aliases",
     programs: {
       admin: [
@@ -95,7 +95,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "redirects",
     phase: 2,
     label: "Redirects",
-    description: "URL-doorverwijzingen",
+    description: "URL redirects",
     path: "redirects",
     programs: {
       admin: ["list-redirects", "create-redirect", "delete-redirect"],
@@ -105,8 +105,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "backups",
     phase: 2,
-    label: "Back-ups",
-    description: "Back-up, schema en restore",
+    label: "Backups",
+    description: "Backup, schedule, and restore",
     path: "backups",
     navOrder: 60,
     programs: {
@@ -122,8 +122,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "files",
     phase: 3,
-    label: "Bestanden",
-    description: "public_html en andere mappen",
+    label: "Files",
+    description: "public_html and other directories",
     path: "files",
     navOrder: 5,
     programs: {
@@ -135,7 +135,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "webmin",
     phase: 3,
     label: "Webmin",
-    description: "Virtualmin & Usermin naast het panel",
+    description: "Virtualmin & Usermin alongside the panel",
     path: "webmin",
     navOrder: 8,
     programs: {
@@ -147,7 +147,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "logs",
     phase: 3,
     label: "Logs",
-    description: "Website access- en errorlogs",
+    description: "Website access and error logs",
     path: "logs",
     navOrder: 55,
     programs: {
@@ -159,7 +159,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "php",
     phase: 3,
     label: "PHP",
-    description: "PHP-versies per map en php.ini",
+    description: "PHP versions per directory and php.ini",
     path: "php",
     programs: {
       admin: [
@@ -182,8 +182,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "protected",
     phase: 3,
-    label: "Beveiligde mappen",
-    description: "Wachtwoordbeveiligde website-mappen",
+    label: "Protected directories",
+    description: "Password-protected website directories",
     path: "protected",
     programs: {
       admin: [
@@ -207,7 +207,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "security",
     phase: 3,
     label: "Spam & DKIM",
-    description: "Spamfilter en DKIM voor e-mail",
+    description: "Spam filter and DKIM for email",
     path: "security",
     programs: {
       admin: ["set-spam", "set-dkim", "modify-web"],
@@ -218,7 +218,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "features",
     phase: 4,
     label: "Features",
-    description: "Web, mail, DNS en database aan/uit",
+    description: "Toggle web, mail, DNS, and database",
     path: "features",
     adminOnly: true,
     programs: {
@@ -229,8 +229,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "limits",
     phase: 4,
-    label: "Limieten",
-    description: "Schijf, mailboxen en bandbreedte",
+    label: "Limits",
+    description: "Disk, mailboxes, and bandwidth",
     path: "limits",
     adminOnly: true,
     programs: {
@@ -241,8 +241,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "lifecycle",
     phase: 4,
-    label: "Levenscyclus",
-    description: "Verwijderen, migreren, valideren",
+    label: "Lifecycle",
+    description: "Delete, migrate, validate",
     path: "lifecycle",
     adminOnly: true,
     programs: {
@@ -261,7 +261,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "scripts",
     phase: 5,
     label: "Scripts",
-    description: "WordPress en andere installers",
+    description: "WordPress and other installers",
     path: "scripts",
     programs: {
       admin: [
@@ -277,7 +277,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "proxies",
     phase: 5,
     label: "Proxies",
-    description: "Reverse proxy en load balancing",
+    description: "Reverse proxy and load balancing",
     path: "proxies",
     programs: {
       admin: ["list-proxies", "create-proxy", "modify-proxy", "delete-proxy"],
@@ -288,7 +288,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "cron",
     phase: 5,
     label: "Cron",
-    description: "Geplande taken (via VirtualMin API)",
+    description: "Scheduled tasks (via VirtualMin API)",
     path: "cron",
     programs: {
       admin: ["list-cron-jobs", "create-cron-job", "delete-cron-job"],
@@ -299,7 +299,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "mailboxes",
     phase: 6,
     label: "IMAP",
-    description: "Mailboxen en mappen (IMAP)",
+    description: "Mailboxes and folders (IMAP)",
     path: "mailboxes",
     programs: {
       admin: ["list-mailbox", "copy-mailbox"],
@@ -310,7 +310,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "mail-logs",
     phase: 6,
     label: "Mail logs",
-    description: "Mailserver-log zoeken",
+    description: "Search mail server logs",
     path: "mail-logs",
     programs: {
       admin: ["search-maillogs", "resend-email"],
@@ -320,8 +320,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "mail-settings",
     phase: 6,
-    label: "Mail instellingen",
-    description: "Catch-all en autoresponder",
+    label: "Mail settings",
+    description: "Catch-all and autoresponder",
     path: "mail-settings",
     programs: {
       admin: ["modify-mail"],
@@ -332,7 +332,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "ftp",
     phase: 6,
     label: "FTP",
-    description: "FTP-accounts voor dit domein",
+    description: "FTP accounts for this domain",
     path: "ftp",
     programs: {
       admin: ["list-users", "create-user", "modify-user", "delete-user"],
@@ -342,8 +342,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "shared",
     phase: 6,
-    label: "Gedeelde adressen",
-    description: "Gedeeld e-mailadres voor meerdere users",
+    label: "Shared addresses",
+    description: "Shared email address for multiple users",
     path: "shared",
     programs: {
       admin: [
@@ -356,7 +356,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   },
 ];
 
-/** Server-wide VirtualMin programs (fase 7, admin only). */
+/** Server-wide VirtualMin programs (phase 7, admin only). */
 export const ADMIN_SERVER_PROGRAMS = [
   "list-bandwidth",
   "list-server-statuses",
@@ -380,7 +380,7 @@ export const ADMIN_SERVER_PROGRAMS = [
   "setup-repos",
 ] as const;
 
-/** Cloud & advanced system programs (fase 8, admin only). */
+/** Cloud & advanced system programs (phase 8, admin only). */
 export const ADMIN_CLOUD_PROGRAMS = [
   "modify-scheduled-backup",
   "restore-domain",
@@ -395,15 +395,15 @@ export const ADMIN_CLOUD_PROGRAMS = [
 export const IMPLEMENTED_PHASE: FeaturePhase = 8;
 
 export const ADMIN_NAV = [
-  { path: "/admin", label: "Overzicht" },
+  { path: "/admin", label: "Overview" },
   { path: "/admin/server", label: "Server" },
   { path: "/admin/resellers", label: "Resellers" },
-  { path: "/admin/plans", label: "Plannen" },
+  { path: "/admin/plans", label: "Plans" },
   { path: "/admin/templates", label: "Templates" },
-  { path: "/admin/admins", label: "Beheerders" },
-  { path: "/admin/license", label: "Licentie" },
+  { path: "/admin/admins", label: "Administrators" },
+  { path: "/admin/license", label: "License" },
   { path: "/admin/cloud", label: "Cloud (S3)" },
-  { path: "/admin/system", label: "Systeem" },
+  { path: "/admin/system", label: "System" },
   { path: "/admin/webmin", label: "Webmin" },
 ] as const;
 
@@ -444,7 +444,7 @@ export function featuresForDomain(role: Role, isAdmin: boolean): DomainFeature[]
     const progs = isAdmin ? f.programs.admin : f.programs.client;
     return progs.length > 0;
   }).sort(
-    (a, b) => (a.navOrder ?? 50) - (b.navOrder ?? 50) || a.label.localeCompare(b.label, "nl"),
+    (a, b) => (a.navOrder ?? 50) - (b.navOrder ?? 50) || a.label.localeCompare(b.label, "en"),
   );
 }
 

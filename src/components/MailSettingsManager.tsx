@@ -32,10 +32,10 @@ export function MailSettingsManager({
         body: JSON.stringify(settings),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess("Mailinstellingen opgeslagen.");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess("Mail settings saved.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -45,18 +45,18 @@ export function MailSettingsManager({
     <div className="space-y-6">
       <DomainPageHeader
         domain={domain}
-        title="Mail instellingen"
-        description="Catch-all en autoresponder"
+        title="Mail settings"
+        description="Catch-all and autoresponder"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
       <Card>
         <form onSubmit={save} className="space-y-4">
           <div>
-            <Label>Catch-all adres</Label>
+            <Label>Catch-all address</Label>
             <Input
               className="mt-1"
-              placeholder="leeg = uit"
+              placeholder="empty = off"
               value={settings.catchAll ?? ""}
               onChange={(e) =>
                 setSettings({ ...settings, catchAll: e.target.value })
@@ -74,10 +74,10 @@ export function MailSettingsManager({
                 })
               }
             />
-            <span className="text-sm text-white">Autoresponder actief</span>
+            <span className="text-sm text-white">Autoresponder enabled</span>
           </label>
           <div>
-            <Label>Autoresponder tekst</Label>
+            <Label>Autoresponder text</Label>
             <textarea
               className="mt-1 w-full rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-sm text-white"
               rows={4}
@@ -88,7 +88,7 @@ export function MailSettingsManager({
             />
           </div>
           <Button type="submit" disabled={loading}>
-            Opslaan
+            Save
           </Button>
         </form>
       </Card>

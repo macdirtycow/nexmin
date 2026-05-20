@@ -32,10 +32,10 @@ export function LimitsManager({
         body: JSON.stringify(limits),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
-      setSuccess("Limieten bijgewerkt.");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      setSuccess("Limits updated.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -43,20 +43,20 @@ export function LimitsManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="Limieten" />
+      <DomainPageHeader domain={domain} title="Limits" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
       <Card>
         <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label>Schijf (MB)</Label>
+            <Label>Disk (MB)</Label>
             <Input
               value={limits.disk ?? ""}
               onChange={(e) => setLimits({ ...limits, disk: e.target.value })}
             />
           </div>
           <div>
-            <Label>Bandbreedte (MB)</Label>
+            <Label>Bandwidth (MB)</Label>
             <Input
               value={limits.bandwidth ?? ""}
               onChange={(e) =>
@@ -65,7 +65,7 @@ export function LimitsManager({
             />
           </div>
           <div>
-            <Label>Mailboxen</Label>
+            <Label>Mailboxes</Label>
             <Input
               value={limits.mailboxes ?? ""}
               onChange={(e) =>
@@ -84,7 +84,7 @@ export function LimitsManager({
           </div>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={loading}>
-              {loading ? "Bezig…" : "Opslaan"}
+              {loading ? "Working…" : "Save"}
             </Button>
           </div>
         </form>

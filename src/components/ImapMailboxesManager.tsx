@@ -32,10 +32,10 @@ export function ImapMailboxesManager({
         `/api/domains/${enc}/mailboxes?user=${encodeURIComponent(user)}`,
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Laden mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Load failed.");
       setMailboxes(data.mailboxes ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -51,10 +51,10 @@ export function ImapMailboxesManager({
         body: JSON.stringify({ from: copyFrom, to: copyTo }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kopiëren mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Copy failed.");
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -62,24 +62,24 @@ export function ImapMailboxesManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="IMAP-mailboxen" />
+      <DomainPageHeader domain={domain} title="IMAP mailboxes" />
       {error && <Alert>{error}</Alert>}
       <Card>
         <div className="flex flex-wrap gap-2">
           <div>
-            <Label>Mailbox gebruiker</Label>
+            <Label>Mailbox user</Label>
             <Input value={user} onChange={(e) => setUser(e.target.value)} className="mt-1 w-40" />
           </div>
           <Button className="self-end" onClick={load} disabled={loading}>
-            Laden
+            Load
           </Button>
         </div>
         <table className="mt-6 w-full text-left text-sm">
           <thead className="text-panel-muted">
             <tr>
-              <th className="py-2">Map</th>
-              <th className="py-2">Berichten</th>
-              <th className="py-2">Grootte</th>
+              <th className="py-2">Directory</th>
+              <th className="py-2">Messages</th>
+              <th className="py-2">Size</th>
             </tr>
           </thead>
           <tbody>
@@ -95,12 +95,12 @@ export function ImapMailboxesManager({
       </Card>
       {isAdmin && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Mailbox kopiëren</h2>
+          <h2 className="text-lg font-medium text-white">Copy mailbox</h2>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Input placeholder="van pad" value={copyFrom} onChange={(e) => setCopyFrom(e.target.value)} />
-            <Input placeholder="naar pad" value={copyTo} onChange={(e) => setCopyTo(e.target.value)} />
+            <Input placeholder="from path" value={copyFrom} onChange={(e) => setCopyFrom(e.target.value)} />
+            <Input placeholder="to path" value={copyTo} onChange={(e) => setCopyTo(e.target.value)} />
             <Button onClick={copy} disabled={loading}>
-              Kopiëren
+              Copy
             </Button>
           </div>
         </Card>

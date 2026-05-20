@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     const path = new URL(request.url).searchParams.get("path");
-    if (!path) return jsonError("Query parameter path is verplicht.");
+    if (!path) return jsonError("Query parameter path is required.");
     const users = await listProtectedUsers(domain, path, session);
     return jsonOk({ users, path });
   } catch (err) {
@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
       pass?: string;
     };
     if (!body.path || !body.user || !body.pass) {
-      return jsonError("Pad, gebruiker en wachtwoord zijn verplicht.");
+      return jsonError("Path, user, and password are required.");
     }
     await createProtectedUser(domain, body.path, body.user, body.pass, session);
     await auditLog(session.username, "create-protected-user", domain, body.user);
@@ -45,7 +45,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { path?: string; user?: string };
     if (!body.path || !body.user) {
-      return jsonError("Pad en gebruiker zijn verplicht.");
+      return jsonError("Path and user are required.");
     }
     await deleteProtectedUser(domain, body.path, body.user, session);
     await auditLog(session.username, "delete-protected-user", domain, body.user);

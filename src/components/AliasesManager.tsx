@@ -49,13 +49,13 @@ export function AliasesManager({
         body: JSON.stringify({ from, to }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess(`Alias ${from}@${domain} aangemaakt.`);
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess(`Alias ${from}@${domain} created.`);
       setFrom("");
       setTo("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -71,13 +71,13 @@ export function AliasesManager({
         body: JSON.stringify({ from: deleteFrom }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
-      setSuccess("Alias verwijderd.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setSuccess("Alias deleted.");
       setDeleteFrom(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -85,22 +85,22 @@ export function AliasesManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="E-mailaliassen" />
+      <DomainPageHeader domain={domain} title="Email aliases" />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Alias toevoegen</h2>
+        <h2 className="text-lg font-medium text-white">Add alias</h2>
         <form onSubmit={create} className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="from">Lokaal deel (van)</Label>
+            <Label htmlFor="from">Local part (from)</Label>
             <Input id="from" value={from} onChange={(e) => setFrom(e.target.value)} required />
           </div>
           <div>
-            <Label htmlFor="to">Doorsturen naar</Label>
+            <Label htmlFor="to">Forward to</Label>
             <Input id="to" value={to} onChange={(e) => setTo(e.target.value)} required />
           </div>
-          <Button type="submit" disabled={loading}>{loading ? "Bezig…" : "Toevoegen"}</Button>
+          <Button type="submit" disabled={loading}>{loading ? "Working…" : "Add"}</Button>
         </form>
       </Card>
 
@@ -108,9 +108,9 @@ export function AliasesManager({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
-              <th className="px-6 py-3">Van</th>
-              <th className="px-6 py-3">Naar</th>
-              <th className="px-6 py-3 text-right">Acties</th>
+              <th className="px-6 py-3">From</th>
+              <th className="px-6 py-3">To</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -120,7 +120,7 @@ export function AliasesManager({
                 <td className="px-6 py-4 text-panel-muted">{a.to}</td>
                 <td className="px-6 py-4 text-right">
                   <Button variant="danger" onClick={() => setDeleteFrom(a.from)}>
-                    Verwijderen
+                    Delete
                   </Button>
                 </td>
               </tr>
@@ -128,15 +128,15 @@ export function AliasesManager({
           </tbody>
         </table>
         {aliases.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen aliassen.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No aliases.</p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!deleteFrom}
-        title="Alias verwijderen"
-        description={`Verwijder alias ${deleteFrom}@${domain}?`}
-        confirmLabel="Verwijderen"
+        title="Delete alias"
+        description={`Delete alias ${deleteFrom}@${domain}?`}
+        confirmLabel="Delete"
         confirmValue={deleteFrom ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

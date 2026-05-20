@@ -23,11 +23,11 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders mogen gedeelde adressen aanmaken.", 403);
+      return jsonError("Only administrators may create shared addresses.", 403);
     }
     const body = (await request.json()) as { address?: string; users?: string };
     if (!body.address || !body.users) {
-      return jsonError("Adres en gebruikers zijn verplicht.");
+      return jsonError("Address and users are required.");
     }
     await createSharedAddress(domain, body.address, body.users, session);
     await auditLog(session.username, "create-shared-address", domain, body.address);
@@ -41,10 +41,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const body = (await request.json()) as { address?: string };
-    if (!body.address) return jsonError("Adres is verplicht.");
+    if (!body.address) return jsonError("Address is required.");
     await deleteSharedAddress(domain, body.address, session);
     await auditLog(session.username, "delete-shared-address", domain, body.address);
     return jsonOk({ ok: true });

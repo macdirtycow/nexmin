@@ -63,13 +63,13 @@ export function ProtectedManager({
         body: JSON.stringify({ path: newPath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Beveiligde map aangemaakt.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("Protected directory created.");
       await refreshDirs();
       setSelectedPath(newPath);
       await loadUsers(newPath);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -92,13 +92,13 @@ export function ProtectedManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Gebruiker toegevoegd.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("User added.");
       setNewUser("");
       setNewPass("");
       await loadUsers(selectedPath);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -113,10 +113,10 @@ export function ProtectedManager({
         body: JSON.stringify({ path: selectedPath, user }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       await loadUsers(selectedPath);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -132,12 +132,12 @@ export function ProtectedManager({
         body: JSON.stringify({ path: deletePath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       setDeletePath(null);
       setConfirmTyped("");
       await refreshDirs();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -147,22 +147,22 @@ export function ProtectedManager({
     <div className="space-y-6">
       <DomainPageHeader
         domain={domain}
-        title="Beveiligde mappen"
-        description="HTTP basic auth voor website-mappen"
+        title="Protected directories"
+        description="HTTP basic auth for website directories"
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Map toevoegen</h2>
+        <h2 className="text-lg font-medium text-white">Add directory</h2>
         <form onSubmit={addDirectory} className="mt-4 flex max-w-lg gap-2">
           <Input
             value={newPath}
             onChange={(e) => setNewPath(e.target.value)}
-            placeholder="/pad"
+            placeholder="/path"
           />
           <Button type="submit" disabled={loading}>
-            Toevoegen
+            Add
           </Button>
         </form>
         <ul className="mt-4 space-y-2">
@@ -186,7 +186,7 @@ export function ProtectedManager({
                 {d.path}
               </button>
               <Button variant="danger" onClick={() => setDeletePath(d.path)}>
-                Verwijderen
+                Delete
               </Button>
             </li>
           ))}
@@ -196,15 +196,15 @@ export function ProtectedManager({
       {selectedPath && (
         <Card>
           <h2 className="text-lg font-medium text-white">
-            Gebruikers voor {selectedPath}
+            Users for {selectedPath}
           </h2>
           <form onSubmit={addUser} className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
-              <Label>Gebruikersnaam</Label>
+              <Label>Username</Label>
               <Input value={newUser} onChange={(e) => setNewUser(e.target.value)} required />
             </div>
             <div>
-              <Label>Wachtwoord</Label>
+              <Label>Password</Label>
               <Input
                 type="password"
                 value={newPass}
@@ -214,7 +214,7 @@ export function ProtectedManager({
             </div>
             <div className="flex items-end">
               <Button type="submit" disabled={loading}>
-                Toevoegen
+                Add
               </Button>
             </div>
           </form>
@@ -223,14 +223,14 @@ export function ProtectedManager({
               <li key={u.user} className="flex justify-between py-3">
                 <span className="text-white">{u.user}</span>
                 <Button variant="danger" onClick={() => removeUser(u.user)}>
-                  Verwijderen
+                  Delete
                 </Button>
               </li>
             ))}
           </ul>
           {users.length === 0 && (
             <p className="mt-2 text-sm text-panel-muted">
-              Geen gebruikers — selecteer een map of voeg er een toe.
+              No users — select a directory or add one.
             </p>
           )}
         </Card>
@@ -238,9 +238,9 @@ export function ProtectedManager({
 
       <ConfirmDialog
         open={!!deletePath}
-        title="Map verwijderen"
-        description={`Verwijder beveiligde map ${deletePath}?`}
-        confirmLabel="Verwijderen"
+        title="Delete directory"
+        description={`Delete protected directory ${deletePath}?`}
+        confirmLabel="Delete"
         confirmValue={deletePath ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

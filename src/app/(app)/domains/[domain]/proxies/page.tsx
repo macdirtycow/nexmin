@@ -11,7 +11,7 @@ export default async function ProxiesPage({ params }: Props) {
   try {
     proxies = await listProxies(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon proxies niet laden.";
+    error = e instanceof Error ? e.message : "Could not load proxies.";
   }
   return (
     <ProxiesManager

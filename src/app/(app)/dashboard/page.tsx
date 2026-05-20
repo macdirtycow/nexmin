@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   try {
     domains = await listDomains(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon domeinen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load domains.";
   }
 
   const active = domains.filter((d) => !isDomainDisabled(d)).length;
@@ -25,7 +25,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
         <p className="mt-1 text-panel-muted">
-          Overzicht van je virtual servers
+          Overview of your virtual servers
         </p>
       </div>
 
@@ -37,23 +37,23 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
-          <p className="text-sm text-panel-muted">Totaal domeinen</p>
+          <p className="text-sm text-panel-muted">Total domains</p>
           <p className="mt-2 text-3xl font-semibold text-white">{domains.length}</p>
         </Card>
         <Card>
-          <p className="text-sm text-panel-muted">Actief</p>
+          <p className="text-sm text-panel-muted">Active</p>
           <p className="mt-2 text-3xl font-semibold text-emerald-400">{active}</p>
         </Card>
         <Card>
-          <p className="text-sm text-panel-muted">Uitgeschakeld</p>
+          <p className="text-sm text-panel-muted">Disabled</p>
           <p className="mt-2 text-3xl font-semibold text-amber-400">{disabled}</p>
         </Card>
       </div>
 
       <Card>
-        <h2 className="text-lg font-medium text-white">Recente domeinen</h2>
+        <h2 className="text-lg font-medium text-white">Recent domains</h2>
         {domains.length === 0 ? (
-          <p className="mt-4 text-sm text-panel-muted">Geen domeinen gevonden.</p>
+          <p className="mt-4 text-sm text-panel-muted">No domains found.</p>
         ) : (
           <ul className="mt-4 divide-y divide-panel-border">
             {domains.slice(0, 5).map((d) => (
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
                   {d.name}
                 </Link>
                 <Badge tone={isDomainDisabled(d) ? "warning" : "success"}>
-                  {isDomainDisabled(d) ? "Uitgeschakeld" : "Actief"}
+                  {isDomainDisabled(d) ? "Disabled" : "Active"}
                 </Badge>
               </li>
             ))}
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           href="/domains"
           className="mt-4 inline-block text-sm text-panel-accent hover:underline"
         >
-          Alle domeinen →
+          All domains →
         </Link>
       </Card>
 

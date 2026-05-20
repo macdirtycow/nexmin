@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const limits = await getDomainLimits(domain, session);
     return jsonOk({ limits });
@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     if (session.role !== "admin") {
-      return jsonError("Alleen beheerders.", 403);
+      return jsonError("Administrators only.", 403);
     }
     const body = (await request.json()) as {
       disk?: string;

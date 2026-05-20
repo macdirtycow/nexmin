@@ -13,21 +13,21 @@ export default async function DomainsPage() {
   try {
     domains = await listDomains(session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon domeinen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load domains.";
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Domeinen</h1>
+          <h1 className="text-2xl font-semibold text-white">Domains</h1>
           <p className="mt-1 text-panel-muted">
-            Virtual servers op deze machine
+            Virtual servers on this machine
           </p>
         </div>
         {session.role === "admin" && (
           <Link href="/domains/new">
-            <Button>Nieuw domein</Button>
+            <Button>New domain</Button>
           </Link>
         )}
       </div>

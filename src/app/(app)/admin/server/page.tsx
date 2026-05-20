@@ -13,7 +13,7 @@ export default async function AdminServerPage() {
       listServerStatuses(session),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon servergegevens niet laden.";
+    error = e instanceof Error ? e.message : "Could not load server data.";
   }
   return (
     <AdminServerView

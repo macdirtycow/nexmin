@@ -9,10 +9,10 @@ export async function GET(request: Request, { params }: Params) {
   try {
     await requireDomainApi((await params).domain);
     if (!isPanelFilesMode()) {
-      return jsonError("Download is alleen in mock-modus beschikbaar.", 501);
+      return jsonError("Download is only available in mock mode.", 501);
     }
     const path = new URL(request.url).searchParams.get("path");
-    if (!path) return jsonError("Pad is verplicht.");
+    if (!path) return jsonError("Path is required.");
 
     const { body, mime, filename } = getDomainFileDownload(path);
     return new Response(Buffer.from(body), {

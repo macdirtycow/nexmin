@@ -21,7 +21,7 @@ export default async function EmailPage({ params }: Props) {
   try {
     users = await listMailboxes(domainName, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon mailboxen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load mailboxes.";
   }
 
   return (

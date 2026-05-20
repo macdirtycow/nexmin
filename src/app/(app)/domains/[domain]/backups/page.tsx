@@ -11,7 +11,7 @@ export default async function BackupsPage({ params }: Props) {
   try {
     scheduled = await listScheduledBackups(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon back-ups niet laden.";
+    error = e instanceof Error ? e.message : "Could not load backups.";
   }
   return (
     <BackupsManager

@@ -11,7 +11,7 @@ export default async function MailSettingsPage({ params }: Props) {
   try {
     settings = await getMailSettings(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon instellingen niet laden.";
+    error = e instanceof Error ? e.message : "Could not load settings.";
   }
   return (
     <MailSettingsManager

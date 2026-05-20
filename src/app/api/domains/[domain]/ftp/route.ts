@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: Params) {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { user?: string; pass?: string };
     if (!body.user || !body.pass) {
-      return jsonError("Gebruiker en wachtwoord zijn verplicht.");
+      return jsonError("User and password are required.");
     }
     await createFtpAccount(domain, body.user, body.pass, session);
     await auditLog(session.username, "create-user", domain, `ftp:${body.user}`);
@@ -40,7 +40,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { user?: string; pass?: string };
     if (!body.user || !body.pass) {
-      return jsonError("Gebruiker en wachtwoord zijn verplicht.");
+      return jsonError("User and password are required.");
     }
     await updateFtpPassword(domain, body.user, body.pass, session);
     await auditLog(session.username, "modify-user", domain, `ftp:${body.user}`);
@@ -54,7 +54,7 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { user?: string };
-    if (!body.user) return jsonError("Gebruiker is verplicht.");
+    if (!body.user) return jsonError("User is required.");
     await deleteFtpAccount(domain, body.user, session);
     await auditLog(session.username, "delete-user", domain, `ftp:${body.user}`);
     return jsonOk({ ok: true });

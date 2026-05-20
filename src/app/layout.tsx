@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Hosting Panel",
-  description: "VirtualMin overlay — eenvoudiger beheer",
+  description: "VirtualMin overlay — simpler management",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

@@ -51,13 +51,13 @@ export function ProxiesManager({
         body: JSON.stringify({ path, dest }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Aanmaken mislukt.");
-      setSuccess("Proxy toegevoegd.");
+      if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      setSuccess("Proxy added.");
       setPath("/");
       setDest("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +73,12 @@ export function ProxiesManager({
         body: JSON.stringify({ path: deletePath }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verwijderen mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
       setDeletePath(null);
       setConfirmTyped("");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
     }
@@ -92,18 +92,18 @@ export function ProxiesManager({
 
       {isAdmin && (
         <Card>
-          <h2 className="text-lg font-medium text-white">Proxy toevoegen</h2>
+          <h2 className="text-lg font-medium text-white">Add proxy</h2>
           <form onSubmit={create} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <Label>Pad</Label>
               <Input value={path} onChange={(e) => setPath(e.target.value)} />
             </div>
             <div>
-              <Label>Bestemming URL</Label>
+              <Label>Destination URL</Label>
               <Input value={dest} onChange={(e) => setDest(e.target.value)} required />
             </div>
             <Button type="submit" disabled={loading}>
-              Toevoegen
+              Add
             </Button>
           </form>
         </Card>
@@ -114,8 +114,8 @@ export function ProxiesManager({
           <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
             <tr>
               <th className="px-6 py-3">Pad</th>
-              <th className="px-6 py-3">Bestemming</th>
-              {isAdmin && <th className="px-6 py-3 text-right">Acties</th>}
+              <th className="px-6 py-3">Destination</th>
+              {isAdmin && <th className="px-6 py-3 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -126,7 +126,7 @@ export function ProxiesManager({
                 {isAdmin && (
                   <td className="px-6 py-4 text-right">
                     <Button variant="danger" onClick={() => setDeletePath(p.path)}>
-                      Verwijderen
+                      Delete
                     </Button>
                   </td>
                 )}
@@ -135,15 +135,15 @@ export function ProxiesManager({
           </tbody>
         </table>
         {proxies.length === 0 && (
-          <p className="px-6 py-8 text-center text-panel-muted">Geen proxies.</p>
+          <p className="px-6 py-8 text-center text-panel-muted">No proxies.</p>
         )}
       </Card>
 
       <ConfirmDialog
         open={!!deletePath}
-        title="Proxy verwijderen"
-        description={`Verwijder proxy voor pad ${deletePath}?`}
-        confirmLabel="Verwijderen"
+        title="Delete proxy"
+        description={`Delete proxy for path ${deletePath}?`}
+        confirmLabel="Delete"
         confirmValue={deletePath ?? ""}
         typedValue={confirmTyped}
         onTypedChange={setConfirmTyped}

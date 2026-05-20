@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   try {
     const session = await requireAdmin();
     const body = (await request.json()) as { name?: string };
-    if (!body.name) return jsonError("Plannaam is verplicht.");
+    if (!body.name) return jsonError("Plan name is required.");
     await createPlan(body.name, session);
     await auditLog(session.username, "create-plan", undefined, body.name);
     return jsonOk({ ok: true });
@@ -29,7 +29,7 @@ export async function DELETE(request: Request) {
   try {
     const session = await requireAdmin();
     const body = (await request.json()) as { name?: string };
-    if (!body.name) return jsonError("Plannaam is verplicht.");
+    if (!body.name) return jsonError("Plan name is required.");
     await deletePlan(body.name, session);
     await auditLog(session.username, "delete-plan", undefined, body.name);
     return jsonOk({ ok: true });

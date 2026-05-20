@@ -30,10 +30,10 @@ export function DomainDetail({
         { method: "POST" },
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Actie mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Action failed.");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setBusy(false);
     }
@@ -44,10 +44,10 @@ export function DomainDetail({
     try {
       const res = await fetch(`/api/domains/${enc}/virtualmin-link`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Link kon niet worden gemaakt.");
+      if (!res.ok) throw new Error(data.error ?? "Could not create link.");
       window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout.");
+      setError(e instanceof Error ? e.message : "Error.");
     }
   }
 
@@ -57,13 +57,13 @@ export function DomainDetail({
         <div>
           <p className="text-sm text-panel-muted">
             <Link href="/domains" className="hover:text-white">
-              ← Domeinen
+              ← Domains
             </Link>
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-white">{domain.name}</h1>
           <div className="mt-2">
             <Badge tone={disabled ? "warning" : "success"}>
-              {disabled ? "Uitgeschakeld" : "Actief"}
+              {disabled ? "Disabled" : "Active"}
             </Badge>
           </div>
         </div>
@@ -74,11 +74,11 @@ export function DomainDetail({
               disabled={busy}
               onClick={() => toggle(disabled)}
             >
-              {busy ? "Bezig…" : disabled ? "Inschakelen" : "Uitschakelen"}
+              {busy ? "Working…" : disabled ? "Enable" : "Disable"}
             </Button>
           )}
           <Button onClick={() => router.push(`/domains/${enc}/files`)}>
-            Bestanden
+            Files
           </Button>
           <Button variant="secondary" onClick={() => router.push(`/domains/${enc}/webmin`)}>
             Webmin
@@ -93,7 +93,7 @@ export function DomainDetail({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <h2 className="text-sm font-medium text-panel-muted">Eigenaar</h2>
+          <h2 className="text-sm font-medium text-panel-muted">Owner</h2>
           <p className="mt-1 text-white">{domain.user ?? "—"}</p>
         </Card>
         <Card>
@@ -101,7 +101,7 @@ export function DomainDetail({
           <p className="mt-1 text-white">{domain.plan ?? "—"}</p>
         </Card>
         <Card>
-          <h2 className="text-sm font-medium text-panel-muted">Schijfgebruik (MB)</h2>
+          <h2 className="text-sm font-medium text-panel-muted">Disk usage (MB)</h2>
           <p className="mt-1 text-white">
             {domain.disk_used ?? "—"} / {domain.disk_limit ?? "—"}
           </p>
@@ -109,9 +109,9 @@ export function DomainDetail({
       </div>
 
       <div>
-        <h2 className="text-lg font-medium text-white">Snel naar</h2>
+        <h2 className="text-lg font-medium text-white">Quick links</h2>
         <p className="mt-1 text-sm text-panel-muted">
-          Bestanden (public_html), e-mail, DNS en meer — of gebruik het menu hierboven.
+          Files (public_html), email, DNS, and more — or use the menu above.
         </p>
         <div className="mt-4">
           <DomainQuickLinks domain={domain.name} isAdmin={isAdmin} />

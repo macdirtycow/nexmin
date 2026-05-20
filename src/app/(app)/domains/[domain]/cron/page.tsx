@@ -11,7 +11,7 @@ export default async function CronPage({ params }: Props) {
   try {
     jobs = await listCronJobs(domain, session);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Kon cron-taken niet laden.";
+    error = e instanceof Error ? e.message : "Could not load cron jobs.";
   }
   return (
     <CronManager

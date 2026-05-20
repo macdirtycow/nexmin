@@ -30,13 +30,13 @@ export function DomainsList({
         { method: "POST" },
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Actie mislukt.");
+      if (!res.ok) throw new Error(data.error ?? "Action failed.");
       router.refresh();
       const listRes = await fetch("/api/domains");
       const listData = await listRes.json();
       if (listRes.ok) setDomains(listData.domains);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fout bij wijzigen.");
+      setError(e instanceof Error ? e.message : "Update error.");
     } finally {
       setBusy(null);
     }
@@ -60,11 +60,11 @@ export function DomainsList({
       <table className="w-full text-left text-sm">
         <thead className="border-b border-panel-border bg-panel-bg/50 text-panel-muted">
           <tr>
-            <th className="px-6 py-3 font-medium">Domein</th>
+            <th className="px-6 py-3 font-medium">Domain</th>
             <th className="px-6 py-3 font-medium">Status</th>
             <th className="px-6 py-3 font-medium">Plan</th>
-            <th className="px-6 py-3 font-medium">Schijf (MB)</th>
-            <th className="px-6 py-3 font-medium text-right">Acties</th>
+            <th className="px-6 py-3 font-medium">Disk (MB)</th>
+            <th className="px-6 py-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,7 @@ export function DomainsList({
                 </td>
                 <td className="px-6 py-4">
                   <Badge tone={disabled ? "warning" : "success"}>
-                    {disabled ? "Uitgeschakeld" : "Actief"}
+                    {disabled ? "Disabled" : "Active"}
                   </Badge>
                 </td>
                 <td className="px-6 py-4 text-panel-muted">{d.plan ?? "—"}</td>
@@ -97,7 +97,7 @@ export function DomainsList({
                         router.push(`/domains/${encodeURIComponent(d.name)}/files`)
                       }
                     >
-                      Bestanden
+                      Files
                     </Button>
                     {isAdmin && (
                       <Button
@@ -106,10 +106,10 @@ export function DomainsList({
                         onClick={() => toggle(d.name, disabled)}
                       >
                         {busy === d.name
-                          ? "Bezig…"
+                          ? "Working…"
                           : disabled
-                            ? "Inschakelen"
-                            : "Uitschakelen"}
+                            ? "Enable"
+                            : "Disable"}
                       </Button>
                     )}
                   </div>
@@ -121,7 +121,7 @@ export function DomainsList({
       </table>
       {domains.length === 0 && (
         <p className="px-6 py-8 text-center text-panel-muted">
-          Geen domeinen om te tonen.
+          No domains to show.
         </p>
       )}
     </Card>

@@ -16,7 +16,7 @@ export default async function NewDomainPage() {
     <div className="space-y-6">
       <p className="text-sm text-panel-muted">
         <Link href="/domains" className="hover:text-white">
-          ← Domeinen
+          ← Domains
         </Link>
       </p>
       <CreateDomainForm parentOptions={parentOptions} />
