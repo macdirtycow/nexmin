@@ -533,6 +533,67 @@ section {
   color: var(--muted);
 }
 
+/* Name origin */
+.origin-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .origin-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.origin-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.origin-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.origin-card.then {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.origin-card.now {
+  border-color: rgba(20, 184, 166, 0.35);
+  background: linear-gradient(160deg, rgba(20, 184, 166, 0.08), transparent);
+}
+
+.origin-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.origin-card li {
+  margin-bottom: 0.35rem;
+}
+
+.origin-links {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.origin-links a {
+  color: #5eead4;
+}
+
+.origin-blurb {
+  font-style: italic;
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+  max-width: 36rem;
+}
+
 /* CTA */
 .cta-block {
   text-align: center;
