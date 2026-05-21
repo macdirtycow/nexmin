@@ -78,6 +78,7 @@ Output: **`dist/qadbak-site-upload.zip`** (extract and upload; see `marketing-si
 
 | File | Contents |
 |------|----------|
+| [docs/COMPLETENESS.md](docs/COMPLETENESS.md) | Done in repo vs on your test VPS |
 | [docs/STATUS.md](docs/STATUS.md) | Current phase — what’s done vs test VPS |
 | [docs/V1-TEST-SERVER.md](docs/V1-TEST-SERVER.md) | **Start here:** step-by-step v1 test server |
 | [docs/E2E-CHECKLIST.md](docs/E2E-CHECKLIST.md) | v1 sign-off after install |
@@ -136,6 +137,9 @@ scripts/          test-api, hash-password
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
 | `npm run test-api` | Remote API connectivity (Phase 0) |
+| `npm run preflight` | VPS checks before E2E |
+| `npm run post-install` | After installer on server |
+| `bash scripts/update-qadbak.sh` | Pull, build, restart on server |
 
 ## License
 

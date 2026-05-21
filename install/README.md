@@ -23,6 +23,10 @@ You will be prompted for:
 2. **Webmin root password** — existing or new VirtualMin root password
 3. **Qadbak admin** username and password
 4. **Certbot email** for Let's Encrypt
+5. **Optional demo client user** (RBAC testing)
+6. **Optional UFW** (SSH + 80 + 443)
+
+Runs **post-install verification** automatically at the end.
 
 ## What it installs
 

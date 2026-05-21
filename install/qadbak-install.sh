@@ -46,6 +46,18 @@ QB_USER="${QB_USER:-admin}"
 read -rsp "Qadbak admin password: " QB_PASS
 echo
 read -rp "Certbot email (Let's Encrypt): " LE_EMAIL
+read -rp "Create demo client user (for RBAC tests)? [y/N]: " ADD_CLIENT
+ADD_CLIENT="${ADD_CLIENT:-N}"
+CLIENT_USER="klant"
+CLIENT_PASS=""
+if [[ "$ADD_CLIENT" =~ ^[Yy]$ ]]; then
+  read -rp "Client username [$CLIENT_USER]: " CLIENT_USER
+  CLIENT_USER="${CLIENT_USER:-klant}"
+  read -rsp "Client password: " CLIENT_PASS
+  echo
+fi
+read -rp "Configure UFW firewall (22, 80, 443)? [y/N]: " SET_UFW
+SET_UFW="${SET_UFW:-N}"
 
 echo "==> Preflight"
 apt-get update -qq
@@ -72,18 +84,27 @@ if [[ ! -x /usr/share/webmin/virtualmin/install.sh ]] && [[ ! -f /etc/webmin/vir
   echo "==> VirtualMin (official install.sh)"
   wget -qO /tmp/virtualmin-install.sh https://software.virtualmin.com/gpl/scripts/virtualmin-install.sh
   chmod +x /tmp/virtualmin-install.sh
-  /tmp/virtualmin-install.sh --minimal --hostname "$PANEL_HOST" || true
+  if ! /tmp/virtualmin-install.sh --minimal --hostname "$PANEL_HOST"; then
+    echo "WARNING: VirtualMin install.sh exited with an error — check /tmp/virtualmin-install.log" >&2
+    echo "Continuing; remote.cgi may not be ready yet." >&2
+  fi
 else
   echo "==> VirtualMin already present, skipping install.sh"
 fi
 
 echo "==> Wait for remote.cgi"
+VM_READY=0
 for i in $(seq 1 60); do
   if curl -sk -o /dev/null -w "%{http_code}" "https://127.0.0.1:10000/virtual-server/remote.cgi" | grep -qE '401|200'; then
+    VM_READY=1
     break
   fi
   sleep 5
 done
+if [[ "$VM_READY" -ne 1 ]]; then
+  echo "ERROR: VirtualMin remote.cgi not reachable on 127.0.0.1:10000" >&2
+  exit 1
+fi
 
 echo "==> Qadbak app user and directory"
 if ! id "$QADBAK_USER" &>/dev/null; then
@@ -91,6 +112,9 @@ if ! id "$QADBAK_USER" &>/dev/null; then
 fi
 if [[ ! -d "$QADBAK_DIR/.git" ]]; then
   git clone "$QADBAK_REPO" "$QADBAK_DIR"
+else
+  echo "==> Updating existing clone"
+  git -C "$QADBAK_DIR" pull --ff-only || true
 fi
 chown -R "$QADBAK_USER:$QADBAK_USER" "$QADBAK_DIR"
 
@@ -105,9 +129,9 @@ VIRTUALMIN_MOCK=false
 VIRTUALMIN_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
 VIRTUALMIN_USER=root
 VIRTUALMIN_PASS=$VM_PASS
-WEBMIN_UI_URL=https://${FQDN}:10000
-USERMIN_UI_URL=https://${FQDN}:20000
-VIRTUALMIN_UI_URL=https://${FQDN}:10000
+WEBMIN_UI_URL=https://${SERVER_FQDN}:10000
+USERMIN_UI_URL=https://${SERVER_FQDN}:20000
+VIRTUALMIN_UI_URL=https://${SERVER_FQDN}:10000
 QADBAK_PUBLIC_HOST=$PANEL_HOST
 PORT=3000
 NODE_TLS_REJECT_UNAUTHORIZED=0
@@ -119,7 +143,28 @@ echo "==> Panel admin user"
 HASH="$(sudo -u "$QADBAK_USER" node "$QADBAK_DIR/scripts/hash-password.mjs" "$QB_PASS")"
 USERS_FILE="$QADBAK_DIR/data/users.json"
 mkdir -p "$QADBAK_DIR/data"
-cat >"$USERS_FILE" <<EOF
+if [[ "$ADD_CLIENT" =~ ^[Yy]$ && -n "$CLIENT_PASS" ]]; then
+  CLIENT_HASH="$(sudo -u "$QADBAK_USER" node "$QADBAK_DIR/scripts/hash-password.mjs" "$CLIENT_PASS")"
+  cat >"$USERS_FILE" <<EOF
+[
+  {
+    "id": "admin-1",
+    "username": "$QB_USER",
+    "passwordHash": "$HASH",
+    "role": "admin",
+    "domains": []
+  },
+  {
+    "id": "client-1",
+    "username": "$CLIENT_USER",
+    "passwordHash": "$CLIENT_HASH",
+    "role": "client",
+    "domains": []
+  }
+]
+EOF
+else
+  cat >"$USERS_FILE" <<EOF
 [
   {
     "id": "admin-1",
@@ -130,6 +175,7 @@ cat >"$USERS_FILE" <<EOF
   }
 ]
 EOF
+fi
 chown "$QADBAK_USER:$QADBAK_USER" "$USERS_FILE"
 chmod 600 "$USERS_FILE"
 
@@ -151,6 +197,21 @@ if [[ -n "$LE_EMAIL" ]]; then
   certbot --nginx "${CERT_DOMAINS[@]}" --non-interactive --agree-tos -m "$LE_EMAIL" || true
 fi
 
+if [[ "$SET_UFW" =~ ^[Yy]$ ]]; then
+  echo "==> UFW"
+  OPEN_WEBMIN=N bash "$QADBAK_DIR/scripts/configure-ufw-qadbak.sh" || true
+fi
+
+VERIFY_OK=0
+
+echo "==> Post-install verify"
+if bash "$QADBAK_DIR/scripts/post-install-verify.sh"; then
+  VERIFY_OK=1
+else
+  VERIFY_OK=0
+  echo "WARNING: post-install verification had failures — see above." >&2
+fi
+
 echo ""
 echo "============================================"
 echo " Qadbak install complete"
@@ -160,5 +221,9 @@ echo "   https://$PANEL_HOST/login"
 [[ "$SERVER_FQDN" != "$PANEL_HOST" ]] && echo "   https://$SERVER_FQDN/login"
 echo " User:   $QB_USER"
 echo " Webmin (engine, not homepage): https://${FQDN}:10000"
-echo " Test:   sudo -u $QADBAK_USER bash -c 'cd $QADBAK_DIR && npm run test-api'"
+echo " Verify: sudo bash $QADBAK_DIR/scripts/post-install-verify.sh"
+echo " Update: sudo bash $QADBAK_DIR/scripts/update-qadbak.sh"
+echo " E2E:    $QADBAK_DIR/docs/E2E-CHECKLIST.md"
+[[ "$ADD_CLIENT" =~ ^[Yy]$ ]] && echo " Client: $CLIENT_USER (assign domains in data/users.json)"
+[[ "$VERIFY_OK" -eq 1 ]] && echo " Post-install: PASSED" || echo " Post-install: check warnings"
 echo "============================================"

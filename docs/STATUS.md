@@ -22,6 +22,18 @@
 | **Code** | Integration phases 1–8 (`IMPLEMENTED_PHASE`) | Wired in repo |
 | **Live proof** | [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) | Pending on **your** test server |
 
+## Repo tooling (new)
+
+| Script | Purpose |
+|--------|---------|
+| `install/qadbak-install.sh` | Full stack + optional client user + UFW |
+| `scripts/post-install-verify.sh` | After install checks |
+| `scripts/update-qadbak.sh` | git pull, build, pm2 restart |
+| `scripts/configure-ufw-qadbak.sh` | Firewall 22/80/443 |
+| `GET /api/health` | Liveness JSON |
+
+See [COMPLETENESS.md](./COMPLETENESS.md).
+
 ## v1 exit = test server only
 
 v1 is “ready to test” when:
