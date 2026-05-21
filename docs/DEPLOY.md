@@ -1,6 +1,9 @@
 # Production deploy (Fase 0)
 
-Deploy Qadbak/Qadbak on the same VPS as VirtualMin (e.g. mareades.com).
+Deploy Qadbak on the same VPS as VirtualMin. **Qadbak must be the front door on ports 80/443** (IP and hostname). VirtualMin/Webmin stays on **:10000** for the API and embeds — not as the page users see first.
+
+**First deploy:** use a [dedicated test VPS](V1-TEST-SERVER.md), not production.  
+See [FRONT-DOOR.md](FRONT-DOOR.md) · [STATUS.md](STATUS.md).
 
 ## Prerequisites
 
@@ -25,9 +28,9 @@ VIRTUALMIN_MOCK=false
 VIRTUALMIN_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
 VIRTUALMIN_USER=root
 VIRTUALMIN_PASS=<webmin-root-password>
-WEBMIN_UI_URL=https://mareades.com:10000
-USERMIN_UI_URL=https://mareades.com:20000
-VIRTUALMIN_UI_URL=https://mareades.com:10000
+WEBMIN_UI_URL=https://panel-test.yourdomain.com:10000
+USERMIN_UI_URL=https://panel-test.yourdomain.com:20000
+VIRTUALMIN_UI_URL=https://panel-test.yourdomain.com:10000
 PORT=3000
 ```
 
@@ -66,15 +69,22 @@ pm2 save
 pm2 startup
 ```
 
-## 5. nginx + TLS
+## 5. nginx + TLS (IP → Qadbak, not VirtualMin)
 
 ```bash
-sudo cp deploy/nginx-qadbak.conf /etc/nginx/sites-available/qadbak
-# Edit PANEL_HOSTNAME in the file to your panel hostname
+PANEL=qadbak.com          # or your server FQDN, e.g. mareades.com
+FQDN=$(hostname -f)
+sed -e "s/__PANEL_HOST__/$PANEL/g" -e "s/__SERVER_FQDN__/$FQDN/g" \
+  deploy/nginx-qadbak.conf | sudo tee /etc/nginx/sites-available/qadbak
 sudo ln -sf /etc/nginx/sites-available/qadbak /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d qadbak.com -d www.qadbak.com
+sudo certbot --nginx -d "$PANEL" -d "$FQDN"
 ```
+
+- `http://SERVER_IP/` → Qadbak (default_server on port 80)
+- `https://$PANEL/login` → Qadbak
+- `https://$FQDN:10000` → Webmin only (do not use as client entry URL)
 
 Remove any static `index.html` in `public_html` that blocks the proxy.
 

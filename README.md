@@ -5,13 +5,13 @@
 
 **Qadbak** is a modern English UI layer **on top of** [VirtualMin](https://virtualmin.com) / Webmin — not a fork. Domains, email, databases, DNS, SSL, server management, and Webmin login links with role-based access (admin / client).
 
-> **Status:** Work in progress — UI phases 1–8 are implemented; production testing on a separate VPS is planned.
+> **Status:** v1 code complete — validate on a **dedicated test VPS** ([docs/V1-TEST-SERVER.md](docs/V1-TEST-SERVER.md)). Do not install on production hosts (e.g. mareades).
 
 ## Requirements
 
 - Node.js 20+
 - VirtualMin with Remote API (`remote.cgi`) for production
-- Optional: dedicated VPS for testing only ([docs/TEST-VPS.md](docs/TEST-VPS.md))
+- **Testing:** dedicated VPS only — [docs/V1-TEST-SERVER.md](docs/V1-TEST-SERVER.md) (not production hosts like mareades)
 
 ## Quick start (local, mock)
 
@@ -74,9 +74,13 @@ Output: **`dist/qadbak-site-upload.zip`** (extract and upload; see `marketing-si
 
 | File | Contents |
 |------|----------|
+| [docs/STATUS.md](docs/STATUS.md) | Current phase — what’s done vs test VPS |
+| [docs/V1-TEST-SERVER.md](docs/V1-TEST-SERVER.md) | **Start here:** step-by-step v1 test server |
+| [docs/E2E-CHECKLIST.md](docs/E2E-CHECKLIST.md) | v1 sign-off after install |
 | [docs/PHASES.md](docs/PHASES.md) | Integration phases and API routes |
 | [docs/API.md](docs/API.md) | MVP VirtualMin commands |
-| [docs/TEST-VPS.md](docs/TEST-VPS.md) | Testing on a separate VPS |
+| [docs/TEST-VPS.md](docs/TEST-VPS.md) | Short test VPS notes |
+| [docs/FRONT-DOOR.md](docs/FRONT-DOOR.md) | IP/443 → Qadbak, not :10000 |
 
 ## Integration phases (overview)
 
@@ -92,12 +96,16 @@ Active phase: `IMPLEMENTED_PHASE` in `src/lib/features.ts`. In-app overview: `/f
 ## Architecture
 
 ```
-Browser → Qadbak (Next.js, auth, RBAC, English UI)
+Browser → https://your-server or http://SERVER_IP  (ports 80/443)
+              ↓ nginx
+         Qadbak (Next.js, auth, RBAC, English UI)
               ↓ server-side only
          virtualmin.ts → remote.cgi
               ↓
-         VirtualMin / Webmin on host :10000
+         VirtualMin / Webmin on 127.0.0.1:10000 (not the public homepage)
 ```
+
+End users should **not** land on `:10000` first — that is the classic Webmin UI. Qadbak is the front door. Details: [docs/FRONT-DOOR.md](docs/FRONT-DOOR.md).
 
 - **Auth:** JWT (httpOnly), users in `data/users.json` (local, not in git)
 - **RBAC:** `src/lib/rbac.ts` + `src/lib/features.ts`

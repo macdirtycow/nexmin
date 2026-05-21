@@ -12,12 +12,33 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
+echo ""
+echo "  WARNING: Use a DEDICATED test VPS only."
+echo "  Do not run on production hosts (e.g. servers with live client sites)."
+echo "  Guide: docs/V1-TEST-SERVER.md"
+echo ""
+read -rp "Continue on this machine? [y/N]: " CONFIRM
+if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+  echo "Aborted."
+  exit 0
+fi
+
 if ! grep -q '22.04' /etc/os-release 2>/dev/null; then
   echo "Warning: this script targets Ubuntu 22.04." >&2
 fi
 
-read -rp "Panel hostname (DNS must point here) [qadbak.com]: " PANEL_HOST
-PANEL_HOST="${PANEL_HOST:-qadbak.com}"
+FQDN="$(hostname -f 2>/dev/null || hostname)"
+echo "Server FQDN: $FQDN"
+echo "Qadbak becomes the homepage on port 80/443 (IP and hostname), not VirtualMin :10000."
+read -rp "Panel hostname — users open Qadbak here (DNS → this server) [$FQDN]: " PANEL_HOST
+PANEL_HOST="${PANEL_HOST:-$FQDN}"
+read -rp "Also answer HTTPS for server FQDN $FQDN? [Y/n]: " ALSO_FQDN
+ALSO_FQDN="${ALSO_FQDN:-Y}"
+if [[ ! "$ALSO_FQDN" =~ ^[Yy] ]]; then
+  SERVER_FQDN="$PANEL_HOST"
+else
+  SERVER_FQDN="$FQDN"
+fi
 read -rsp "VirtualMin/Webmin root password: " VM_PASS
 echo
 read -rp "Qadbak admin username [admin]: " QB_USER
@@ -66,7 +87,6 @@ if [[ ! -d "$QADBAK_DIR/.git" ]]; then
 fi
 chown -R "$QADBAK_USER:$QADBAK_USER" "$QADBAK_DIR"
 
-FQDN="$(hostname -f 2>/dev/null || hostname)"
 SECRET="$(openssl rand -base64 32)"
 
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && npm install && npm run build"
@@ -110,22 +130,28 @@ echo "==> pm2"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && pm2 delete qadbak 2>/dev/null || true; pm2 start npm --name qadbak -- start && pm2 save"
 env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DIR" | tail -1 | bash || true
 
-echo "==> nginx"
+echo "==> nginx (80/443 → Qadbak; :10000 stays Webmin)"
 NGX="/etc/nginx/sites-available/qadbak"
-sed "s/PANEL_HOSTNAME/$PANEL_HOST/g" "$QADBAK_DIR/deploy/nginx-qadbak.conf" >"$NGX"
+sed -e "s/__PANEL_HOST__/$PANEL_HOST/g" -e "s/__SERVER_FQDN__/$SERVER_FQDN/g" \
+  "$QADBAK_DIR/deploy/nginx-qadbak.conf" >"$NGX"
 ln -sf "$NGX" /etc/nginx/sites-enabled/qadbak
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 nginx -t && systemctl reload nginx
 
 if [[ -n "$LE_EMAIL" ]]; then
-  certbot --nginx -d "$PANEL_HOST" --non-interactive --agree-tos -m "$LE_EMAIL" || true
+  CERT_DOMAINS=(-d "$PANEL_HOST")
+  [[ "$SERVER_FQDN" != "$PANEL_HOST" ]] && CERT_DOMAINS+=(-d "$SERVER_FQDN")
+  certbot --nginx "${CERT_DOMAINS[@]}" --non-interactive --agree-tos -m "$LE_EMAIL" || true
 fi
 
 echo ""
 echo "============================================"
 echo " Qadbak install complete"
-echo " Panel:  https://$PANEL_HOST/login"
+echo " Front door (Qadbak UI):"
+echo "   http://YOUR_SERVER_IP/     → Qadbak"
+echo "   https://$PANEL_HOST/login"
+[[ "$SERVER_FQDN" != "$PANEL_HOST" ]] && echo "   https://$SERVER_FQDN/login"
 echo " User:   $QB_USER"
-echo " Webmin: https://${FQDN}:10000"
+echo " Webmin (engine, not homepage): https://${FQDN}:10000"
 echo " Test:   sudo -u $QADBAK_USER bash -c 'cd $QADBAK_DIR && npm run test-api'"
 echo "============================================"
