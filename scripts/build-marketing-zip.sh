@@ -14,6 +14,7 @@ sed -i '' \
   -e 's|src="/landing.js"|src="assets/js/main.js"|g' \
   -e 's|href="/favicon.svg"|href="assets/img/favicon.svg"|g' \
   -e 's|href="/login"|href="https://qadbak.com/login"|g' \
+  -e 's|href="/about"|href="https://qadbak.com/about"|g' \
   -e 's|<head>|<head>\n    <link rel="canonical" href="https://qadbak.com/" />|' \
   "$TMP/index.html"
 # Refresh CSS/JS from Next.js public assets when present
