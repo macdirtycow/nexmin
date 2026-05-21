@@ -1,6 +1,6 @@
 # Parity audit — Webmin / Virtualmin vs Qadbak
 
-Reference server: **mareades.com** (Ubuntu 22.04, Webmin 2.641, Virtualmin 8.1.0 GPL).
+Reference screenshots: **mareades.com** (read-only audit source — **do not install Qadbak there**). Validate on an isolated test VPS per [V1-TEST-SERVER.md](./V1-TEST-SERVER.md).
 
 **Status legend**
 
@@ -189,5 +189,5 @@ Store under `docs/audit-screenshots/` (optional, not in git).
 ## v1 exit criteria
 
 - [ ] All Virtualmin sidebar rows = **UI** or **Embed** (not Gap, not Link-only)
-- [ ] E2E on mareades: domain list, mailbox, DNS record, backup list
+- [ ] E2E on **test VPS only**: domain list, mailbox, DNS record, backup list ([E2E-CHECKLIST.md](./E2E-CHECKLIST.md))
 - [ ] `VIRTUALMIN_MOCK=false` on production

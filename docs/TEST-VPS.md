@@ -1,6 +1,9 @@
 # Testing on a separate VPS
 
-Use a **dedicated test server** (e.g. rent one for a month) so you do not touch production VirtualMin with real domains.
+Use a **dedicated test server** (e.g. rent one for a month). **Never** use mareades or any host with live client sites.
+
+**Start here:** [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) (full step-by-step).  
+**Status:** [STATUS.md](./STATUS.md).
 
 ## Option A — Qadbak + VirtualMin on one test VPS (recommended to start)
 

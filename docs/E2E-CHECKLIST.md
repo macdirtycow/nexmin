@@ -1,6 +1,8 @@
 # E2E checklist (v1 exit)
 
-Run on live server with `VIRTUALMIN_MOCK=false`.
+Run on a **dedicated test VPS** only (`VIRTUALMIN_MOCK=false`). Not on mareades or other production.
+
+Setup: [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) · Preflight: `npm run preflight`
 
 ## Admin
 
