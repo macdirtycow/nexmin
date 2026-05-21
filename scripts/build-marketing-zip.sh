@@ -14,9 +14,17 @@ sed -i '' \
   -e 's|src="/landing.js"|src="assets/js/main.js"|g' \
   -e 's|href="/favicon.svg"|href="assets/img/favicon.svg"|g' \
   -e 's|href="/login"|href="https://qadbak.com/login"|g' \
-  -e 's|href="/about"|href="https://qadbak.com/about"|g' \
+  -e 's|href="/about"|href="about.html"|g' \
   -e 's|<head>|<head>\n    <link rel="canonical" href="https://qadbak.com/" />|' \
   "$TMP/index.html"
+if [[ -f "$TMP/about.html" ]]; then
+  sed -i '' \
+    -e 's|href="/landing.css"|href="assets/css/style.css"|g' \
+    -e 's|href="/favicon.svg"|href="assets/img/favicon.svg"|g' \
+    -e 's|href="/login"|href="https://qadbak.com/login"|g' \
+    -e 's|href="/"|href="index.html"|g' \
+    "$TMP/about.html"
+fi
 # Refresh CSS/JS from Next.js public assets when present
 if [[ -f "$ROOT/public/landing.css" ]]; then
   cp "$ROOT/public/landing.css" "$TMP/assets/css/style.css"
