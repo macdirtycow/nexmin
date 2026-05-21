@@ -2,7 +2,8 @@
 
 Run on a **dedicated test VPS** only (`VIRTUALMIN_MOCK=false`). Not on mareades or other production.
 
-Setup: [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) · Preflight: `npm run preflight`
+Setup: [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) · Preflight: `npm run preflight`  
+Automated (mock, local/CI): `npm run test:e2e` — [E2E-PLAYWRIGHT.md](./E2E-PLAYWRIGHT.md)
 
 ## Admin
 

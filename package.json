@@ -11,7 +11,9 @@
     "test-api": "bash scripts/test-api.sh",
     "preflight": "bash scripts/v1-test-preflight.sh",
     "post-install": "bash scripts/post-install-verify.sh",
-    "update": "bash scripts/update-qadbak.sh"
+    "update": "bash scripts/update-qadbak.sh",
+    "test:e2e": "bash scripts/run-e2e.sh",
+    "test:e2e:live": "bash scripts/run-e2e.sh live"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -22,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.51.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.4",
