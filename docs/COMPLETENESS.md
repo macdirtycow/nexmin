@@ -15,6 +15,7 @@ What is **done** in the repo vs what you still do on a **test VPS**.
 | Docs: test server, E2E, deploy, about the name | Done |
 | Health API `/api/health` | Done |
 | Scripts: `preflight`, `post-install-verify`, `update-qadbak`, `configure-ufw-qadbak` | Done |
+| **Playwright E2E (mock)** | `npm run test:e2e` — see [E2E-PLAYWRIGHT.md](./E2E-PLAYWRIGHT.md) |
 
 ## You still do once (test VPS)
 

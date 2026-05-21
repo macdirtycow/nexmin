@@ -140,6 +140,7 @@ scripts/          test-api, hash-password
 | `npm run preflight` | VPS checks before E2E |
 | `npm run post-install` | After installer on server |
 | `bash scripts/update-qadbak.sh` | Pull, build, restart on server |
+| `npm run test:e2e` | Playwright smoke tests (mock, stable) |
 
 ## License
 
