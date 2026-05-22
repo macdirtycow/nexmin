@@ -98,9 +98,15 @@ export function FileManager({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not open file.");
       if (data.encoding === "base64") {
-        setError(
-          "This is a binary file. Use Download — editing is only available for text files.",
-        );
+        if (entry.editable !== false) {
+          setError(
+            "This file could not be opened as text. Try Download, or re-save the file as UTF-8.",
+          );
+        } else {
+          setError(
+            "This is a binary file. Use Download — editing is only available for text files.",
+          );
+        }
         return;
       }
       setEditPath(entry.path);
