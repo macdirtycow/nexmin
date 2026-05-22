@@ -37,6 +37,15 @@ curl -sI -H 'Host: siccamanagement.nl' http://127.0.0.1/ | head -5
 
 Upload the site via Qadbak **Files** → `public_html` (or VirtualMin).
 
+If visitors still see **Apache2 Ubuntu Default Page** (`/var/www/html`), Apache has no vhost for your domain on the backend port (usually `8080`). Diagnose and fix:
+
+```bash
+sudo bash scripts/diagnose-domain-web-root.sh siccamanagement.nl
+sudo bash scripts/fix-domain-website.sh siccamanagement.nl
+```
+
+Your edited file must be `/home/USER/public_html/index.html`, not `/var/www/html/index.html`.
+
 ## Cloudflare
 
 - **A** record → VPS IP (`QADBAK_ORIGIN_IP` in `.env.local`).
