@@ -7,7 +7,7 @@ import {
   moduleById,
   webminModulesForDomain,
 } from "@/lib/webmin";
-import { listDomains } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: Params) {
       redirectPath = mod.path;
       if (mod.usermin) {
         target = "usermin";
-        const domains = await listDomains(session);
+        const domains = await getProvisioner().listDomains(session);
         const info = domains.find(
           (d) => d.name.toLowerCase() === domain.toLowerCase(),
         );

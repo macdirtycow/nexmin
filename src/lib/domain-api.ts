@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSession, requireSession } from "./session";
 import type { VirtualMinDomain } from "./types";
-import { listDomains } from "./virtualmin";
+import { getProvisioner } from "./provisioner";
 
 async function resolveDomain(
   encodedDomain: string,
@@ -13,7 +13,7 @@ async function resolveDomain(
 }> {
   const session = await requireSession();
   const domainName = decodeURIComponent(encodedDomain);
-  const domains = await listDomains(session);
+  const domains = await getProvisioner().listDomains(session);
   const found = domains.find(
     (d) => d.name.toLowerCase() === domainName.toLowerCase(),
   );

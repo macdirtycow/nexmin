@@ -1,11 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireSession } from "@/lib/session";
-import {
-  createDatabase,
-  listDatabases,
-  updateDatabasePassword,
-} from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -14,7 +10,7 @@ export async function GET(_request: Request, { params }: Params) {
     const session = await requireSession();
     const { domain: encoded } = await params;
     const domain = decodeURIComponent(encoded);
-    const databases = await listDatabases(domain, session);
+    const databases = await getProvisioner().listDatabases(domain, session);
     return jsonOk({ databases });
   } catch (err) {
     return handleApiError(err);
@@ -34,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.name || !body.pass) {
       return jsonError("Database name and password are required.");
     }
-    await createDatabase(
+    await getProvisioner().createDatabase(
       domain,
       body.name,
       body.pass,
@@ -57,7 +53,7 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!body.name || !body.pass) {
       return jsonError("Database name and password are required.");
     }
-    await updateDatabasePassword(domain, body.name, body.pass, session);
+    await getProvisioner().updateDatabasePassword(domain, body.name, body.pass, session);
     await auditLog(session.username, "modify-database-pass", domain, body.name);
     return jsonOk({ ok: true });
   } catch (err) {

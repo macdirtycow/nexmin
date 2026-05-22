@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { listS3Buckets, listS3Files, uploadS3File } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export async function POST(request: Request) {
   try {
@@ -21,13 +21,13 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "buckets") {
-      const buckets = await listS3Buckets(accessKey, secretKey, session);
+      const buckets = await getProvisioner().listS3Buckets(accessKey, secretKey, session);
       return jsonOk({ buckets });
     }
 
     if (body.action === "files") {
       if (!body.bucket?.trim()) return jsonError("Bucket is required.");
-      const files = await listS3Files(
+      const files = await getProvisioner().listS3Files(
         body.bucket.trim(),
         accessKey,
         secretKey,
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       if (!body.bucket?.trim() || !body.key?.trim()) {
         return jsonError("Bucket and file name are required.");
       }
-      const result = await uploadS3File(
+      const result = await getProvisioner().uploadS3File(
         {
           bucket: body.bucket.trim(),
           key: body.key.trim(),
