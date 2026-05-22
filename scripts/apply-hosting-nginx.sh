@@ -95,7 +95,7 @@ for panel_conf in /etc/nginx/sites-available/qadbak-port-*; do
   QADBAK_NGINX_ONLY=1 bash "$QADBAK_DIR/scripts/enable-panel-port.sh" "$panel_port"
 done
 
-if [[ -f "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" ]] && command -v virtualmin &>/dev/null; then
+if [[ -f "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" ]] && command -v virtualmin &>/dev/null && [[ "${QADBAK_NATIVE_INSTALL:-}" != "1" ]]; then
   echo ""
   APACHE_BACKEND="$APACHE_BACKEND" bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh"
 fi

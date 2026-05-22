@@ -17,6 +17,14 @@ cd qadbak
 sudo bash install/qadbak-install.sh
 ```
 
+**Without VirtualMin on the same machine (phase 6):**
+
+```bash
+sudo bash install/qadbak-install-native.sh
+```
+
+See [docs/QADBAK-NATIVE-INSTALL.md](../docs/QADBAK-NATIVE-INSTALL.md). Existing VirtualMin VPS: no reinstall — [docs/MIGRATE-FROM-VIRTUALMIN.md](../docs/MIGRATE-FROM-VIRTUALMIN.md).
+
 You will be prompted for:
 
 1. **Panel hostname** — where users open Qadbak (e.g. `panel.example.com`)

@@ -27,14 +27,21 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=lib/virtualmin-domains.sh
 source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
 TEST_DOMAIN="${TEST_DOMAIN:-}"
+if [[ -n "$TEST_DOMAIN" ]] && [[ ! "$TEST_DOMAIN" =~ \. ]]; then
+  TEST_DOMAIN=""
+fi
 if [[ -z "$TEST_DOMAIN" ]]; then
   TEST_DOMAIN="$(first_virtualmin_domain 2>/dev/null || true)"
 fi
-if [[ -z "$TEST_DOMAIN" ]]; then
-  echo "Set TEST_DOMAIN=your.domain or create a VirtualMin domain first." >&2
-  exit 1
-fi
-echo "Using TEST_DOMAIN=$TEST_DOMAIN"
+LIST_DOMAINS_TMP=""
+extract_domain_from_json() {
+  local file="$1"
+  grep -oE '"website_hostnames"[[:space:]]*:[[:space:]]*\[[[:space:]]*"[^"]+"' "$file" 2>/dev/null \
+    | head -1 \
+    | grep -oE '[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+' \
+    | head -1
+}
+echo "Using TEST_DOMAIN=${TEST_DOMAIN:-<from list-domains>}"
 
 FAILED=0
 
@@ -69,18 +76,35 @@ call_api() {
   head -c 4000 "$tmp"
   echo ""
   echo ""
-  if [[ "$program" == "list-domains" ]] && ! grep -qE '"(domain|name)"' "$tmp"; then
+  if [[ "$program" == "list-domains" ]] && ! grep -qE '"(domain|name|website_hostnames)"' "$tmp"; then
     rm -f "$tmp"
     echo "FAILED: $program (no domain data in response)" >&2
     FAILED=1
     return 1
   fi
-  rm -f "$tmp"
+  if [[ "$program" == "list-domains" ]]; then
+    LIST_DOMAINS_TMP="$tmp"
+    if [[ -z "$TEST_DOMAIN" ]]; then
+      TEST_DOMAIN="$(extract_domain_from_json "$tmp")"
+    fi
+    tmp="" # keep file for optional calls
+    if [[ -n "$TEST_DOMAIN" ]]; then
+      echo "Resolved TEST_DOMAIN=$TEST_DOMAIN"
+      echo ""
+    fi
+  fi
+  [[ -n "$tmp" ]] && rm -f "$tmp"
   return 0
 }
 
 # Preflight only requires list-domains; other calls are informational.
 if ! call_api "list-domains"; then
+  exit 1
+fi
+
+if [[ -z "$TEST_DOMAIN" ]]; then
+  echo "Set TEST_DOMAIN=your.domain or create a VirtualMin domain first." >&2
+  [[ -n "$LIST_DOMAINS_TMP" ]] && rm -f "$LIST_DOMAINS_TMP"
   exit 1
 fi
 
@@ -92,4 +116,5 @@ if [[ "$FAILED" -ne 0 ]]; then
   echo "Some optional API calls failed (see above)." >&2
 fi
 
+[[ -n "$LIST_DOMAINS_TMP" ]] && rm -f "$LIST_DOMAINS_TMP"
 echo "OK — list-domains succeeded (required for preflight)."
