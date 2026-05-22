@@ -24,7 +24,7 @@ grep -q '^VIRTUALMIN_TLS_INSECURE=' "$ROOT/.env.local" || {
 }
 
 echo "==> pm2 restart with ecosystem (.env.local → process env)"
-run "cd '$ROOT' && pm2 delete qadbak 2>/dev/null || true"
+run "cd '$ROOT' && pm2 delete qadbak qadbak-terminal 2>/dev/null || true"
 run "cd '$ROOT' && pm2 start ecosystem.config.cjs"
 run "cd '$ROOT' && pm2 save"
 

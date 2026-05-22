@@ -36,7 +36,7 @@ Still **no Webmin UI** for these tabs.
 
 | Current embed | Target |
 |---------------|--------|
-| Terminal | Native shell in panel (`sudo -u domain-user`, WebSocket) — no Webmin login |
+| Terminal | **Done** — native shell in panel (`docs/TERMINAL-NATIVE.md`) |
 | Webmin module browser | Retire per-module as API coverage completes |
 
 ## Server setup after pull

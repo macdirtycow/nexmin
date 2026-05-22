@@ -6,6 +6,8 @@ function loadEnvFile(filePath) {
   const env = {
     NODE_ENV: "production",
     PORT: "3000",
+    QADBAK_TERMINAL_WS_PORT: "3001",
+    QADBAK_TERMINAL_WS_HOST: "127.0.0.1",
   };
   if (!fs.existsSync(filePath)) return env;
   for (const line of fs.readFileSync(filePath, "utf8").split("\n")) {
@@ -26,6 +28,8 @@ function loadEnvFile(filePath) {
   return env;
 }
 
+const env = loadEnvFile(path.join(__dirname, ".env.local"));
+
 module.exports = {
   apps: [
     {
@@ -33,7 +37,14 @@ module.exports = {
       cwd: __dirname,
       script: "node_modules/next/dist/bin/next",
       args: "start",
-      env: loadEnvFile(path.join(__dirname, ".env.local")),
+      env,
+    },
+    {
+      name: "qadbak-terminal",
+      cwd: __dirname,
+      script: "scripts/domain-terminal-ws.mjs",
+      interpreter: "node",
+      env,
     },
   ],
 };

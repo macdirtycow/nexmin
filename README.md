@@ -88,6 +88,7 @@ Output: **`dist/qadbak-site-upload.zip`** (extract and upload; see `marketing-si
 | [docs/FRONT-DOOR.md](docs/FRONT-DOOR.md) | IP/443 → Qadbak, not :10000 |
 | [docs/HOSTING-MULTI-TENANT.md](docs/HOSTING-MULTI-TENANT.md) | All customer domains → `public_html` (no per-domain hardcoding) |
 | [docs/HOSTING-NGINX.md](docs/HOSTING-NGINX.md) | nginx + Apache backend for hosted sites |
+| [docs/TERMINAL-NATIVE.md](docs/TERMINAL-NATIVE.md) | In-panel bash terminal (no Webmin) |
 | [docs/ABOUT-THE-NAME.md](docs/ABOUT-THE-NAME.md) | Why “Qadbak” (2009 → panel) |
 
 ## Integration phases (overview)

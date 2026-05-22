@@ -44,6 +44,11 @@ if [[ -f "$QADBAK_DIR/scripts/configure-webmin-embed.sh" ]]; then
   bash "$QADBAK_DIR/scripts/configure-webmin-embed.sh" || true
 fi
 
+echo "==> Native terminal (bash as domain user, no Webmin UI)"
+if [[ -f "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" || true
+fi
+
 if command -v virtualmin &>/dev/null; then
   echo "==> Webmin login for all VirtualMin domains (Terminal, Webmin embeds)"
   while read -r d; do
