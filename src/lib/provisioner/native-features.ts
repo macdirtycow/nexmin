@@ -11,6 +11,11 @@ const ALL = [
   "redirects",
   "features",
   "logs",
+  "php",
+  "ftp",
+  "limits",
+  "lifecycle",
+  "mail-settings",
 ] as const;
 
 export type NativeFeature = (typeof ALL)[number];
