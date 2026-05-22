@@ -14,13 +14,49 @@ fi
 
 mkdir -p "$ROOT/data"
 
-if ! command -v virtualmin &>/dev/null; then
-  echo "virtualmin CLI not found — create $OUT manually or from /home/*/.qadbak-domain" >&2
-  exit 1
-fi
-
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
+
+scan_home_domains() {
+  echo "["
+  local first=1
+  for hint in /home/*/.qadbak-domain; do
+    [[ -f "$hint" ]] || continue
+    local domain user disabled zone_file
+    domain="$(tr -d '[:space:]' <"$hint")"
+    [[ -n "$domain" ]] || continue
+    user="$(basename "$(dirname "$hint")")"
+    disabled="false"
+    zone_file=""
+    if [[ -f "/var/lib/bind/${domain}.hosts" ]]; then
+      zone_file="/var/lib/bind/${domain}.hosts"
+    elif [[ -f "/var/lib/bind/${domain}.host" ]]; then
+      zone_file="/var/lib/bind/${domain}.host"
+    fi
+    [[ "$first" -eq 1 ]] || echo ","
+    first=0
+    if [[ -n "$zone_file" ]]; then
+      printf '  {"name":"%s","user":"%s","disabled":%s,"plan":"Default","zoneFile":"%s"}' \
+        "$domain" "$user" "$disabled" "$zone_file"
+    else
+      printf '  {"name":"%s","user":"%s","disabled":%s,"plan":"Default"}' \
+        "$domain" "$user" "$disabled"
+    fi
+  done
+  echo ""
+  echo "]"
+}
+
+if ! command -v virtualmin &>/dev/null; then
+  echo "==> virtualmin not found — scan /home/*/.qadbak-domain → $OUT"
+  scan_home_domains >"$TMP"
+  mv "$TMP" "$OUT"
+  chown "$QADBAK_USER:$QADBAK_USER" "$OUT"
+  chmod 644 "$OUT"
+  count="$(grep -c '"name"' "$OUT" || true)"
+  echo "OK — $count domain(s) in $OUT (home scan)"
+  exit 0
+fi
 
 echo "==> Export domains → $OUT"
 {

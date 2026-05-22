@@ -15,6 +15,16 @@ import { aliasList, aliasCreate, aliasDelete } from "./lib/provision-aliases.mjs
 import { redirectList, redirectCreate, redirectDelete } from "./lib/provision-redirects.mjs";
 import { featureList, featureSet } from "./lib/provision-features.mjs";
 import { logsTail } from "./lib/provision-logs.mjs";
+import {
+  phpVersions,
+  phpDirectories,
+  phpIni,
+  phpSetDirectory,
+} from "./lib/provision-php.mjs";
+import { ftpList, ftpCreate, ftpDelete, ftpPass } from "./lib/provision-ftp.mjs";
+import { limitsGet, limitsSet } from "./lib/provision-limits.mjs";
+import { domainEnable, domainDisable } from "./lib/provision-lifecycle.mjs";
+import { mailSettingsGet, mailSettingsSet } from "./lib/provision-mail-settings.mjs";
 
 const cmd = process.argv[2];
 const args = process.argv.slice(3);
@@ -116,6 +126,48 @@ async function main() {
       break;
     case "logs-tail":
       await logsTail(args[0], args[1] || "access");
+      break;
+    case "php-versions":
+      await phpVersions(args[0]);
+      break;
+    case "php-directories":
+      await phpDirectories(args[0]);
+      break;
+    case "php-ini":
+      await phpIni(args[0], args[1]);
+      break;
+    case "php-set-directory":
+      await phpSetDirectory(args[0], args[1], args[2]);
+      break;
+    case "ftp-list":
+      await ftpList(args[0]);
+      break;
+    case "ftp-create":
+      await ftpCreate(args[0], args[1], args[2]);
+      break;
+    case "ftp-delete":
+      await ftpDelete(args[0], args[1]);
+      break;
+    case "ftp-pass":
+      await ftpPass(args[0], args[1], args[2]);
+      break;
+    case "limits-get":
+      await limitsGet(args[0]);
+      break;
+    case "limits-set":
+      await limitsSet(args[0], args[1]);
+      break;
+    case "domain-enable":
+      await domainEnable(args[0]);
+      break;
+    case "domain-disable":
+      await domainDisable(args[0]);
+      break;
+    case "mail-settings-get":
+      await mailSettingsGet(args[0]);
+      break;
+    case "mail-settings-set":
+      await mailSettingsSet(args[0], args[1]);
       break;
     default:
       emit({ ok: false, error: `Unknown command: ${cmd}` });

@@ -70,6 +70,27 @@ if has logs; then
   echo "==> logs-tail $DOMAIN"
   check logs-tail "$DOMAIN" error
 fi
+if has php; then
+  echo "==> php-versions $DOMAIN"
+  check php-versions "$DOMAIN"
+  check php-directories "$DOMAIN"
+fi
+if has ftp; then
+  echo "==> ftp-list $DOMAIN"
+  check ftp-list "$DOMAIN"
+fi
+if has limits; then
+  echo "==> limits-get $DOMAIN"
+  check limits-get "$DOMAIN"
+fi
+if has lifecycle; then
+  echo "==> domain-enable $DOMAIN"
+  check domain-enable "$DOMAIN"
+fi
+if has mail-settings; then
+  echo "==> mail-settings-get $DOMAIN"
+  check mail-settings-get "$DOMAIN"
+fi
 
 if [[ "$FAILED" -ne 0 ]]; then
   echo "Some native checks failed." >&2

@@ -12,14 +12,14 @@ Webmin UI blijft uit (`QADBAK_DISABLE_WEBMIN=true`) in beide modi.
 ## Wat “onafhankelijk” wél is
 
 - Domeinlijst uit `data/native-domains.json`
-- SSL, DNS, mail, DB, backup, cron via `provisioning-helper` (geen API)
+- SSL, DNS, mail, DB, backup, cron, aliases, redirects, features, logs, **php, ftp, limits, lifecycle, mail-settings** via `provisioning-helper`
 - Files, terminal, website repair via eigen sudo-helpers
 - Niet-native panel-acties **falen met duidelijke fout** (geen stille VM-call)
 
 ## Wat nog níet onafhankelijk is
 
 - **Postfix/Dovecot configs** — mail via `QADBAK_MAIL_BACKEND=direct` (geen `virtualmin` CLI); pakketten `postfix` + `dovecot` blijven nodig
-- **FTP, PHP, aliases, redirects, proxies, scripts, limits, …** — nog geen native module
+- **proxies, protected dirs, scripts, shared IP, mail queue logs, PHP ini wijzigen** — nog geen native module
 - **`apt remove webmin`** — pas na pure Postfix/Dovecot-scripts en volledige parity-test
 
 ## Veilige volgorde (test-VPS)

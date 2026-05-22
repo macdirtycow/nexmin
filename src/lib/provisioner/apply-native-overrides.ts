@@ -57,6 +57,30 @@ export function applyNativeOverrides<T extends Provisioner>(base: T): T {
   if (nativeFeatureEnabled("logs")) {
     out.getWebsiteLogs = native.getWebsiteLogsNative;
   }
+  if (nativeFeatureEnabled("php")) {
+    out.listPhpVersions = native.listPhpVersionsNative;
+    out.listPhpDirectories = native.listPhpDirectoriesNative;
+    out.listPhpIni = native.listPhpIniNative;
+    out.setPhpDirectory = native.setPhpDirectoryNative;
+  }
+  if (nativeFeatureEnabled("ftp")) {
+    out.listFtpAccounts = native.listFtpAccountsSafeNative;
+    out.listFtpAccountsSafe = native.listFtpAccountsSafeNative;
+    out.createFtpAccount = native.createFtpAccountNative;
+    out.updateFtpPassword = native.updateFtpPasswordNative;
+    out.deleteFtpAccount = native.deleteFtpAccountNative;
+  }
+  if (nativeFeatureEnabled("limits")) {
+    out.getDomainLimits = native.getDomainLimitsNative;
+    out.updateDomainLimits = native.updateDomainLimitsNative;
+  }
+  if (nativeFeatureEnabled("lifecycle")) {
+    out.setDomainEnabled = native.setDomainEnabledNative;
+  }
+  if (nativeFeatureEnabled("mail-settings")) {
+    out.getMailSettings = native.getMailSettingsNative;
+    out.updateMailSettings = native.updateMailSettingsNative;
+  }
 
   return out;
 }

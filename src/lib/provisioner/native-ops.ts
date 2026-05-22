@@ -271,3 +271,141 @@ export async function getWebsiteLogsNative(
   const r = await runProvisioningHelper("logs-tail", domain, logType);
   return String(r.log ?? "");
 }
+
+export async function listPhpVersionsNative(
+  domain: string,
+  _actor: Actor,
+): Promise<{ version: string; id?: string }[]> {
+  const r = await runProvisioningHelper("php-versions", domain);
+  return (r.versions as { version: string; id?: string }[]) ?? [];
+}
+
+export async function listPhpDirectoriesNative(
+  domain: string,
+  _actor: Actor,
+): Promise<{ dir: string; version?: string; mode?: string }[]> {
+  const r = await runProvisioningHelper("php-directories", domain);
+  return (r.directories as { dir: string; version?: string; mode?: string }[]) ?? [];
+}
+
+export async function listPhpIniNative(
+  domain: string,
+  version: string | undefined,
+  _actor: Actor,
+): Promise<{ name: string; value: string }[]> {
+  const r = await runProvisioningHelper("php-ini", domain, version ?? "");
+  return (r.ini as { name: string; value: string }[]) ?? [];
+}
+
+export async function setPhpDirectoryNative(
+  domain: string,
+  dir: string,
+  version: string,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("php-set-directory", domain, dir, version);
+}
+
+export async function listFtpAccountsSafeNative(
+  domain: string,
+  _actor: Actor,
+): Promise<{ user: string; dir?: string; quota?: string }[]> {
+  const r = await runProvisioningHelper("ftp-list", domain);
+  return (r.accounts as { user: string; dir?: string; quota?: string }[]) ?? [];
+}
+
+export async function createFtpAccountNative(
+  domain: string,
+  user: string,
+  pass: string,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("ftp-create", domain, user, pass);
+}
+
+export async function updateFtpPasswordNative(
+  domain: string,
+  user: string,
+  pass: string,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("ftp-pass", domain, user, pass);
+}
+
+export async function deleteFtpAccountNative(
+  domain: string,
+  user: string,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("ftp-delete", domain, user);
+}
+
+export async function getDomainLimitsNative(
+  domain: string,
+  _actor: Actor,
+): Promise<{
+  disk?: string;
+  bandwidth?: string;
+  mailboxes?: string;
+  databases?: string;
+}> {
+  const r = await runProvisioningHelper("limits-get", domain);
+  return (r.limits as {
+    disk?: string;
+    bandwidth?: string;
+    mailboxes?: string;
+    databases?: string;
+  }) ?? {};
+}
+
+export async function updateDomainLimitsNative(
+  domain: string,
+  limits: {
+    disk?: string;
+    bandwidth?: string;
+    mailboxes?: string;
+    databases?: string;
+  },
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("limits-set", domain, JSON.stringify(limits));
+}
+
+export async function setDomainEnabledNative(
+  domain: string,
+  enabled: boolean,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper(
+    enabled ? "domain-enable" : "domain-disable",
+    domain,
+  );
+}
+
+export async function getMailSettingsNative(
+  domain: string,
+  _actor: Actor,
+): Promise<{
+  catchAll?: string;
+  autoresponder?: string;
+  autoresponderEnabled?: boolean;
+}> {
+  const r = await runProvisioningHelper("mail-settings-get", domain);
+  return (r.settings as {
+    catchAll?: string;
+    autoresponder?: string;
+    autoresponderEnabled?: boolean;
+  }) ?? {};
+}
+
+export async function updateMailSettingsNative(
+  domain: string,
+  settings: {
+    catchAll?: string;
+    autoresponder?: string;
+    autoresponderEnabled?: boolean;
+  },
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("mail-settings-set", domain, JSON.stringify(settings));
+}
