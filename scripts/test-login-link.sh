@@ -27,3 +27,5 @@ curl -sk -u "${VIRTUALMIN_USER}:${VIRTUALMIN_PASS}" -X POST \
 echo ""
 echo ""
 echo "OK if you see a https:// URL above (no 'Unknown parameter')."
+echo ""
+echo "If redirect-url fails, Qadbak retries without it and appends the path in the panel (git pull + pm2 restart)."

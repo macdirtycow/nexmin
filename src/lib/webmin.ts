@@ -1,5 +1,8 @@
 import type { Role } from "./types";
-import { virtualMinCall, VirtualMinError } from "./virtualmin";
+import {
+  callCreateLoginLink,
+  VirtualMinError,
+} from "./virtualmin";
 
 export type WebminLoginTarget = "root" | "domain" | "usermin";
 
@@ -254,6 +257,22 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     virtualmin: true,
   },
   {
+    id: "vm-terminal",
+    label: "Terminal (xterm)",
+    description: "Shell in Webmin for this domain",
+    path: "/xterm/",
+    category: "Tools",
+    virtualmin: true,
+  },
+  {
+    id: "vm-shell",
+    label: "Shell",
+    description: "Command shell for this domain",
+    path: "/shell/",
+    category: "Tools",
+    virtualmin: true,
+  },
+  {
     id: "usermin-mail",
     label: "Usermin webmail",
     description: "Webmail as domain owner",
@@ -336,9 +355,9 @@ export async function createWebminLoginLink(
   const redirect = normalizeRedirect(options.redirectPath);
   if (redirect) params["redirect-url"] = redirect;
 
-  const data = await virtualMinCall("create-login-link", params, actor);
+  const url = await callCreateLoginLink(params, actor);
   return parseLoginUrl(
-    data,
+    url,
     fallbackLoginUrl(options.target, {
       domain: options.domain,
       redirectPath: options.redirectPath,
