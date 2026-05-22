@@ -9,7 +9,7 @@ Cloudflare (orange cloud) proxies visitors but connects to **your VPS** on ports
 ```bash
 cd /opt/qadbak && git pull
 sudo bash scripts/configure-domain-repair-sudo.sh   # once
-sudo bash scripts/fix-domain-website.sh siccamanagement.nl
+sudo bash scripts/fix-domain-website.sh example.com
 ```
 
 In **Qadbak** → domain overview → **Website & Cloudflare** → **Repair on server** (admin).
@@ -18,13 +18,13 @@ In **Qadbak** → domain overview → **Website & Cloudflare** → **Repair on s
 
 | Record | Type | Value | Proxy |
 |--------|------|-------|-------|
-| `@` | A | Your VPS public IP (e.g. `173.212.250.158`) | Proxied OK |
+| `@` | A | Your VPS public IP | Proxied OK |
 | `www` | A or CNAME | Same origin | Proxied OK |
 
 Set in server `.env.local`:
 
 ```env
-QADBAK_ORIGIN_IP=173.212.250.158
+QADBAK_ORIGIN_IP=YOUR_VPS_PUBLIC_IP
 ```
 
 (Public DNS may show Cloudflare IPs `104.21.x` / `172.67.x` when proxied — that is normal.)
@@ -66,7 +66,7 @@ Generate SSL in Qadbak → domain → **SSL** (Let's Encrypt).
 
 ```bash
 # On VPS — must return HTTP headers
-curl -sI -H "Host: siccamanagement.nl" http://127.0.0.1/
+curl -sI -H "Host: example.com" http://127.0.0.1/
 
 # From your Mac — ports open?
 nc -zv YOUR_VPS_IP 80 443
@@ -82,7 +82,7 @@ Cloudflare **does** reach your VPS, but the response from the origin is invalid 
 
 ```bash
 cd /opt/qadbak && git pull
-sudo bash scripts/fix-origin-502.sh siccamanagement.nl
+sudo bash scripts/fix-origin-502.sh example.com
 sudo -u qadbak bash -c 'cd /opt/qadbak && npm run build'
 sudo bash scripts/pm2-restart-qadbak.sh
 ```
@@ -94,7 +94,7 @@ If the origin has **no** Let's Encrypt certificate yet, set **SSL/TLS → Overvi
 ### Diagnose
 
 ```bash
-curl -sI -H "Host: siccamanagement.nl" http://127.0.0.1/    # must not be 502
-curl -sI -H "Host: siccamanagement.nl" http://127.0.0.1:8080/  # Apache backend
+curl -sI -H "Host: example.com" http://127.0.0.1/    # must not be 502
+curl -sI -H "Host: example.com" http://127.0.0.1:8080/  # Apache backend
 sudo tail -20 /var/log/nginx/error.log
 ```

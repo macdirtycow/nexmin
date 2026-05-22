@@ -18,6 +18,13 @@ run_as_qadbak "cd '$ROOT' && git pull"
 echo "==> Build"
 run_as_qadbak "cd '$ROOT' && npm install && npm run build"
 
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "==> Hosting stack + sudo helpers"
+  bash "$ROOT/scripts/configure-domain-fs-sudo.sh" 2>/dev/null || true
+  bash "$ROOT/scripts/configure-domain-repair-sudo.sh" 2>/dev/null || true
+  bash "$ROOT/scripts/install-hosting-stack.sh" || true
+fi
+
 echo "==> Restart (load .env.local into pm2)"
 run_as_qadbak "cd '$ROOT' && bash scripts/pm2-restart-qadbak.sh"
 

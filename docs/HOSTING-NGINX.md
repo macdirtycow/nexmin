@@ -2,7 +2,7 @@
 
 ## Problem
 
-If nginx uses `default_server` on port 80 and proxies **everything** to Qadbak (`127.0.0.1:3000`), domains like `siccamanagement.nl` show the Qadbak marketing page instead of files in `/home/USER/public_html`.
+If nginx uses `default_server` on port 80 and proxies **everything** to Qadbak (`127.0.0.1:3000`), customer domains show the Qadbak marketing page instead of files in `/home/USER/public_html`.
 
 ## Fix (this repo)
 
@@ -21,7 +21,7 @@ Panel login without a customer domain name: use **https://panel-host/login** or 
 cd /opt/qadbak && git pull
 sudo bash scripts/ensure-apache-backend.sh   # Apache must run (usually :8080)
 sudo bash scripts/apply-hosting-nginx.sh
-sudo bash scripts/fix-domain-website.sh siccamanagement.nl
+sudo bash scripts/fix-domain-website.sh example.com
 ```
 
 If repair shows **apache2: not active** and local probe **502**, Apache failed to start — the script prints `journalctl` hints. Common fix when nginx owns port 80: Apache should only `Listen 127.0.0.1:8080` in `/etc/apache2/ports.conf` (the repair script can adjust this automatically).
@@ -31,7 +31,7 @@ If repair shows **apache2: not active** and local probe **502**, Apache failed t
 Check:
 
 ```bash
-curl -sI -H 'Host: siccamanagement.nl' http://127.0.0.1/ | head -5
+curl -sI -H 'Host: example.com' http://127.0.0.1/ | head -5
 # Should NOT return Next.js / Qadbak HTML
 ```
 
@@ -40,8 +40,8 @@ Upload the site via Qadbak **Files** → `public_html` (or VirtualMin).
 If visitors still see **Apache2 Ubuntu Default Page** (`/var/www/html`), Apache has no vhost for your domain on the backend port (usually `8080`). Diagnose and fix:
 
 ```bash
-sudo bash scripts/diagnose-domain-web-root.sh siccamanagement.nl
-sudo bash scripts/fix-domain-website.sh siccamanagement.nl
+sudo bash scripts/diagnose-domain-web-root.sh example.com
+sudo bash scripts/fix-domain-website.sh example.com
 ```
 
 Your edited file must be `/home/USER/public_html/index.html`, not `/var/www/html/index.html`.

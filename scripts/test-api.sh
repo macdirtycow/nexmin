@@ -23,7 +23,18 @@ fi
 : "${VIRTUALMIN_USER:?Set VIRTUALMIN_USER}"
 : "${VIRTUALMIN_PASS:?Set VIRTUALMIN_PASS}"
 
-TEST_DOMAIN="${TEST_DOMAIN:-siccamanagement.nl}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/virtualmin-domains.sh
+source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
+TEST_DOMAIN="${TEST_DOMAIN:-}"
+if [[ -z "$TEST_DOMAIN" ]]; then
+  TEST_DOMAIN="$(first_virtualmin_domain 2>/dev/null || true)"
+fi
+if [[ -z "$TEST_DOMAIN" ]]; then
+  echo "Set TEST_DOMAIN=your.domain or create a VirtualMin domain first." >&2
+  exit 1
+fi
+echo "Using TEST_DOMAIN=$TEST_DOMAIN"
 
 call_api() {
   local program="$1"

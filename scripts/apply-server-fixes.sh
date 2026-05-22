@@ -20,12 +20,12 @@ if [[ -f "$QADBAK_DIR/.env.local" ]] && grep -q '^NODE_TLS_REJECT_UNAUTHORIZED='
   echo "    Removed NODE_TLS_REJECT_UNAUTHORIZED from .env.local"
 fi
 
-echo "==> Nginx (hosted domains → Apache, panel host → Qadbak)"
-bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
-
 echo "==> Sudo helpers"
 bash "$QADBAK_DIR/scripts/configure-domain-fs-sudo.sh"
 bash "$QADBAK_DIR/scripts/configure-domain-repair-sudo.sh"
+
+echo "==> Hosting stack (nginx, public_html, Webmin login)"
+bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 echo "==> Verify file helper sudo"
 FS_WRAP="$(readlink -f "$QADBAK_DIR/scripts/run-domain-fs-helper.sh")"
@@ -52,14 +52,6 @@ sudo -u "$QADBAK_USER" sudo -n "$REPAIR" __probe__ || {
 echo "==> Build + restart"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && npm run build"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"
-
-echo "==> Webmin login for all domains (Terminal / embeds)"
-if command -v virtualmin &>/dev/null; then
-  while read -r d; do
-    [[ -z "$d" ]] && continue
-    virtualmin enable-feature --domain "$d" --webmin 2>/dev/null || true
-  done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d')
-fi
 
 echo "==> Website repair (all VirtualMin domains)"
 if command -v virtualmin &>/dev/null; then

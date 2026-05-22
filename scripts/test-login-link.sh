@@ -16,7 +16,17 @@ fi
 : "${VIRTUALMIN_USER:?}"
 : "${VIRTUALMIN_PASS:?}"
 
-DOMAIN="${1:-siccamanagement.nl}"
+# shellcheck source=lib/virtualmin-domains.sh
+source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
+DOMAIN="${1:-}"
+if [[ -z "$DOMAIN" ]]; then
+  DOMAIN="$(first_virtualmin_domain 2>/dev/null || true)"
+fi
+if [[ -z "$DOMAIN" ]]; then
+  echo "Usage: bash scripts/test-login-link.sh DOMAIN" >&2
+  echo "  (or create at least one domain in VirtualMin first)" >&2
+  exit 1
+fi
 
 echo "==> Plain create-login-link (no json, no multiline)"
 curl -sk -u "${VIRTUALMIN_USER}:${VIRTUALMIN_PASS}" -X POST \

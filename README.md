@@ -86,6 +86,8 @@ Output: **`dist/qadbak-site-upload.zip`** (extract and upload; see `marketing-si
 | [docs/API.md](docs/API.md) | MVP VirtualMin commands |
 | [docs/TEST-VPS.md](docs/TEST-VPS.md) | Short test VPS notes |
 | [docs/FRONT-DOOR.md](docs/FRONT-DOOR.md) | IP/443 → Qadbak, not :10000 |
+| [docs/HOSTING-MULTI-TENANT.md](docs/HOSTING-MULTI-TENANT.md) | All customer domains → `public_html` (no per-domain hardcoding) |
+| [docs/HOSTING-NGINX.md](docs/HOSTING-NGINX.md) | nginx + Apache backend for hosted sites |
 | [docs/ABOUT-THE-NAME.md](docs/ABOUT-THE-NAME.md) | Why “Qadbak” (2009 → panel) |
 
 ## Integration phases (overview)
