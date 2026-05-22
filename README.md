@@ -89,6 +89,7 @@ Output: **`dist/qadbak-site-upload.zip`** (extract and upload; see `marketing-si
 | [docs/HOSTING-MULTI-TENANT.md](docs/HOSTING-MULTI-TENANT.md) | All customer domains → `public_html` (no per-domain hardcoding) |
 | [docs/HOSTING-NGINX.md](docs/HOSTING-NGINX.md) | nginx + Apache backend for hosted sites |
 | [docs/TERMINAL-NATIVE.md](docs/TERMINAL-NATIVE.md) | In-panel bash terminal (no Webmin) |
+| [docs/QADBAK-INDEPENDENCE-8-PHASES.md](docs/QADBAK-INDEPENDENCE-8-PHASES.md) | **8 fasen** los van VirtualMin/Webmin |
 | [docs/ABOUT-THE-NAME.md](docs/ABOUT-THE-NAME.md) | Why “Qadbak” (2009 → panel) |
 
 ## Integration phases (overview)

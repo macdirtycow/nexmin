@@ -2,6 +2,8 @@
 
 **Last updated:** for isolated v1 test server workflow.
 
+**Independence (8 phases):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — Qadbak standalone without Webmin UI; VirtualMin engine phased out later.
+
 ## Do not use production hosts for Qadbak testing
 
 | Host | Use |
