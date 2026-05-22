@@ -25,7 +25,10 @@ function vmValue<T extends Record<string, unknown>>(
   const dotted = row[`values.${key}`];
   if (dotted !== undefined && dotted !== null) return String(dotted);
   const direct = row[key];
-  if (direct !== undefined && direct !== null) return String(direct);
+  if (direct !== undefined && direct !== null) {
+    if (Array.isArray(direct) && direct.length > 0) return String(direct[0]);
+    return String(direct);
+  }
 
   const values = row.values;
   if (values && typeof values === "object" && !Array.isArray(values)) {
@@ -77,6 +80,28 @@ function normalizeList(data: unknown): Record<string, unknown>[] {
   return [];
 }
 
+const DOMAIN_LIKE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
+
+function domainNameFromRowHints(row: Record<string, unknown>): string {
+  for (const key of ["error_log", "access_log", "ssl_cert_used_by"]) {
+    const v = vmValue(row, key);
+    if (!v) continue;
+    const fromLog = v.match(/([\w.-]+\.[a-z]{2,})_error_log/i);
+    if (fromLog?.[1]) return fromLog[1].toLowerCase();
+    const fqdn = v.match(/([\w.-]+\.[a-z]{2,})/i);
+    if (fqdn?.[1] && DOMAIN_LIKE.test(fqdn[1])) return fqdn[1].toLowerCase();
+  }
+  const values = row.values;
+  if (values && typeof values === "object" && !Array.isArray(values)) {
+    for (const val of Object.values(values as Record<string, unknown>)) {
+      const s = (Array.isArray(val) ? val[0] : val) as unknown;
+      if (typeof s !== "string" || !DOMAIN_LIKE.test(s)) continue;
+      return s.toLowerCase();
+    }
+  }
+  return "";
+}
+
 /** Resolve domain name from a list-domains row (VirtualMin field names vary). */
 function rowDomainName(row: Record<string, unknown>): string {
   if (typeof row.name === "string" && row.name.trim()) return row.name.trim();
@@ -93,7 +118,7 @@ function rowDomainName(row: Record<string, unknown>): string {
     const v = vmValue(row, key);
     if (v?.trim()) return v.trim();
   }
-  return "";
+  return domainNameFromRowHints(row);
 }
 
 function mapDomainRow(row: Record<string, unknown>): VirtualMinDomain {
