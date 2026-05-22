@@ -3,7 +3,11 @@
 # Usage: sudo bash scripts/fix-origin-502.sh [domain]
 set -euo pipefail
 
-DOMAIN="${1:-siccamanagement.nl}"
+DOMAIN="${1:-}"
+if [[ -z "$DOMAIN" ]]; then
+  echo "Usage: sudo bash scripts/fix-origin-502.sh DOMAIN" >&2
+  exit 1
+fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [[ "$(id -u)" -ne 0 ]]; then

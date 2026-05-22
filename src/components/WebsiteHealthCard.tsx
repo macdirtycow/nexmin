@@ -81,27 +81,29 @@ export function WebsiteHealthCard({
   const panelHijack =
     health?.localProbe.servingPanelLanding || health?.publicProbe.servingPanelLanding;
   const apacheDefault =
-    health?.localProbe.servingApacheDefault || health?.publicProbe.servingApacheDefault;
+    health?.publicProbe.servingApacheDefault && !health?.publicProbe.ok;
+  const localApacheNote =
+    health?.publicProbe.ok && health?.localProbe.servingApacheDefault;
   const cf523 =
     health?.publicProbe.cloudflare523 && !health?.publicProbe.ok;
   const cf502 =
     health?.publicProbe.cloudflare502 && !health?.publicProbe.ok;
-  const siteOk = health?.publicProbe.ok && health?.localProbe.ok;
+  const siteOk = health?.publicProbe.ok === true;
   const repairOk = health?.repairAvailable !== false;
 
   const subtitle = panelHijack
     ? "This domain shows the Qadbak landing page instead of your site in public_html."
     : apacheDefault
-      ? health?.localProbe.ok
-        ? "Public URL still shows Ubuntu page — purge Cloudflare cache; origin may already be fixed."
-        : "Apache serves the Ubuntu default page — Repair installs nginx vhosts for public_html."
+      ? "Visitors still see the Ubuntu/Apache default page — use Repair on server."
+      : localApacheNote
+        ? "Your site is live on the internet; local routing can be aligned with Repair (optional)."
       : cf502
       ? "Cloudflare error 502 — origin answers badly (nginx→Apache or HTTPS without cert)."
       : cf523
       ? "Cloudflare error 523 — the proxy cannot reach your origin on ports 80/443."
       : siteOk
-        ? "Website responds on this server and on the internet."
-        : "Checks origin routing, public reachability, and Cloudflare DNS.";
+        ? "Website is live — public_html is served for this domain."
+        : "Checks public URL, origin routing, and Cloudflare DNS.";
 
   return (
     <Card
@@ -173,9 +175,11 @@ export function WebsiteHealthCard({
               >
                 {health.localProbe.servingPanelLanding
                   ? "Qadbak landing — not public_html"
-                  : health.localProbe.servingApacheDefault
-                    ? "Ubuntu/Apache default — not public_html"
-                    : health.localProbe.ok
+                  : health.localProbe.servingApacheDefault && !health.publicProbe.ok
+                    ? "Apache fallback (not public_html)"
+                    : health.localProbe.servingApacheDefault && health.publicProbe.ok
+                      ? `OK via internet — local curl HTTP ${health.localProbe.status ?? ""}`
+                      : health.localProbe.ok
                     ? `OK — HTTP ${health.localProbe.status ?? ""}`
                     : health.localProbe.error ?? "No response"}
               </p>

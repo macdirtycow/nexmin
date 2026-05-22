@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { repairAvailable } from "./domain-repair";
+import { domainUnixUser } from "./domain-files";
 import { validateDomain } from "./virtualmin";
 import type { Role } from "./types";
 
@@ -51,14 +53,33 @@ function looksLikeCloudflare523(body: string, status: number): boolean {
   return sample.includes("error code: 523") || sample.includes("origin is unreachable");
 }
 
+/** Strict match — avoids false alarms on normal sites (e.g. short HTML with "Hello"). */
 function looksLikeApacheDefaultPage(body: string): boolean {
-  const sample = body.slice(0, 20000).toLowerCase();
+  const sample = body.slice(0, 40000).toLowerCase();
   return (
-    sample.includes("apache2 ubuntu default") ||
-    sample.includes("ubuntu default page") ||
-    sample.includes("debian default page") ||
-    (sample.includes("it works!") && sample.includes("apache"))
+    sample.includes("apache2 ubuntu default page") ||
+    (sample.includes("/var/www/html") &&
+      (sample.includes("replace this file") ||
+        sample.includes("before continuing to operate your http server"))) ||
+    sample.includes("apache2 debian default page")
   );
+}
+
+async function bodyMatchesPublicHtmlIndex(
+  domain: string,
+  body: string,
+): Promise<boolean> {
+  const user = domainUnixUser(domain);
+  const indexPath = `/home/${user}/public_html/index.html`;
+  try {
+    const index = await readFile(indexPath, "utf8");
+    const norm = (s: string) => s.replace(/\s+/g, " ").trim();
+    const snippet = norm(index).slice(0, 160);
+    if (snippet.length < 6) return false;
+    return norm(body).includes(snippet);
+  } catch {
+    return false;
+  }
 }
 
 function looksLikeCloudflare502(body: string, status: number): boolean {
@@ -74,6 +95,7 @@ function looksLikeCloudflare502(body: string, status: number): boolean {
 async function probeHttp(
   url: string,
   host: string,
+  domain: string,
 ): Promise<WebsiteProbeResult> {
   try {
     const res = await fetch(url, {
@@ -85,7 +107,10 @@ async function probeHttp(
     const servingPanelLanding = looksLikeQadbakLanding(body, res.headers);
     const cloudflare523 = looksLikeCloudflare523(body, res.status);
     const cloudflare502 = looksLikeCloudflare502(body, res.status);
-    const servingApacheDefault = looksLikeApacheDefaultPage(body);
+    let servingApacheDefault = looksLikeApacheDefaultPage(body);
+    if (servingApacheDefault && (await bodyMatchesPublicHtmlIndex(domain, body))) {
+      servingApacheDefault = false;
+    }
     const ok =
       res.status > 0 &&
       res.status < 500 &&
@@ -106,9 +131,11 @@ async function probeHttp(
           ? "Cloudflare error 523 — origin unreachable from the internet."
           : cloudflare502
             ? "Cloudflare error 502 — nginx cannot reach Apache, or HTTPS to origin without a certificate."
-            : !ok
-              ? `HTTP ${res.status}`
-              : undefined,
+            : servingApacheDefault
+              ? "Ubuntu/Apache default page — not your public_html."
+              : !ok
+                ? `HTTP ${res.status}`
+                : undefined,
     };
   } catch (e) {
     return {
@@ -119,21 +146,22 @@ async function probeHttp(
 }
 
 async function probeLocalWebsite(domain: string): Promise<WebsiteProbeResult> {
-  return probeHttp("http://127.0.0.1/", domain);
+  return probeHttp("http://127.0.0.1/", domain, domain);
 }
 
 async function probePublicWebsite(domain: string): Promise<WebsiteProbeResult> {
-  const https = await probeHttp(`https://${domain}/`, domain);
+  const https = await probeHttp(`https://${domain}/`, domain, domain);
   if (
     https.ok ||
     https.status ||
     https.servingPanelLanding ||
     https.cloudflare523 ||
-    https.cloudflare502
+    https.cloudflare502 ||
+    https.servingApacheDefault
   ) {
     return https;
   }
-  return probeHttp(`http://${domain}/`, domain);
+  return probeHttp(`http://${domain}/`, domain, domain);
 }
 
 function buildIssues(
@@ -149,16 +177,18 @@ function buildIssues(
     );
   }
 
-  if (localProbe.servingApacheDefault || publicProbe.servingApacheDefault) {
-    if (localProbe.ok && publicProbe.servingApacheDefault) {
-      issues.push(
-        "Origin serves your site locally but the public URL still shows the Ubuntu page — purge Cloudflare cache (Caching → Purge Everything), then refresh.",
-      );
-    } else {
-      issues.push(
-        "Visitors see the Ubuntu/Apache default page, not public_html — use Repair on server (nginx public_html vhosts + Apache DocumentRoot).",
-      );
-    }
+  if (publicProbe.servingApacheDefault) {
+    issues.push(
+      "Visitors see the Ubuntu/Apache default page, not public_html — use Repair on server (applies to all domains on this VPS).",
+    );
+  } else if (localProbe.servingApacheDefault && !publicProbe.ok) {
+    issues.push(
+      "Origin routing may still hit Apache’s default site — use Repair on server (nginx vhosts for every VirtualMin domain).",
+    );
+  } else if (localProbe.servingApacheDefault && publicProbe.ok) {
+    issues.push(
+      "Website is live publicly; local curl still hits Apache fallback — optional: Repair once to align origin routing.",
+    );
   }
 
   if (publicProbe.cloudflare523 && localProbe.ok) {
@@ -196,18 +226,21 @@ function buildIssues(
     issues.push("VirtualMin reports configuration problems for this domain.");
   }
 
-  if (publicProbe.ok && localProbe.ok) {
-    issues.push("Website is reachable locally and on the internet.");
+  if (publicProbe.ok) {
+    issues.push(
+      localProbe.ok
+        ? "Website is reachable locally and on the internet."
+        : "Website is live on the internet (public URL). Files in public_html are being served.",
+    );
   } else if (
     localProbe.ok &&
     !publicProbe.cloudflare523 &&
     !publicProbe.cloudflare502 &&
     !publicProbe.servingPanelLanding &&
-    !localProbe.servingApacheDefault &&
     !publicProbe.servingApacheDefault
   ) {
     issues.push(
-      "Origin responds on this server — if visitors still see errors, check Cloudflare DNS and SSL mode.",
+      "Origin responds on this server — if visitors still see errors, check Cloudflare DNS, SSL mode, or cache.",
     );
   }
 

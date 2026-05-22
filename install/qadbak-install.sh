@@ -230,12 +230,16 @@ env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DI
 echo "==> nginx (panel host → Qadbak; other hosts → Apache; :10000 stays Webmin)"
 export PANEL_HOST SERVER_FQDN
 bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
+if command -v virtualmin &>/dev/null; then
+  bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" || true
+fi
 
 if [[ -n "$LE_EMAIL" ]]; then
   CERT_DOMAINS=(-d "$PANEL_HOST")
   [[ "$SERVER_FQDN" != "$PANEL_HOST" ]] && CERT_DOMAINS+=(-d "$SERVER_FQDN")
   certbot --nginx "${CERT_DOMAINS[@]}" --non-interactive --agree-tos -m "$LE_EMAIL" || true
   bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
+  command -v virtualmin &>/dev/null && bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" || true
 fi
 
 if [[ "$SET_UFW" =~ ^[Yy]$ ]]; then
