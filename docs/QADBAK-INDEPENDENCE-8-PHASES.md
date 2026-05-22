@@ -163,15 +163,17 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 6 — Install & lifecycle zonder VirtualMin-installer
+## Fase 6 — Install & lifecycle zonder VirtualMin-installer ✅ in repo
 
 **Doel:** Nieuwe VPS = Qadbak-first stack.
 
-- `install/qadbak-install.sh` installeert stack (nginx, mariadb, postfix, bind) **zonder** Webmin GPL installer
-- Of: optionele “import from VirtualMin” voor bestaande servers
-- Migratie-doc: bestaande VM-server → Qadbak engine
+- `install/qadbak-install-native.sh` + `scripts/install-native-stack.sh`
+- `install/qadbak-install.sh` vraagt: VirtualMin wel/niet op deze machine
+- Docs: [QADBAK-NATIVE-INSTALL.md](./QADBAK-NATIVE-INSTALL.md) · [MIGRATE-FROM-VIRTUALMIN.md](./MIGRATE-FROM-VIRTUALMIN.md)
 
-**Exit:** Fresh Ubuntu + Qadbak = werkend multi-tenant hosting zonder `virtualmin-install.sh`.
+**Gedaan:** Native stack installer; bestaande VM-servers blijven ongewijzigd (geen herinstall nodig).
+
+**Exit:** Fresh Ubuntu + Qadbak = stack zonder `virtualmin-install.sh`; multi-tenant provisioning nog via remote VM of fase 8 native engine.
 
 ---
 

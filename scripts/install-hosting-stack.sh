@@ -39,9 +39,13 @@ fi
 echo "==> nginx (panel → Qadbak; all VirtualMin domains → public_html)"
 bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
 
-echo "==> Webmin embed proxy (Terminal / iframe modules)"
-if [[ -f "$QADBAK_DIR/scripts/configure-webmin-embed.sh" ]]; then
-  bash "$QADBAK_DIR/scripts/configure-webmin-embed.sh" || true
+if [[ "${QADBAK_NATIVE_INSTALL:-}" != "1" ]]; then
+  echo "==> Webmin embed proxy (Terminal / iframe modules)"
+  if [[ -f "$QADBAK_DIR/scripts/configure-webmin-embed.sh" ]]; then
+    bash "$QADBAK_DIR/scripts/configure-webmin-embed.sh" || true
+  fi
+else
+  echo "==> Native install — Webmin embed skipped (no local Webmin)"
 fi
 
 echo "==> Native terminal (bash as domain user, no Webmin UI)"
@@ -52,12 +56,14 @@ if [[ -f "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" ]]; then
   bash "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" || true
 fi
 
-if command -v virtualmin &>/dev/null; then
+if [[ "${QADBAK_NATIVE_INSTALL:-}" != "1" ]] && command -v virtualmin &>/dev/null; then
   echo "==> Webmin login for all VirtualMin domains (Terminal, Webmin embeds)"
   while read -r d; do
     [[ -z "$d" ]] && continue
     virtualmin enable-feature --domain "$d" --webmin 2>/dev/null || true
   done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d')
+elif [[ "${QADBAK_NATIVE_INSTALL:-}" == "1" ]]; then
+  echo "==> Native install — skipping VirtualMin domain webmin feature (no local VirtualMin)"
 fi
 
 echo "==> Hosting stack applied"

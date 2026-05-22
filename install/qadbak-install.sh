@@ -27,6 +27,12 @@ if ! grep -q '22.04' /etc/os-release 2>/dev/null; then
   echo "Warning: this script targets Ubuntu 22.04." >&2
 fi
 
+read -rp "Install VirtualMin on this server? (No = native stack only, phase 6) [Y/n]: " INSTALL_VM
+INSTALL_VM="${INSTALL_VM:-Y}"
+if [[ "$INSTALL_VM" =~ ^[Nn]$ ]]; then
+  exec bash "$(dirname "$0")/qadbak-install-native.sh"
+fi
+
 FQDN="$(hostname -f 2>/dev/null || hostname)"
 echo "Server FQDN: $FQDN"
 echo "Qadbak panel on your panel hostname (+ optional :11000). Customer domains use Apache on port 80."
