@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { AvailableScript, InstalledScript } from "@/lib/virtualmin";
+import type { AvailableScript, InstalledScript } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

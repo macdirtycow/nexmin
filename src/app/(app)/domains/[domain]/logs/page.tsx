@@ -1,6 +1,6 @@
 import { LogsManager } from "@/components/LogsManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { getWebsiteLogs } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
@@ -9,7 +9,7 @@ export default async function LogsPage({ params }: Props) {
   let log = "";
   let error = "";
   try {
-    log = await getWebsiteLogs(domain, "access", session);
+    log = await getProvisioner().getWebsiteLogs(domain, "access", session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load logs.";
   }

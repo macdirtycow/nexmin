@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { FtpAccount } from "@/lib/virtualmin";
+import type { FtpAccount } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

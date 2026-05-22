@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { CronJob } from "@/lib/virtualmin";
+import type { CronJob } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

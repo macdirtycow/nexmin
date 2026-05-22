@@ -1,6 +1,6 @@
 import { CreateDomainForm } from "@/components/CreateDomainForm";
 import { getSession } from "@/lib/session";
-import { listDomains } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -15,7 +15,7 @@ export default async function NewDomainPage({ searchParams }: Props) {
   const initialType =
     sp.type === "sub" || sp.type === "alias" ? sp.type : "top";
 
-  const domains = await listDomains(session);
+  const domains = await getProvisioner().listDomains(session);
   const parentOptions = domains.map((d) => d.name);
 
   return (

@@ -1,15 +1,15 @@
 import { ImapMailboxesManager } from "@/components/ImapMailboxesManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { listImapMailboxes } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
 export default async function MailboxesPage({ params }: Props) {
   const { session, domain } = await requireDomainAccess((await params).domain);
-  let mailboxes: Awaited<ReturnType<typeof listImapMailboxes>> = [];
+  let mailboxes: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listImapMailboxes"]>> = [];
   let error = "";
   try {
-    mailboxes = await listImapMailboxes(domain, "info", session);
+    mailboxes = await getProvisioner().listImapMailboxes(domain, "info", session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load mailboxes.";
   }

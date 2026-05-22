@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { MailAlias } from "@/lib/virtualmin";
+import type { MailAlias } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

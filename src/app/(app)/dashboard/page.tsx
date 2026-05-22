@@ -2,17 +2,17 @@ import { ServerConfigButton } from "@/components/ServerConfigButton";
 import { Badge, Card } from "@/components/ui";
 import { getSession } from "@/lib/session";
 import { isDomainDisabled } from "@/lib/domain-utils";
-import { listDomains } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
 
-  let domains: Awaited<ReturnType<typeof listDomains>> = [];
+  let domains: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listDomains"]>> = [];
   let error = "";
   try {
-    domains = await listDomains(session);
+    domains = await getProvisioner().listDomains(session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load domains.";
   }

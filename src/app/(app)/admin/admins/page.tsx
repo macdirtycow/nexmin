@@ -1,13 +1,13 @@
 import { AdminListView } from "@/components/AdminListView";
 import { requireAdminPage } from "@/lib/admin-api";
-import { listAdmins } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export default async function AdminAdminsPage() {
   const session = await requireAdminPage();
-  let admins: Awaited<ReturnType<typeof listAdmins>> = [];
+  let admins: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listAdmins"]>> = [];
   let error = "";
   try {
-    admins = await listAdmins(session);
+    admins = await getProvisioner().listAdmins(session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load administrators.";
   }

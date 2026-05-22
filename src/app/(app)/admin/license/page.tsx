@@ -1,13 +1,13 @@
 import { Alert, Card } from "@/components/ui";
 import { requireAdminPage } from "@/lib/admin-api";
-import { getLicenseInfo } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export default async function AdminLicensePage() {
   const session = await requireAdminPage();
   let license: Record<string, string> = {};
   let error = "";
   try {
-    license = await getLicenseInfo(session);
+    license = await getProvisioner().getLicenseInfo(session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load license.";
   }

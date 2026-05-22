@@ -1,7 +1,7 @@
 import { DomainDetail } from "@/components/DomainDetail";
 import { getSession } from "@/lib/session";
 import { isDomainDisabled } from "@/lib/domain-utils";
-import { listDomains } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ domain: string }> };
@@ -12,7 +12,7 @@ export default async function DomainDetailPage({ params }: Props) {
 
   const { domain: encoded } = await params;
   const domainName = decodeURIComponent(encoded);
-  const domains = await listDomains(session);
+  const domains = await getProvisioner().listDomains(session);
   const domain = domains.find(
     (d) => d.name.toLowerCase() === domainName.toLowerCase(),
   );

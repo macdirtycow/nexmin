@@ -147,12 +147,13 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "webmin",
     phase: 3,
     label: "Webmin",
-    description: "Virtualmin & Usermin alongside the panel",
+    description: "Break-glass Virtualmin & Usermin (admins only)",
     path: "webmin",
     navOrder: 8,
+    adminOnly: true,
     programs: {
       admin: ["create-login-link"],
-      client: ["create-login-link"],
+      client: [],
     },
   },
   {

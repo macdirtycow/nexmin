@@ -1,15 +1,15 @@
 import { AliasesManager } from "@/components/AliasesManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { listAliases } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
 export default async function AliasesPage({ params }: Props) {
   const { session, domain } = await requireDomainAccess((await params).domain);
-  let aliases: Awaited<ReturnType<typeof listAliases>> = [];
+  let aliases: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listAliases"]>> = [];
   let error = "";
   try {
-    aliases = await listAliases(domain, session);
+    aliases = await getProvisioner().listAliases(domain, session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load aliases.";
   }

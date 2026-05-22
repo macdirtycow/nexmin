@@ -7,7 +7,7 @@ import {
   ConfirmDialog,
   Input,
 } from "@/components/ui";
-import type { Reseller } from "@/lib/virtualmin";
+import type { Reseller } from "@/lib/provisioner";
 import { useState } from "react";
 
 export function AdminResellersView({

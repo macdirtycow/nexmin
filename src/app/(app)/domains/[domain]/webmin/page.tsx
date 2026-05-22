@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { WebminHub } from "@/components/WebminHub";
 import { requireDomainAccess } from "@/lib/domain-api";
 import {
@@ -9,7 +10,10 @@ import {
 type Props = { params: Promise<{ domain: string }> };
 
 export default async function DomainWebminPage({ params }: Props) {
-  const { domain } = await requireDomainAccess((await params).domain);
+  const { domain, session } = await requireDomainAccess((await params).domain);
+  if (session.role !== "admin") {
+    redirect(`/domains/${encodeURIComponent(domain)}`);
+  }
   const enc = encodeURIComponent(domain);
   return (
     <WebminHub

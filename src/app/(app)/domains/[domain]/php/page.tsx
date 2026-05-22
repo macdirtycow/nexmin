@@ -1,24 +1,20 @@
 import { PhpManager } from "@/components/PhpManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import {
-  listPhpDirectories,
-  listPhpIni,
-  listPhpVersions,
-} from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
 export default async function PhpPage({ params }: Props) {
   const { session, domain } = await requireDomainAccess((await params).domain);
   let error = "";
-  let versions: Awaited<ReturnType<typeof listPhpVersions>> = [];
-  let directories: Awaited<ReturnType<typeof listPhpDirectories>> = [];
-  let ini: Awaited<ReturnType<typeof listPhpIni>> = [];
+  let versions: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listPhpVersions"]>> = [];
+  let directories: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listPhpDirectories"]>> = [];
+  let ini: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listPhpIni"]>> = [];
   try {
     [versions, directories, ini] = await Promise.all([
-      listPhpVersions(domain, session),
-      listPhpDirectories(domain, session),
-      listPhpIni(domain, undefined, session),
+      getProvisioner().listPhpVersions(domain, session),
+      getProvisioner().listPhpDirectories(domain, session),
+      getProvisioner().listPhpIni(domain, undefined, session),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load PHP data.";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card } from "@/components/ui";
-import type { DomainFeatureFlag } from "@/lib/virtualmin";
+import type { DomainFeatureFlag } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

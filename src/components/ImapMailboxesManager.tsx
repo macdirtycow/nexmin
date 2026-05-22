@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import type { ImapMailbox } from "@/lib/virtualmin";
+import type { ImapMailbox } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

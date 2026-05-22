@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import type { MailDomainSettings } from "@/lib/virtualmin";
+import type { MailDomainSettings } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
