@@ -19,9 +19,12 @@ Panel login without a customer domain name: use **https://panel-host/login** or 
 
 ```bash
 cd /opt/qadbak && git pull
+sudo bash scripts/ensure-apache-backend.sh   # Apache must run (usually :8080)
 sudo bash scripts/apply-hosting-nginx.sh
 sudo bash scripts/fix-domain-website.sh siccamanagement.nl
 ```
+
+If repair shows **apache2: not active** and local probe **502**, Apache failed to start — the script prints `journalctl` hints. Common fix when nginx owns port 80: Apache should only `Listen 127.0.0.1:8080` in `/etc/apache2/ports.conf` (the repair script can adjust this automatically).
 
 `QADBAK_PUBLIC_HOST` must be a **hostname** (e.g. `vmi3317912.contaboserver.net`), not a bare IP. If Let's Encrypt is not installed for the panel host, the script uses HTTP-only nginx (panel stays on `:11000` or port 80 without TLS).
 

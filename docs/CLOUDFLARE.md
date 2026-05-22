@@ -73,3 +73,28 @@ nc -zv YOUR_VPS_IP 80 443
 ```
 
 If local curl works but Cloudflare still shows 523, the origin IP in Cloudflare or the provider firewall is wrong.
+
+## Error 502 — Bad gateway
+
+Cloudflare **does** reach your VPS, but the response from the origin is invalid (often nginx cannot proxy to Apache, or Cloudflare uses **HTTPS** to the origin while only HTTP on port 80 is configured).
+
+### Fix on the VPS
+
+```bash
+cd /opt/qadbak && git pull
+sudo bash scripts/fix-origin-502.sh siccamanagement.nl
+sudo -u qadbak bash -c 'cd /opt/qadbak && npm run build'
+sudo bash scripts/pm2-restart-qadbak.sh
+```
+
+### Cloudflare SSL
+
+If the origin has **no** Let's Encrypt certificate yet, set **SSL/TLS → Overview → Flexible** (Cloudflare talks HTTP to your server on port 80). **Full** without a cert on the VPS often causes **502**.
+
+### Diagnose
+
+```bash
+curl -sI -H "Host: siccamanagement.nl" http://127.0.0.1/    # must not be 502
+curl -sI -H "Host: siccamanagement.nl" http://127.0.0.1:8080/  # Apache backend
+sudo tail -20 /var/log/nginx/error.log
+```
