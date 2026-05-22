@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import type { DomainLimits } from "@/lib/virtualmin";
+import type { DomainLimits } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

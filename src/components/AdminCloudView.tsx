@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import type { S3Bucket, S3File } from "@/lib/virtualmin";
+import type { S3Bucket, S3File } from "@/lib/provisioner";
 import { useState } from "react";
 
 export function AdminCloudView({ initialError }: { initialError: string }) {

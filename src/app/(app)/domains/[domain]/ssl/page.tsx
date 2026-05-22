@@ -1,15 +1,15 @@
 import { SslManager } from "@/components/SslManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { listSslCerts } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
 export default async function SslPage({ params }: Props) {
   const { session, domain } = await requireDomainAccess((await params).domain);
-  let certs: Awaited<ReturnType<typeof listSslCerts>> = [];
+  let certs: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listSslCerts"]>> = [];
   let error = "";
   try {
-    certs = await listSslCerts(domain, session);
+    certs = await getProvisioner().listSslCerts(domain, session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load certificates.";
   }

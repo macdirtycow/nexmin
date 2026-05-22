@@ -1,16 +1,16 @@
 import { AdminServerView } from "@/components/AdminServerView";
 import { requireAdminPage } from "@/lib/admin-api";
-import { listBandwidth, listServerStatuses } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export default async function AdminServerPage() {
   const session = await requireAdminPage();
-  let bandwidth: Awaited<ReturnType<typeof listBandwidth>> = [];
-  let services: Awaited<ReturnType<typeof listServerStatuses>> = [];
+  let bandwidth: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listBandwidth"]>> = [];
+  let services: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listServerStatuses"]>> = [];
   let error = "";
   try {
     [bandwidth, services] = await Promise.all([
-      listBandwidth(session),
-      listServerStatuses(session),
+      getProvisioner().listBandwidth(session),
+      getProvisioner().listServerStatuses(session),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load server data.";

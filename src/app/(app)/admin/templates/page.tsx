@@ -1,13 +1,13 @@
 import { Alert, Card } from "@/components/ui";
 import { requireAdminPage } from "@/lib/admin-api";
-import { listTemplates } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export default async function AdminTemplatesPage() {
   const session = await requireAdminPage();
-  let templates: Awaited<ReturnType<typeof listTemplates>> = [];
+  let templates: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listTemplates"]>> = [];
   let error = "";
   try {
-    templates = await listTemplates(session);
+    templates = await getProvisioner().listTemplates(session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load templates.";
   }

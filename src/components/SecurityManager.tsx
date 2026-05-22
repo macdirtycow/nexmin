@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card } from "@/components/ui";
-import type { MailSecuritySettings } from "@/lib/virtualmin";
+import type { MailSecuritySettings } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

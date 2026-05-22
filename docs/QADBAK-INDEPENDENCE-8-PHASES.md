@@ -112,7 +112,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 3 — Hosting-kern 100% Qadbak (VirtualMin alleen headless)
+## Fase 3 — Hosting-kern 100% Qadbak (VirtualMin alleen headless) ✅ in repo
 
 **Doel:** v1-pariteit in [PARITY-AUDIT.md](./PARITY-AUDIT.md) op **UI**, niet Embed.
 
@@ -122,6 +122,8 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 - SSL Let’s Encrypt + renew
 - Cron, PHP, redirects, proxies
 - Logs (tail via helper, geen Webmin log-viewer)
+
+**Gedaan:** `src/app/(app)/**` + managers via `getProvisioner()`; Webmin-domeinlink `adminOnly` + redirect voor clients.
 
 **Exit:** Geen enkele Virtualmin-sidebar-link nodig voor hosting; API mag nog VM zijn.
 

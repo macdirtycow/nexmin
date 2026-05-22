@@ -50,5 +50,6 @@ Reference: [HestiaCP](https://github.com/hestiacp/hestiacp) `v-*` CLI for a futu
 |-------|--------|
 | `src/app/api/**` | Uses `getProvisioner()` |
 | `src/lib/domain-api.ts` | Uses `getProvisioner()` |
-| Server components (`src/app/(app)/**`) | Still import `@/lib/virtualmin` (phase 3) |
-| `src/lib/webmin.ts` | Webmin login links — stays on virtualmin until embeds removed |
+| Server components (`src/app/(app)/**`) | Uses `getProvisioner()` (phase 3) |
+| UI components (types) | Import types from `@/lib/provisioner` |
+| `src/lib/webmin.ts` | Break-glass Webmin links (admin only) |

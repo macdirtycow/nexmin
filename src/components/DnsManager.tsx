@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, ConfirmDialog, Input, Label } from "@/components/ui";
-import type { DnsRecord } from "@/lib/virtualmin";
+import type { DnsRecord } from "@/lib/provisioner";
 import { useEffect, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

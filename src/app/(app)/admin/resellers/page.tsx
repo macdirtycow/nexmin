@@ -1,13 +1,13 @@
 import { AdminResellersView } from "@/components/AdminResellersView";
 import { requireAdminPage } from "@/lib/admin-api";
-import { listResellers } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 export default async function AdminResellersPage() {
   const session = await requireAdminPage();
-  let resellers: Awaited<ReturnType<typeof listResellers>> = [];
+  let resellers: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listResellers"]>> = [];
   let error = "";
   try {
-    resellers = await listResellers(session);
+    resellers = await getProvisioner().listResellers(session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load resellers.";
   }

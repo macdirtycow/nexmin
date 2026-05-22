@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Badge, Button, Card } from "@/components/ui";
-import type { GlobalFeature } from "@/lib/virtualmin";
+import type { GlobalFeature } from "@/lib/provisioner";
 import { useState } from "react";
 
 export function AdminSystemView({

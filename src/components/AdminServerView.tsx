@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Badge, Button, Card } from "@/components/ui";
-import type { BandwidthRow, ServerService } from "@/lib/virtualmin";
+import type { BandwidthRow, ServerService } from "@/lib/provisioner";
 import { useState } from "react";
 
 export function AdminServerView({

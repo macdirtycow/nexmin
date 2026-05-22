@@ -5,7 +5,7 @@ import type {
   PhpDirectory,
   PhpIniSetting,
   PhpVersion,
-} from "@/lib/virtualmin";
+} from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Badge, Button, Card } from "@/components/ui";
-import type { SslCert } from "@/lib/virtualmin";
+import type { SslCert } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

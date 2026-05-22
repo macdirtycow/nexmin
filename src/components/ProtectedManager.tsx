@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { ProtectedDirectory, ProtectedUser } from "@/lib/virtualmin";
+import type { ProtectedDirectory, ProtectedUser } from "@/lib/provisioner";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 

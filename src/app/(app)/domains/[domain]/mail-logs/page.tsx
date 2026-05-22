@@ -1,6 +1,6 @@
 import { MailLogsManager } from "@/components/MailLogsManager";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { searchMailLogs } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Props = { params: Promise<{ domain: string }> };
 
@@ -9,7 +9,7 @@ export default async function MailLogsPage({ params }: Props) {
   let lines: string[] = [];
   let error = "";
   try {
-    lines = await searchMailLogs(domain, "", session);
+    lines = await getProvisioner().searchMailLogs(domain, "", session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load logs.";
   }

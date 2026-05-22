@@ -43,6 +43,7 @@ export type {
   ProtectedDirectory,
   ProtectedUser,
   MailSecuritySettings,
+  MailDomainSettings,
   DomainFeatureFlag,
   DomainLimits,
   AvailableScript,
