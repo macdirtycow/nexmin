@@ -18,17 +18,17 @@ export function AdminServerView({
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState<string | null>(null);
 
-  async function restart(service: string) {
-    setLoading(service);
+  async function control(service: string, action: "start" | "stop" | "restart") {
+    setLoading(`${action}:${service}`);
     setError("");
     try {
       const res = await fetch("/api/admin/server", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service }),
+        body: JSON.stringify({ service, action }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Restart failed.");
+      if (!res.ok) throw new Error(data.error ?? `${action} failed.`);
       const listRes = await fetch("/api/admin/server");
       const listData = await listRes.json();
       if (listRes.ok) setServices(listData.services ?? []);
@@ -44,20 +44,44 @@ export function AdminServerView({
       {error && <Alert>{error}</Alert>}
       <Card>
         <h2 className="text-lg font-medium text-white">Services</h2>
+        <p className="mt-1 text-sm text-panel-muted">
+          nginx, Apache, mail, DNS, database — via systemctl when configured, else VirtualMin API.
+        </p>
         <ul className="mt-4 divide-y divide-panel-border">
           {services.map((s) => (
-            <li key={s.service} className="flex items-center justify-between py-3">
+            <li
+              key={s.service}
+              className="flex flex-wrap items-center justify-between gap-2 py-3"
+            >
               <span className="text-white">{s.service}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={s.status === "running" ? "success" : "warning"}>
                   {s.status}
                 </Badge>
+                {s.status !== "running" && (
+                  <Button
+                    variant="secondary"
+                    disabled={loading === `start:${s.service}`}
+                    onClick={() => control(s.service, "start")}
+                  >
+                    {loading === `start:${s.service}` ? "…" : "Start"}
+                  </Button>
+                )}
+                {s.status === "running" && (
+                  <Button
+                    variant="secondary"
+                    disabled={loading === `stop:${s.service}`}
+                    onClick={() => control(s.service, "stop")}
+                  >
+                    {loading === `stop:${s.service}` ? "…" : "Stop"}
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
-                  disabled={loading === s.service}
-                  onClick={() => restart(s.service)}
+                  disabled={loading === `restart:${s.service}`}
+                  onClick={() => control(s.service, "restart")}
                 >
-                  {loading === s.service ? "Working…" : "Restart"}
+                  {loading === `restart:${s.service}` ? "…" : "Restart"}
                 </Button>
               </div>
             </li>

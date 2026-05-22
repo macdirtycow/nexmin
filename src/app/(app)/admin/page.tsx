@@ -1,10 +1,10 @@
 import { Card } from "@/components/ui";
 import { APP_NAME } from "@/lib/brand";
-import { ADMIN_NAV } from "@/lib/features";
+import { adminNavItems } from "@/lib/features";
 import Link from "next/link";
 
 export default function AdminOverviewPage() {
-  const items = ADMIN_NAV.filter((n) => n.path !== "/admin");
+  const items = adminNavItems().filter((n) => n.path !== "/admin");
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -17,6 +17,19 @@ export default function AdminOverviewPage() {
           </Link>
         ))}
       </div>
+      <Card className="border-panel-border/80">
+        <h2 className="font-medium text-white">Break-glass Webmin</h2>
+        <p className="mt-1 text-sm text-panel-muted">
+          Emergency access to Webmin modules if a native screen is missing. Normal admin work
+          stays in Qadbak — no need to open port 10000.
+        </p>
+        <Link
+          href="/admin/webmin"
+          className="mt-3 inline-block text-sm text-panel-accent hover:underline"
+        >
+          Open Webmin hub →
+        </Link>
+      </Card>
       <Card className="border-dashed border-panel-border/80 bg-panel-card/30">
         <p className="text-sm text-panel-muted">
           <span className="text-panel-muted/70">2009 → today · </span>

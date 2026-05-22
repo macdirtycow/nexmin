@@ -38,14 +38,12 @@ export function AppShell({ children, username, role }: AppShellProps) {
                 Domains
               </NavLink>
               {role === "admin" && (
-                <>
-                  <NavLink href="/admin" active={pathname.startsWith("/admin") && !pathname.startsWith("/admin/webmin")}>
-                    Server admin
-                  </NavLink>
-                  <NavLink href="/admin/webmin" active={pathname.startsWith("/admin/webmin")}>
-                    Webmin
-                  </NavLink>
-                </>
+                <NavLink
+                  href="/admin"
+                  active={pathname.startsWith("/admin")}
+                >
+                  Server admin
+                </NavLink>
               )}
               <NavLink href="/fases" active={pathname === "/fases"}>
                 Phases

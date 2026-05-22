@@ -1,16 +1,20 @@
 import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
+import {
+  controlAdminServerService,
+  listAdminServerServices,
+} from "@/lib/admin-server-services";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { getProvisioner } from "@/lib/provisioner";
 
 export async function GET() {
   try {
     const session = await requireAdmin();
-    const [bandwidth, services] = await Promise.all([
+    const [bandwidth, { services, source }] = await Promise.all([
       getProvisioner().listBandwidth(session),
-      getProvisioner().listServerStatuses(session),
+      listAdminServerServices(session),
     ]);
-    return jsonOk({ bandwidth, services });
+    return jsonOk({ bandwidth, services, servicesSource: source });
   } catch (err) {
     return handleApiError(err);
   }
@@ -19,11 +23,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await requireAdmin();
-    const body = (await request.json()) as { service?: string };
+    const body = (await request.json()) as {
+      service?: string;
+      action?: "start" | "stop" | "restart";
+    };
     if (!body.service) return jsonError("Service is required.");
-    await getProvisioner().restartServer(body.service, session);
-    await auditLog(session.username, "restart-server", undefined, body.service);
-    return jsonOk({ ok: true });
+    const action = body.action ?? "restart";
+    const { source } = await controlAdminServerService(body.service, action, session);
+    await auditLog(session.username, `${action}-server`, undefined, `${body.service} (${source})`);
+    return jsonOk({ ok: true, source });
   } catch (err) {
     return handleApiError(err);
   }

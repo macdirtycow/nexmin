@@ -159,6 +159,9 @@ chown "$QADBAK_USER:$QADBAK_USER" "$ENV_FILE"
 echo "==> Native file manager (sudo helper)"
 bash "$QADBAK_DIR/scripts/configure-domain-fs-sudo.sh"
 
+echo "==> Host services control (sudo helper, phase 4)"
+bash "$QADBAK_DIR/scripts/configure-host-services-sudo.sh"
+
 echo "==> Website repair (sudo)"
 REPAIR_SCRIPT="$QADBAK_DIR/scripts/fix-domain-website.sh"
 chmod 755 "$REPAIR_SCRIPT"
