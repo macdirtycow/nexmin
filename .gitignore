@@ -5,6 +5,7 @@ dist/
 .env
 .env.local
 data/users.json
+data/servers.json
 .install-test.env
 data/audit.log
 *.log

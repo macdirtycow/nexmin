@@ -411,6 +411,7 @@ export const IMPLEMENTED_PHASE: FeaturePhase = 8;
 export const ADMIN_NAV = [
   { path: "/admin", label: "Overview" },
   { path: "/admin/status", label: "Status" },
+  { path: "/admin/nodes", label: "Nodes" },
   { path: "/admin/server", label: "Services" },
   { path: "/admin/stack", label: "Stack config" },
   { path: "/admin/resellers", label: "Resellers" },

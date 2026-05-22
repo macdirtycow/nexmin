@@ -5,33 +5,48 @@ ROOT="${QADBAK_DIR:-/opt/qadbak}"
 USER="${QADBAK_USER:-qadbak}"
 PORT="${PORT:-3000}"
 
-if [[ -f "$ROOT/.install-test.env" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$ROOT/.install-test.env"
-  set +a
-elif [[ -f "$ROOT/.env.local" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$ROOT/.env.local"
-  set +a
-  export E2E_ADMIN_USER="${E2E_ADMIN_USER:-${QADBAK_E2E_ADMIN_USER:-admin}}"
-  export E2E_ADMIN_PASS="${E2E_ADMIN_PASS:-${QADBAK_E2E_ADMIN_PASS:-}}"
-fi
+E2E_ADMIN_USER="admin"
+E2E_ADMIN_PASS=""
+E2E_CLIENT_USER=""
+E2E_CLIENT_PASS=""
 
-if [[ -z "${E2E_ADMIN_PASS:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
+for cred_file in "$ROOT/.install-test.env" "$ROOT/.env.local"; do
+  if [[ -f "$cred_file" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$cred_file"
+    set +a
+  fi
+done
+
+E2E_ADMIN_USER="${E2E_ADMIN_USER:-${QADBAK_E2E_ADMIN_USER:-admin}}"
+E2E_ADMIN_PASS="${E2E_ADMIN_PASS:-${QADBAK_E2E_ADMIN_PASS:-}}"
+E2E_ADMIN_PASS="${E2E_ADMIN_PASS//$'\r'/}"
+
+if [[ -z "$E2E_ADMIN_PASS" ]] && [[ "$(id -u)" -eq 0 ]]; then
   bash "$ROOT/scripts/ensure-install-test-env.sh" 2>/dev/null || true
   if [[ -f "$ROOT/.install-test.env" ]]; then
+    set -a
     # shellcheck disable=SC1091
     source "$ROOT/.install-test.env"
+    set +a
+    E2E_ADMIN_PASS="${E2E_ADMIN_PASS//$'\r'/}"
   fi
 fi
 
-: "${E2E_ADMIN_PASS:?E2E_ADMIN_PASS missing — run via install, .install-test.env, or QADBAK_E2E_ADMIN_PASS in .env.local}"
+if [[ -z "$E2E_ADMIN_PASS" ]]; then
+  echo "E2E_ADMIN_PASS missing." >&2
+  echo "  Add to $ROOT/.install-test.env:" >&2
+  echo "    E2E_ADMIN_USER=admin" >&2
+  echo "    E2E_ADMIN_PASS=your-login-password" >&2
+  echo "  Or QADBAK_E2E_ADMIN_PASS=... in .env.local" >&2
+  exit 1
+fi
 
 export E2E_INSTALL_VERIFY=1
 export E2E_BASE_URL="${E2E_BASE_URL:-http://127.0.0.1:${PORT}}"
 export E2E_PORT="$PORT"
+export E2E_ADMIN_USER E2E_ADMIN_PASS E2E_CLIENT_USER E2E_CLIENT_PASS
 
 cd "$ROOT"
 
@@ -58,12 +73,12 @@ run_as_user() {
 }
 
 run_as_user env E2E_INSTALL_VERIFY=1 E2E_BASE_URL="$E2E_BASE_URL" E2E_PORT="$E2E_PORT" \
-  E2E_ADMIN_USER="${E2E_ADMIN_USER:-admin}" E2E_ADMIN_PASS="$E2E_ADMIN_PASS" \
+  E2E_ADMIN_USER="$E2E_ADMIN_USER" E2E_ADMIN_PASS="$E2E_ADMIN_PASS" \
   E2E_CLIENT_USER="${E2E_CLIENT_USER:-}" E2E_CLIENT_PASS="${E2E_CLIENT_PASS:-}" \
   bash -c "cd '$ROOT' && npx playwright install chromium 2>/dev/null || true"
 
-echo "==> Install E2E → $E2E_BASE_URL"
+echo "==> Install E2E → $E2E_BASE_URL (user $E2E_ADMIN_USER)"
 run_as_user env E2E_INSTALL_VERIFY=1 E2E_BASE_URL="$E2E_BASE_URL" E2E_PORT="$E2E_PORT" \
-  E2E_ADMIN_USER="${E2E_ADMIN_USER:-admin}" E2E_ADMIN_PASS="$E2E_ADMIN_PASS" \
+  E2E_ADMIN_USER="$E2E_ADMIN_USER" E2E_ADMIN_PASS="$E2E_ADMIN_PASS" \
   E2E_CLIENT_USER="${E2E_CLIENT_USER:-}" E2E_CLIENT_PASS="${E2E_CLIENT_PASS:-}" \
   npx playwright test e2e/install-verify.spec.ts
