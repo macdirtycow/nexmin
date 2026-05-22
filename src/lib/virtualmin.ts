@@ -198,6 +198,81 @@ function extractUrlFromText(text: string): string | undefined {
   return match?.[0];
 }
 
+function isUnknownParamLoginLinkError(err: unknown): boolean {
+  return (
+    err instanceof VirtualMinError &&
+    /Unknown parameter\s+--/i.test(err.message)
+  );
+}
+
+/** Older VirtualMin builds reject redirect-url on create-login-link — append path to returned URL. */
+export function appendLoginRedirectPath(
+  loginUrl: string,
+  redirectPath: string,
+): string {
+  const path = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
+  try {
+    const u = new URL(loginUrl);
+    if (!u.searchParams.has("page")) {
+      u.searchParams.set("page", path);
+    }
+    return u.toString();
+  } catch {
+    const sep = loginUrl.includes("?") ? "&" : "?";
+    return `${loginUrl}${sep}page=${encodeURIComponent(path)}`;
+  }
+}
+
+function parseCreateLoginLinkResponse(
+  data: unknown,
+  params: Record<string, string>,
+  redirectPath?: string,
+): string {
+  if (typeof data === "string" && data.startsWith("http")) return data.trim();
+  if (typeof data === "string") {
+    const fromText = extractUrlFromText(data);
+    if (fromText) return fromText;
+  }
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.url === "string") return obj.url;
+    if (typeof obj.link === "string") return obj.link;
+  }
+  const base = (
+    process.env.WEBMIN_UI_URL ??
+    process.env.VIRTUALMIN_UI_URL ??
+    "https://localhost:10000"
+  ).replace(/\/$/, "");
+  if (redirectPath) {
+    const p = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
+    return `${base}${p}`;
+  }
+  if (params.domain) {
+    return `${base}/virtual-server/?domain=${encodeURIComponent(params.domain)}`;
+  }
+  return `${base}/`;
+}
+
+export async function callCreateLoginLink(
+  params: Record<string, string>,
+  actor: { role: Role; domains: string[] },
+): Promise<string> {
+  const redirect = params["redirect-url"];
+  try {
+    const data = await virtualMinCall("create-login-link", params, actor);
+    return parseCreateLoginLinkResponse(data, params, redirect);
+  } catch (err) {
+    if (redirect && isUnknownParamLoginLinkError(err)) {
+      const retry = { ...params };
+      delete retry["redirect-url"];
+      const data = await virtualMinCall("create-login-link", retry, actor);
+      const base = parseCreateLoginLinkResponse(data, retry);
+      return appendLoginRedirectPath(base, redirect);
+    }
+    throw err;
+  }
+}
+
 /**
  * Build remote.cgi POST body. With json=1, remote.cgi injects --multiline unless
  * simple-multiline is set — older servers still break on create-login-link.
@@ -775,25 +850,7 @@ export async function createVirtualMinLoginLink(
       ? options.redirectUrl
       : `/${options.redirectUrl}`;
   }
-  const data = await virtualMinCall("create-login-link", params, actor);
-  if (typeof data === "string" && data.startsWith("http")) return data;
-  if (data && typeof data === "object") {
-    const obj = data as Record<string, unknown>;
-    if (typeof obj.url === "string") return obj.url;
-    if (typeof obj.link === "string") return obj.link;
-  }
-  const base = (
-    process.env.WEBMIN_UI_URL ??
-    process.env.VIRTUALMIN_UI_URL ??
-    "https://localhost:10000"
-  ).replace(/\/$/, "");
-  if (options?.redirectUrl) {
-    const p = options.redirectUrl.startsWith("/")
-      ? options.redirectUrl
-      : `/${options.redirectUrl}`;
-    return `${base}${p}`;
-  }
-  return `${base}/virtual-server/?domain=${encodeURIComponent(domain)}`;
+  return callCreateLoginLink(params, actor);
 }
 
 export async function listMailboxes(
