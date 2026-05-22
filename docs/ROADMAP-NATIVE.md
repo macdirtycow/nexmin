@@ -36,7 +36,7 @@ Still **no Webmin UI** for these tabs.
 
 | Current embed | Target |
 |---------------|--------|
-| Terminal | SSH keys / limited command whitelist (or keep embed, admin-only) |
+| Terminal | Native shell in panel (`sudo -u domain-user`, WebSocket) — no Webmin login |
 | Webmin module browser | Retire per-module as API coverage completes |
 
 ## Server setup after pull

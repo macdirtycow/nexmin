@@ -50,6 +50,17 @@ export function rewriteWebminLoginUrlForEmbed(url: string): string {
   }
 
   const directOrigins = directWebminOrigins();
+  if (embedBase) {
+    try {
+      const embedOrigin = new URL(embedBase).origin;
+      if (parsed.origin === embedOrigin && parsed.pathname.includes("/embed/webmin")) {
+        return url;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
   const isDirectWebmin =
     parsed.port === "10000" ||
     directOrigins.some((o) => parsed.origin === o);
