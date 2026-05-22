@@ -2,9 +2,11 @@
 
 Full UI replacement of Webmin/Virtualmin. Product name: **Qadbak** (repo: `macdirtycow/qadbak`, local folder: `~/Projects/qadbak`).
 
+**Independence plan (8 phases, Dutch):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — how Qadbak stands alone without Webmin in daily use, and eventually without VirtualMin on the server.
+
 See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 
-## Phases
+## Phases (product)
 
 | Phase | Goal | User-visible outcome |
 |-------|------|----------------------|
@@ -16,6 +18,21 @@ See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 | **5** | **v2** System | Dashboard + System menu in panel |
 | **6** | **v3** Servers | Apache, mail stack, BIND, … in panel |
 | **7** | **v4–v5** | Tools, Networking, Hardware, Cluster |
+
+## Independence phases (engine)
+
+| Phase | Summary |
+|-------|---------|
+| **I1** | No Webmin UI for customers — native files, terminal, API screens |
+| **I2** | Provisioner abstraction (swap VirtualMin later) |
+| **I3** | Full hosting UI; VM API headless only |
+| **I4** | Server/reseller admin without Webmin |
+| **I5** | Config via scripts/helpers (Hestia-style) |
+| **I6** | Install without VirtualMin installer |
+| **I7** | Multi-server (optional) |
+| **I8** | Remove VirtualMin package |
+
+Details: [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md).
 
 ## v1 scope (Phase 2)
 

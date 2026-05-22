@@ -29,7 +29,7 @@ Reference screenshots: **mareades.com** (read-only audit source — **do not ins
 | Edit Databases | `/domains/[domain]/databases` | UI | v1 |
 | Manage Web Apps | `/domains/[domain]/scripts` | UI | v1 |
 | File Manager | `/domains/[domain]/files` | UI+Embed live | v1 |
-| Terminal | `/domains/[domain]/terminal` | Embed (UI) | v1 |
+| Terminal | `/domains/[domain]/terminal` | UI (native WS) | v1 / I1 |
 | Manage Virtual Server | features, limits, lifecycle | UI | v1 |
 | DNS Settings | `/domains/[domain]/dns` | UI | v1 |
 | Web Configuration | redirects, proxies, php, protected | UI | v1 |
