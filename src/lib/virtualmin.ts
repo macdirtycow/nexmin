@@ -161,6 +161,21 @@ export async function virtualMinCall(
       text,
     );
   }
+
+  if (parsed && typeof parsed === "object") {
+    const envelope = parsed as Record<string, unknown>;
+    const status = String(envelope.status ?? "").toLowerCase();
+    if (status === "failure" || status === "error") {
+      const msg = String(
+        envelope.error ??
+          envelope.full_error ??
+          envelope.message ??
+          "VirtualMin command failed.",
+      );
+      throw new VirtualMinError(msg, exitCode, text);
+    }
+  }
+
   if (exitCode !== undefined && exitCode !== 0) {
     const msg =
       typeof parsed === "object" && parsed && "error" in parsed
@@ -500,7 +515,11 @@ export async function listDomains(actor: {
   role: Role;
   domains: string[];
 }): Promise<VirtualMinDomain[]> {
-  const data = await virtualMinCall("list-domains", {}, actor);
+  const data = await virtualMinCall(
+    "list-domains",
+    { multiline: "1", "toplevel": "1" },
+    actor,
+  );
   const rows = normalizeList(data);
   const mapped = rows.map((row) => ({
     name: rowDomainName(row),
@@ -1261,7 +1280,12 @@ export async function createDomain(
     pass: input.pass,
     user: input.user?.trim() || defaultDomainUnixUser(input.domain),
     desc: input.domain,
-    "default-features": "1",
+    unix: "1",
+    dir: "1",
+    web: "1",
+    dns: "1",
+    mail: "1",
+    mysql: "1",
   };
   if (input.plan) params.plan = input.plan;
   if (input.parent) params.parent = input.parent;

@@ -42,13 +42,16 @@ export async function POST(request: Request) {
       },
       session,
     );
-    const domains = await listDomains(session);
-    const created = domains.find(
-      (d) => d.name.toLowerCase() === domainName,
-    );
+    let created: Awaited<ReturnType<typeof listDomains>>[number] | undefined;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const domains = await listDomains(session);
+      created = domains.find((d) => d.name.toLowerCase() === domainName);
+      if (created) break;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
     if (!created) {
       return jsonError(
-        "VirtualMin processed the request but the domain is not listed yet. Check Webmin (:10000) or server logs.",
+        "VirtualMin did not list the new domain. Open Webmin (:10000) or run: virtualmin list-domains. Check postfix/hostname on the server.",
         502,
       );
     }
