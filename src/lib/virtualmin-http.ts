@@ -1,6 +1,5 @@
 import http from "node:http";
 import https from "node:https";
-import { Readable } from "node:stream";
 
 function virtualMinUrlIsLocal(): boolean {
   const url = process.env.VIRTUALMIN_URL?.trim();
@@ -65,6 +64,10 @@ function nodeRequest(
 ): Promise<Response> {
   const target = new URL(url);
   const body = requestBody(init);
+  const headers = headersToRecord(init.headers);
+  if (body) {
+    headers["Content-Length"] = String(Buffer.byteLength(body, "utf8"));
+  }
 
   return new Promise((resolve, reject) => {
     const req = mod.request(
@@ -74,7 +77,7 @@ function nodeRequest(
         port: target.port || (target.protocol === "https:" ? 443 : 80),
         path: `${target.pathname}${target.search}`,
         method: init.method ?? "GET",
-        headers: headersToRecord(init.headers),
+        headers,
         agent,
       },
       (res) => {
@@ -92,7 +95,7 @@ function nodeRequest(
             }
           }
           resolve(
-            new Response(Readable.toWeb(Readable.from(buf)) as ReadableStream<Uint8Array>, {
+            new Response(new Uint8Array(buf), {
               status: res.statusCode ?? 500,
               headers: responseHeaders,
             }),
