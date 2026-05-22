@@ -407,16 +407,22 @@ export const ADMIN_CLOUD_PROGRAMS = [
 
 export const IMPLEMENTED_PHASE: FeaturePhase = 8;
 
+/** Primary server admin — no Webmin embed menus (phase 4). */
 export const ADMIN_NAV = [
   { path: "/admin", label: "Overview" },
   { path: "/admin/status", label: "Status" },
-  { path: "/admin/server", label: "Server" },
+  { path: "/admin/server", label: "Services" },
   { path: "/admin/resellers", label: "Resellers" },
   { path: "/admin/plans", label: "Plans" },
   { path: "/admin/templates", label: "Templates" },
   { path: "/admin/admins", label: "Administrators" },
   { path: "/admin/license", label: "License" },
   { path: "/admin/cloud", label: "Cloud (S3)" },
+] as const;
+
+/** Break-glass Webmin module browsers — hidden from main nav unless env enabled. */
+export const ADMIN_NAV_WEBMIN = [
+  { path: "/admin/webmin", label: "Webmin (break-glass)" },
   { path: "/admin/system", label: "Virtualmin" },
   { path: "/admin/system-menu", label: "System" },
   { path: "/admin/servers-menu", label: "Servers" },
@@ -424,8 +430,14 @@ export const ADMIN_NAV = [
   { path: "/admin/networking-menu", label: "Network" },
   { path: "/admin/hardware-menu", label: "Hardware" },
   { path: "/admin/cluster-menu", label: "Cluster" },
-  { path: "/admin/webmin", label: "Webmin links" },
 ] as const;
+
+export function adminNavItems(): readonly { path: string; label: string }[] {
+  const showWebmin =
+    process.env.QADBAK_SHOW_WEBMIN_NAV === "true" ||
+    process.env.QADBAK_SHOW_WEBMIN_NAV === "1";
+  return showWebmin ? [...ADMIN_NAV, ...ADMIN_NAV_WEBMIN] : ADMIN_NAV;
+}
 
 const GLOBAL_ADMIN_BASE = [
   "list-domains",

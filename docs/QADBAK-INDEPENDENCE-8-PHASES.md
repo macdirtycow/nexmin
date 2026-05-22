@@ -129,7 +129,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 4 — Server & reseller zonder Webmin-menu
+## Fase 4 — Server & reseller zonder Webmin-menu ✅ in repo
 
 **Doel:** Admin beheert server vanuit Qadbak (status, diensten, firewall, plannen).
 
@@ -137,6 +137,8 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 - Diensten: nginx, apache, postfix, bind — start/stop/restart met policy
 - Resellers/plannen: native forms
 - Backups: scripts + S3 (bestaande richting in repo)
+
+**Gedaan:** `AdminHostMetrics` + `/api/admin/host-metrics`; `host-services-helper` + sudo; Webmin uit header/admin-nav (break-glass link op overview); `QADBAK_SHOW_WEBMIN_NAV` voor oude menu’s.
 
 **Exit:** Admin opent `:10000` niet meer; optioneel alleen break-glass SSH.
 

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_NAV } from "@/lib/features";
+import { adminNavItems } from "@/lib/features";
 
 export function AdminNav() {
   const pathname = usePathname();
   return (
     <nav className="flex flex-wrap gap-2 border-b border-panel-border pb-4">
-      {ADMIN_NAV.map((item) => (
+      {adminNavItems().map((item) => (
         <Link
           key={item.path}
           href={item.path}
