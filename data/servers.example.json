@@ -1,0 +1,10 @@
+[
+  {
+    "id": "local",
+    "name": "Primary node",
+    "roles": ["panel", "provisioner"],
+    "agentUrl": "http://127.0.0.1:9100",
+    "virtualminUrl": "https://127.0.0.1:10000/virtual-server/remote.cgi",
+    "isDefault": true
+  }
+]

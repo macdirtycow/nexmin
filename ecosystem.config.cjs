@@ -46,5 +46,12 @@ module.exports = {
       interpreter: "node",
       env,
     },
+    {
+      name: "qadbak-node-agent",
+      cwd: __dirname,
+      script: "scripts/qadbak-node-agent.mjs",
+      interpreter: "node",
+      env,
+    },
   ],
 };

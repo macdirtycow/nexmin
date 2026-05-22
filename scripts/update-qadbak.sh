@@ -60,7 +60,9 @@ if [[ "$(id -u)" -eq 0 ]]; then
     echo "==> Install E2E skipped (set QADBAK_E2E_ADMIN_PASS in .env.local or keep .install-test.env)" >&2
   fi
 fi
-if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/apply-phase6-test-server.sh" ]]; then
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/apply-phase7-test-server.sh" ]]; then
+  echo "Test VPS phase 7: sudo bash $ROOT/scripts/apply-phase7-test-server.sh"
+elif [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/apply-phase6-test-server.sh" ]]; then
   echo "Test VPS (hybrid phase 6): sudo bash $ROOT/scripts/apply-phase6-test-server.sh"
 fi
 echo "Done."

@@ -177,15 +177,21 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 7 — Multi-server & API (optioneel product)
+## Fase 7 — Multi-server & API ✅ foundation in repo
 
 **Doel:** Meerdere nodes, één panel (zoals ISPConfig remote).
 
-- Agent op elke node (REST + helpers)
-- Panel op centrale host
-- DNS/mail/web sync
+| Onderdeel | Status |
+|-----------|--------|
+| Node agent (`qadbak-node-agent`, :9100) | ✅ pm2 + health + VirtualMin proxy |
+| Registry `data/servers.json` | ✅ |
+| Admin **Nodes** + health | ✅ `/admin/nodes` |
+| Per-domain routing naar remote node | 🔜 volgende iteratie |
+| DNS/mail/web sync over cluster | 🔜 |
 
-**Exit:** 2+ VPS onder één Qadbak; niet vereist voor single-server MVP.
+**Test VPS:** `sudo bash scripts/apply-phase7-test-server.sh` — docs [PHASE-7-MULTI-SERVER.md](./PHASE-7-MULTI-SERVER.md).
+
+**Exit (volledig):** 2+ VPS onder één Qadbak met provisioning op gekozen node; single-server MVP werkt al met alleen `local`.
 
 ---
 
