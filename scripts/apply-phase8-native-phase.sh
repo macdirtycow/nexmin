@@ -6,7 +6,9 @@ FEATURES="${1:?features comma-separated, e.g. ssl,dns,mail}"
 [[ "$(id -u)" -eq 0 ]] || { echo "Run as root" >&2; exit 1; }
 
 cd "$QADBAK_DIR"
-git pull --ff-only 2>/dev/null || true
+echo "==> git pull"
+bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
+git pull --ff-only
 bash "$QADBAK_DIR/scripts/fix-qadbak-ownership.sh"
 
 set_env() {
