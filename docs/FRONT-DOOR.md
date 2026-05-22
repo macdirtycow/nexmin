@@ -39,7 +39,7 @@ Set in `.env.local`:
 ```env
 QADBAK_PUBLIC_HOST=qadbak.com
 WEBMIN_UI_URL=https://your-server-fqdn:10000
-QADBAK_ORIGIN_IP=173.212.250.158
+QADBAK_ORIGIN_IP=YOUR_VPS_PUBLIC_IP
 ```
 
 `WEBMIN_UI_URL` is for login links and embeds, not customer websites.

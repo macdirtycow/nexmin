@@ -1,6 +1,6 @@
 #!/bin/bash
 # Fix website unreachable (502 / Cloudflare 523) for one VirtualMin domain.
-# Run on VPS: sudo bash scripts/fix-domain-website.sh siccamanagement.nl
+# Run on VPS: sudo bash scripts/fix-domain-website.sh YOUR_DOMAIN
 set -euo pipefail
 
 if [[ "${1:-}" == "__probe__" ]]; then

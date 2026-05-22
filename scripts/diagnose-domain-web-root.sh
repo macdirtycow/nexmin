@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Show where Apache/nginx think the website root is for a domain.
-# Usage: sudo bash scripts/diagnose-domain-web-root.sh siccamanagement.nl
+# Usage: sudo bash scripts/diagnose-domain-web-root.sh YOUR_DOMAIN
 set -euo pipefail
 
 DOMAIN="${1:-}"

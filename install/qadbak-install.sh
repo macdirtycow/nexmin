@@ -227,19 +227,15 @@ echo "==> pm2"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && pm2 delete qadbak 2>/dev/null || true; pm2 start npm --name qadbak -- start && pm2 save"
 env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DIR" | tail -1 | bash || true
 
-echo "==> nginx (panel host → Qadbak; other hosts → Apache; :10000 stays Webmin)"
+echo "==> Hosting stack (nginx, Apache, public_html vhosts, Webmin login)"
 export PANEL_HOST SERVER_FQDN
-bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
-if command -v virtualmin &>/dev/null; then
-  bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" || true
-fi
+bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 if [[ -n "$LE_EMAIL" ]]; then
   CERT_DOMAINS=(-d "$PANEL_HOST")
   [[ "$SERVER_FQDN" != "$PANEL_HOST" ]] && CERT_DOMAINS+=(-d "$SERVER_FQDN")
   certbot --nginx "${CERT_DOMAINS[@]}" --non-interactive --agree-tos -m "$LE_EMAIL" || true
-  bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
-  command -v virtualmin &>/dev/null && bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh" || true
+  bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 fi
 
 if [[ "$SET_UFW" =~ ^[Yy]$ ]]; then

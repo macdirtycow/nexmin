@@ -9,10 +9,12 @@ Qadbak server scripts are **not** tied to one customer domain. They read domains
 | `apply-hosting-nginx.sh` | Panel host + default_server; probes one domain for Apache backend |
 | `fix-domain-website.sh` | Per-domain VirtualMin/Apache fix |
 
-Examples in docs use `siccamanagement.nl` only as a sample hostname. On your VPS, pass **your** domain:
+Docs use `example.com` as a placeholder. On your VPS, pass **your** domain:
 
 ```bash
 sudo bash scripts/fix-domain-website.sh jouwdomein.nl
 ```
+
+Fresh installs run `scripts/install-hosting-stack.sh` automatically (see `install/qadbak-install.sh`).
 
 After **creating any domain** in the panel, Repair (or install) runs the same nginx + Apache setup for that unix user’s `public_html`.

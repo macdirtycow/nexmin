@@ -32,4 +32,4 @@ echo "==> Quick API check"
 sleep 2
 curl -sf "http://127.0.0.1:3000/api/health" | head -c 120 || true
 echo ""
-echo "Done. Open Domains in the panel (not New domain for siccamanagement.nl — it already exists)."
+echo "Done. Open Domains in the panel to manage your VirtualMin sites."
