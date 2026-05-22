@@ -20,12 +20,15 @@ Elke sub-fase voegt scripts + `QADBAK_NATIVE_FEATURES` toe. Hybrid blijft VM-fal
 cd /opt/qadbak
 git pull
 
-# In .env.local:
-# QADBAK_NATIVE_FEATURES=ssl,dns,mail,db,domain,backup,cron
-# QADBAK_PROVISIONER=hybrid
-# QADBAK_VIRTUALMIN_FALLBACK=true   # uit zetten als alles getest is
-
 sudo bash scripts/apply-phase8-native-enable.sh
+# Zet QADBAK_NATIVE_FEATURES=ssl,dns,mail,db,domain,backup,cron, rebuild + smoke tests
+```
+
+**Alleen ssl+dns al actief?** Voeg de rest toe:
+
+```bash
+sudo bash scripts/apply-phase8-native-phase.sh ssl,dns,mail,db,backup,cron
+# domain alleen op lege test-VPS (create/delete)
 ```
 
 ## Per fase inschakelen

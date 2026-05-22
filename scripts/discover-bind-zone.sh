@@ -38,14 +38,14 @@ fi
 
 echo "OK — zone file: $ZONE"
 
-if [[ -f "$REG" ]] && command -v jq &>/dev/null; then
-  tmp="$(mktemp)"
-  jq --arg d "$DOMAIN" --arg z "$ZONE" \
-    'map(if .name == $d then . + {zoneFile: $z} else . end)' "$REG" >"$tmp"
-  mv "$tmp" "$REG"
-  echo "    Updated $REG"
-elif [[ -f "$REG" ]]; then
-  echo "    (install jq to auto-update $REG, or add zoneFile manually)"
+if [[ -f "$REG" ]]; then
+  NODE_BIN="${QADBAK_NODE_BIN:-$(command -v node)}"
+  if [[ -n "$NODE_BIN" ]]; then
+    QADBAK_DIR="$QADBAK_DIR" "$NODE_BIN" "$QADBAK_DIR/scripts/lib/patch-registry-zone.mjs" "$DOMAIN" "$ZONE" && \
+      echo "    Updated $REG"
+  else
+    echo "    (node not found — run export-native-domains.sh)"
+  fi
 fi
 
 echo "Test:"
