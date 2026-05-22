@@ -136,7 +136,11 @@ export function FileManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed.");
-      setSuccess("File saved.");
+      setSuccess(
+        editPath.startsWith("public_html")
+          ? "File saved. If the live site still looks wrong, use Overview → Repair on server (Apache document root)."
+          : "File saved.",
+      );
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");
@@ -472,8 +476,7 @@ export function FileManager({
                           </Button>
                         )}
                         {entry.type === "file" &&
-                          entry.editable !== false &&
-                          writable && (
+                          (entry.deletable !== false && writable) && (
                             <Button
                               variant="ghost"
                               className="!px-2 !py-1 text-xs text-red-300"

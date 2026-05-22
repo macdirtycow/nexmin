@@ -53,9 +53,31 @@ if command -v virtualmin &>/dev/null; then
   echo "==> VirtualMin: enable web + validate $DOMAIN"
   virtualmin enable-feature --domain "$DOMAIN" --web 2>/dev/null || true
   virtualmin validate-domains --domain "$DOMAIN" --all-features 2>&1 || true
-  virtualmin modify-web --domain "$DOMAIN" --fix-document-dir --fix-options 2>&1 || true
+  virtualmin modify-web --domain "$DOMAIN" --document-dir public_html --fix-document-dir --fix-options 2>&1 || true
 else
   echo "virtualmin CLI not found — skip VM steps"
+fi
+
+echo ""
+echo "==> Apache: serve $DOMAIN from public_html (not Ubuntu default site)"
+if command -v a2dissite &>/dev/null; then
+  a2dissite 000-default.conf 2>/dev/null || true
+  a2dissite default.conf 2>/dev/null || true
+fi
+
+VM_USER=""
+if command -v virtualmin &>/dev/null; then
+  VM_USER="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
+fi
+[[ -z "$VM_USER" ]] && VM_USER="${DOMAIN%%.*}"
+PUB="/home/$VM_USER/public_html"
+if [[ -d "$PUB" ]]; then
+  chown -R "$VM_USER:$VM_USER" "$PUB"
+  find "$PUB" -type d -exec chmod 755 {} \;
+  find "$PUB" -type f -exec chmod 644 {} \;
+  echo "    document root: $PUB (owner $VM_USER)"
+else
+  echo "    WARN — missing $PUB" >&2
 fi
 
 for svc in apache2 httpd nginx; do
@@ -85,6 +107,10 @@ elif [[ "$HTTP_CODE" =~ ^[0-9]+$ ]] && (( HTTP_CODE > 0 && HTTP_CODE < 500 )); t
   if grep -qiE 'qadbak.*virtualmin|your hosting panel|sign in at qadbak' "$PROBE_BODY" 2>/dev/null; then
     echo "    WARN — Host $DOMAIN still serves the Qadbak marketing page (not public_html)"
     echo "    Fix:  sudo bash $ROOT/scripts/apply-hosting-nginx.sh"
+  elif grep -qiE 'apache2 ubuntu default|ubuntu default page|debian default page|it works!' "$PROBE_BODY" 2>/dev/null; then
+    echo "    WARN — Apache still serves the Ubuntu/Debian default page (not your public_html)"
+    echo "    Files to edit: $PUB/index.html — then re-run this script or Repair in Qadbak"
+    echo "    Also purge Cloudflare cache if you use orange-cloud proxy"
   else
     echo "    OK — HTTP $HTTP_CODE for Host: $DOMAIN"
   fi
