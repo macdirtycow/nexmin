@@ -8,6 +8,7 @@ export interface WebsiteProbeResult {
   error?: string;
   servingPanelLanding?: boolean;
   cloudflare523?: boolean;
+  cloudflare502?: boolean;
 }
 
 export interface WebsiteHealthReport {
@@ -49,6 +50,16 @@ function looksLikeCloudflare523(body: string, status: number): boolean {
   return sample.includes("error code: 523") || sample.includes("origin is unreachable");
 }
 
+function looksLikeCloudflare502(body: string, status: number): boolean {
+  if (status === 502) return true;
+  const sample = body.slice(0, 8000).toLowerCase();
+  return (
+    sample.includes("error code: 502") ||
+    sample.includes("bad gateway") ||
+    sample.includes("host error")
+  );
+}
+
 async function probeHttp(
   url: string,
   host: string,
@@ -62,23 +73,28 @@ async function probeHttp(
     const body = await res.text().catch(() => "");
     const servingPanelLanding = looksLikeQadbakLanding(body, res.headers);
     const cloudflare523 = looksLikeCloudflare523(body, res.status);
+    const cloudflare502 = looksLikeCloudflare502(body, res.status);
     const ok =
       res.status > 0 &&
       res.status < 500 &&
       !cloudflare523 &&
+      !cloudflare502 &&
       !servingPanelLanding;
     return {
       ok,
       status: res.status,
       servingPanelLanding,
       cloudflare523,
+      cloudflare502,
       error: servingPanelLanding
         ? "This hostname serves the Qadbak marketing page, not public_html."
         : cloudflare523
           ? "Cloudflare error 523 — origin unreachable from the internet."
-          : !ok
-            ? `HTTP ${res.status}`
-            : undefined,
+          : cloudflare502
+            ? "Cloudflare error 502 — nginx cannot reach Apache, or HTTPS to origin without a certificate."
+            : !ok
+              ? `HTTP ${res.status}`
+              : undefined,
     };
   } catch (e) {
     return {
@@ -94,7 +110,13 @@ async function probeLocalWebsite(domain: string): Promise<WebsiteProbeResult> {
 
 async function probePublicWebsite(domain: string): Promise<WebsiteProbeResult> {
   const https = await probeHttp(`https://${domain}/`, domain);
-  if (https.ok || https.status || https.servingPanelLanding || https.cloudflare523) {
+  if (
+    https.ok ||
+    https.status ||
+    https.servingPanelLanding ||
+    https.cloudflare523 ||
+    https.cloudflare502
+  ) {
     return https;
   }
   return probeHttp(`http://${domain}/`, domain);
@@ -121,7 +143,22 @@ function buildIssues(
     issues.push("Cloudflare cannot reach your server (error 523).");
   }
 
-  if (!localProbe.ok && !localProbe.servingPanelLanding && !publicProbe.cloudflare523) {
+  if (publicProbe.cloudflare502 && localProbe.ok) {
+    issues.push(
+      "Cloudflare 502 but origin works locally — set SSL mode to Flexible, or install HTTPS on the VPS.",
+    );
+  } else if (publicProbe.cloudflare502) {
+    issues.push(
+      "Cloudflare 502 — on VPS: sudo bash scripts/fix-origin-502.sh <domain>",
+    );
+  }
+
+  if (
+    !localProbe.ok &&
+    !localProbe.servingPanelLanding &&
+    !publicProbe.cloudflare523 &&
+    !publicProbe.cloudflare502
+  ) {
     issues.push(
       "Web server on this VPS does not answer for this domain — use Repair on server.",
     );
@@ -133,7 +170,12 @@ function buildIssues(
 
   if (publicProbe.ok && localProbe.ok) {
     issues.push("Website is reachable locally and on the internet.");
-  } else if (localProbe.ok && !publicProbe.cloudflare523 && !publicProbe.servingPanelLanding) {
+  } else if (
+    localProbe.ok &&
+    !publicProbe.cloudflare523 &&
+    !publicProbe.cloudflare502 &&
+    !publicProbe.servingPanelLanding
+  ) {
     issues.push(
       "Origin responds on this server — if visitors still see errors, check Cloudflare DNS and SSL mode.",
     );

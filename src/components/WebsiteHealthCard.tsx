@@ -9,6 +9,7 @@ type Probe = {
   error?: string;
   servingPanelLanding?: boolean;
   cloudflare523?: boolean;
+  cloudflare502?: boolean;
 };
 
 type Health = {
@@ -80,12 +81,16 @@ export function WebsiteHealthCard({
     health?.localProbe.servingPanelLanding || health?.publicProbe.servingPanelLanding;
   const cf523 =
     health?.publicProbe.cloudflare523 && !health?.publicProbe.ok;
+  const cf502 =
+    health?.publicProbe.cloudflare502 && !health?.publicProbe.ok;
   const siteOk = health?.publicProbe.ok && health?.localProbe.ok;
   const repairOk = health?.repairAvailable !== false;
 
   const subtitle = panelHijack
     ? "This domain shows the Qadbak landing page instead of your site in public_html."
-    : cf523
+    : cf502
+      ? "Cloudflare error 502 — origin answers badly (nginx→Apache or HTTPS without cert)."
+      : cf523
       ? "Cloudflare error 523 — the proxy cannot reach your origin on ports 80/443."
       : siteOk
         ? "Website responds on this server and on the internet."
@@ -179,7 +184,9 @@ export function WebsiteHealthCard({
                         : "text-amber-300"
                 }
               >
-                {health.publicProbe.cloudflare523
+                {health.publicProbe.cloudflare502
+                  ? `Cloudflare 502 — HTTP ${health.publicProbe.status ?? ""}`
+                  : health.publicProbe.cloudflare523
                   ? `Cloudflare 523 — HTTP ${health.publicProbe.status ?? ""}`
                   : health.publicProbe.servingPanelLanding
                     ? "Qadbak landing — not your site"

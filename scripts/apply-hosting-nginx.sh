@@ -39,8 +39,14 @@ for candidate in "$PANEL_HOST" "$SERVER_FQDN"; do
   fi
 done
 
-APACHE_BACKEND="$(bash "$QADBAK_DIR/scripts/detect-apache-backend.sh")"
-echo "==> Apache backend for hosted sites: $APACHE_BACKEND"
+DETECT_DOMAIN="${DETECT_DOMAIN:-siccamanagement.nl}"
+APACHE_BACKEND="$(DETECT_DOMAIN="$DETECT_DOMAIN" bash "$QADBAK_DIR/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
+echo "==> Web backend for hosted sites (probe Host: $DETECT_DOMAIN): $APACHE_BACKEND"
+PROBE_CODE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 -H "Host: $DETECT_DOMAIN" "http://$APACHE_BACKEND/" 2>/dev/null || echo 000)"
+if [[ "$PROBE_CODE" == "502" || "$PROBE_CODE" == "000" ]]; then
+  echo "WARN: backend $APACHE_BACKEND returned HTTP $PROBE_CODE — site may show Cloudflare 502." >&2
+  echo "       Run: sudo bash scripts/fix-origin-502.sh $DETECT_DOMAIN" >&2
+fi
 echo "==> Panel hostname (Qadbak UI): $PANEL_HOST"
 if [[ -n "$SSL_CERT_HOST" ]]; then
   echo "==> TLS certificate: /etc/letsencrypt/live/$SSL_CERT_HOST/"
