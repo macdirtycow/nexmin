@@ -16,7 +16,7 @@ fi
 cd "$QADBAK_DIR"
 echo "==> Phase 8 test-server apply (path to no Webmin UI)"
 
-bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh" 2>/dev/null || true
+bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
 git pull --ff-only
 bash "$QADBAK_DIR/scripts/fix-qadbak-ownership.sh"
 

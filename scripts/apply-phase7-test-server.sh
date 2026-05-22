@@ -16,9 +16,7 @@ fi
 cd "$QADBAK_DIR"
 echo "==> Phase 7 test-server apply ($QADBAK_DIR)"
 
-if ! git diff --quiet package-lock.json scripts/run-domain-fs-helper.sh 2>/dev/null; then
-  bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
-fi
+bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
 git pull --ff-only
 bash "$QADBAK_DIR/scripts/fix-qadbak-ownership.sh"
 
