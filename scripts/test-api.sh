@@ -23,15 +23,19 @@ fi
 : "${VIRTUALMIN_USER:?Set VIRTUALMIN_USER}"
 : "${VIRTUALMIN_PASS:?Set VIRTUALMIN_PASS}"
 
+TEST_DOMAIN="${TEST_DOMAIN:-siccamanagement.nl}"
+
 call_api() {
   local program="$1"
   shift
   echo "=== $program ==="
-  local -a extra=(--data-urlencode "json=1")
+  local -a extra=()
   if [[ "$program" == list-* ]]; then
-    extra+=(--data-urlencode "multiline=")
+    extra=(--data-urlencode "json=1" --data-urlencode "multiline=")
+  elif [[ "$program" == "create-login-link" ]]; then
+    extra=()
   else
-    extra+=(--data-urlencode "simple-multiline=")
+    extra=(--data-urlencode "json=1" --data-urlencode "simple-multiline=")
   fi
   curl -sk \
     -u "${VIRTUALMIN_USER}:${VIRTUALMIN_PASS}" \
@@ -46,8 +50,8 @@ call_api() {
 }
 
 call_api "list-domains"
-call_api "create-login-link" --data-urlencode "domain=${TEST_DOMAIN:-example.com}"
-call_api "list-users" --data-urlencode "domain=${TEST_DOMAIN:-}"
-call_api "list-databases" --data-urlencode "domain=${TEST_DOMAIN:-}"
+call_api "create-login-link" --data-urlencode "domain=${TEST_DOMAIN}"
+call_api "list-users" --data-urlencode "domain=${TEST_DOMAIN}"
+call_api "list-databases" --data-urlencode "domain=${TEST_DOMAIN}"
 
-echo "OK — if you see JSON above, Remote API works."
+echo "OK — list-domains should show domain data; create-login-link should not mention simple-multiline."

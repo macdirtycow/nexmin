@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$ROOT/.env.local"
 FQDN="$(hostname -f 2>/dev/null || hostname)"
-PUBLIC_IP="$(curl -fsS --max-time 3 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
+PUBLIC_IP="$(curl -4 -fsS --max-time 5 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run as root: sudo bash scripts/fix-virtualmin-access.sh" >&2
@@ -50,7 +50,7 @@ if [[ -n "$VM_PASS" && -f "$ENV_FILE" ]]; then
   echo "  Updated VIRTUALMIN_PASS in .env.local"
 fi
 
-WEBMIN_URL="https://${PUBLIC_IP}:10000"
+WEBMIN_URL="https://${FQDN}:10000"
 if [[ -f "$ENV_FILE" ]]; then
   for key in WEBMIN_UI_URL VIRTUALMIN_UI_URL; do
     if grep -q "^${key}=" "$ENV_FILE"; then
@@ -85,6 +85,6 @@ sudo -u qadbak bash -c "cd '$ROOT' && pm2 restart qadbak"
 echo ""
 echo "============================================"
 echo " Browser (admin): $WEBMIN_URL"
-echo " Qadbak login:    http://${PUBLIC_IP}:11000/login"
+echo " Qadbak login:    http://${PUBLIC_IP}:11000/login  (or https://${FQDN} if nginx panel vhost)"
 echo " After login, Domains should list VM domains if test-api OK."
 echo "============================================"

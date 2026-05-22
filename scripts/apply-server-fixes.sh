@@ -14,6 +14,12 @@ cd "$QADBAK_DIR"
 echo "==> git pull"
 git pull
 
+if [[ -f "$QADBAK_DIR/.env.local" ]] && grep -q '^NODE_TLS_REJECT_UNAUTHORIZED=' "$QADBAK_DIR/.env.local" 2>/dev/null; then
+  sed -i '/^NODE_TLS_REJECT_UNAUTHORIZED=/d' "$QADBAK_DIR/.env.local"
+  grep -q '^VIRTUALMIN_TLS_INSECURE=' "$QADBAK_DIR/.env.local" || echo 'VIRTUALMIN_TLS_INSECURE=true' >>"$QADBAK_DIR/.env.local"
+  echo "    Removed NODE_TLS_REJECT_UNAUTHORIZED from .env.local"
+fi
+
 echo "==> Nginx (hosted domains → Apache, panel host → Qadbak)"
 bash "$QADBAK_DIR/scripts/apply-hosting-nginx.sh"
 
