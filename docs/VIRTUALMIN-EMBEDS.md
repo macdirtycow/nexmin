@@ -4,7 +4,9 @@
 
 Embeds use `create-login-link` for **every** domain — no hardcoded hostname. The panel passes `domain=…` and an optional redirect path (`/xterm/index.cgi?user=…`, `/filemin/index.cgi`, etc.).
 
-Webmin is proxied at **`/embed/webmin/`** on the same host/port as Qadbak so Terminal works inside the panel iframe (avoids blank screen from `:10000` cross-origin blocking).
+Webmin is proxied at **`/embed/webmin/`** on the same host/port as Qadbak so Terminal works inside the panel iframe. Login uses VirtualMin **`create-login-link`** (one-time URL) — users should **not** type a Webmin password in the panel. If you see a login form, run `configure-webmin-embed.sh` again after `sync-webmin-embed-env.sh`.
+
+Long term, Qadbak replaces Webmin screens with native UI (`docs/ROADMAP-NATIVE.md`); VirtualMin stays the engine on the server, not something clients open.
 
 On the VPS after `git pull`:
 
