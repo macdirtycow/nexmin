@@ -1,8 +1,8 @@
 import { WebminEmbed } from "@/components/WebminEmbed";
 import { DomainPageHeader } from "@/components/DomainPageHeader";
 import { requireDomainAccess } from "@/lib/domain-api";
-import { VIRTUALMIN_EMBED_PATHS } from "@/lib/virtualmin-embed";
-import { createVirtualMinLoginLink } from "@/lib/virtualmin";
+import { domainTerminalEmbedPath } from "@/lib/webmin-embed-url";
+import { createVirtualMinLoginLink, resolveDomainUnixUser } from "@/lib/virtualmin";
 
 type Props = { params: Promise<{ domain: string }> };
 
@@ -13,8 +13,9 @@ export default async function DomainTerminalPage({ params }: Props) {
   let initialUrl: string | null = null;
   let initialError = "";
   try {
+    const unixUser = await resolveDomainUnixUser(domain, session);
     initialUrl = await createVirtualMinLoginLink(domain, session, {
-      redirectUrl: VIRTUALMIN_EMBED_PATHS.terminal,
+      redirectUrl: domainTerminalEmbedPath(unixUser),
       preferUsermin: false,
     });
   } catch (e) {

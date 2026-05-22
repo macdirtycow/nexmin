@@ -1,3 +1,5 @@
+import { domainTerminalEmbedPath } from "./webmin-embed-url";
+
 /** Webmin paths for domain embeds (create-login-link redirect-url). */
 export const VIRTUALMIN_EMBED_PATHS = {
   terminal: "/xterm/",
@@ -7,8 +9,14 @@ export const VIRTUALMIN_EMBED_PATHS = {
 
 export type VirtualminEmbedDest = keyof typeof VIRTUALMIN_EMBED_PATHS;
 
-export function virtualminEmbedPath(dest: string | null): string | undefined {
+export function virtualminEmbedPath(
+  dest: string | null,
+  domainUnixUser?: string,
+): string | undefined {
   if (!dest) return undefined;
+  if (dest === "terminal" && domainUnixUser) {
+    return domainTerminalEmbedPath(domainUnixUser);
+  }
   if (dest in VIRTUALMIN_EMBED_PATHS) {
     return VIRTUALMIN_EMBED_PATHS[dest as VirtualminEmbedDest];
   }
