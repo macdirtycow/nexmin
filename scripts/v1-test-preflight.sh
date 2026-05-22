@@ -69,7 +69,14 @@ else
   echo "==> VirtualMin API"
 fi
 if bash scripts/test-api.sh >/tmp/qadbak-test-api.out 2>&1; then
-  if grep -q 'list-domains' /tmp/qadbak-test-api.out; then
+  if [[ "${QADBAK_PROVISIONER:-}" == "hybrid" || "${QADBAK_PROVISIONER:-}" == "native" ]]; then
+    if grep -qE 'native-domains\.json|native domain registry' /tmp/qadbak-test-api.out; then
+      pass "native domain registry (phase 8)"
+    else
+      fail "test-native-domains — see /tmp/qadbak-test-api.out"
+      tail -10 /tmp/qadbak-test-api.out 2>/dev/null || true
+    fi
+  elif grep -q 'list-domains' /tmp/qadbak-test-api.out; then
     pass "npm run test-api (list-domains)"
   else
     fail "test-api ran but no list-domains output"
