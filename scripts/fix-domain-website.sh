@@ -20,6 +20,8 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/fix-apache-vhost.sh
+source "$ROOT/scripts/lib/fix-apache-vhost.sh"
 
 echo "==> Firewall: allow HTTP/HTTPS on host"
 bash "$ROOT/scripts/open-host-firewall-port.sh" 80
@@ -58,24 +60,25 @@ else
   echo "virtualmin CLI not found — skip VM steps"
 fi
 
-echo ""
-echo "==> Apache: serve $DOMAIN from public_html (not Ubuntu default site)"
-if command -v a2dissite &>/dev/null; then
-  a2dissite 000-default.conf 2>/dev/null || true
-  a2dissite default.conf 2>/dev/null || true
-fi
-
 VM_USER=""
 if command -v virtualmin &>/dev/null; then
   VM_USER="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
 fi
 [[ -z "$VM_USER" ]] && VM_USER="${DOMAIN%%.*}"
 PUB="/home/$VM_USER/public_html"
+
+APACHE_BACKEND=""
+if [[ -f "$ROOT/scripts/detect-web-backend.sh" ]]; then
+  APACHE_BACKEND="$(DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
+fi
+export APACHE_BACKEND
+
+fix_apache_vhost_for_domain "$DOMAIN" "$VM_USER" "$PUB" "$ROOT"
+
 if [[ -d "$PUB" ]]; then
   chown -R "$VM_USER:$VM_USER" "$PUB"
   find "$PUB" -type d -exec chmod 755 {} \;
   find "$PUB" -type f -exec chmod 644 {} \;
-  echo "    document root: $PUB (owner $VM_USER)"
 else
   echo "    WARN — missing $PUB" >&2
 fi
@@ -90,7 +93,18 @@ if [[ -z "$ORIGIN_IP" ]]; then
 fi
 
 echo ""
-echo "==> Local probe (nginx → Apache for Host: $DOMAIN)"
+echo "==> Probe: does Apache use public_html for Host: $DOMAIN?"
+[[ -n "$APACHE_BACKEND" ]] && echo "    backend: http://$APACHE_BACKEND/"
+BACKEND_RESULT="$(probe_web_root "$DOMAIN" "${APACHE_BACKEND:-127.0.0.1:8080}")"
+case "$BACKEND_RESULT" in
+  ok) echo "    Apache backend → your site (not /var/www/html)" ;;
+  ubuntu-default) echo "    FAIL — Apache backend still serves /var/www/html (Ubuntu default)" >&2 ;;
+  qadbak-landing) echo "    WARN — backend serves Qadbak landing" >&2 ;;
+  *) echo "    WARN — backend probe: $BACKEND_RESULT" >&2 ;;
+esac
+
+echo ""
+echo "==> Local probe (nginx :80 → Apache for Host: $DOMAIN)"
 PROBE_BODY="$(mktemp)"
 trap 'rm -f "$PROBE_BODY"' EXIT
 HTTP_CODE="$(curl -sS --max-time 8 -o "$PROBE_BODY" -w '%{http_code}' -H "Host: $DOMAIN" http://127.0.0.1/ || echo 000)"
