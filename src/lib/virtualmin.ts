@@ -13,6 +13,7 @@ export { VirtualMinError } from "./errors";
 import { parseDomainsListRows } from "./virtualmin-api-parse";
 import { VirtualMinError } from "./errors";
 import { virtualMinFetch } from "./virtualmin-http";
+import { rewriteWebminLoginUrlForEmbed } from "./webmin-embed-url";
 
 function normalizeFieldKey(key: string): string {
   return key.toLowerCase().replace(/\s+/g, "_");
@@ -303,16 +304,17 @@ export async function callCreateLoginLink(
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
   const redirect = params["redirect-url"];
+  const finish = (url: string) => rewriteWebminLoginUrlForEmbed(url);
   try {
     const data = await virtualMinCall("create-login-link", params, actor);
-    return parseCreateLoginLinkResponse(data, params, redirect);
+    return finish(parseCreateLoginLinkResponse(data, params, redirect));
   } catch (err) {
     if (redirect && isUnknownParamLoginLinkError(err)) {
       const retry = { ...params };
       delete retry["redirect-url"];
       const data = await virtualMinCall("create-login-link", retry, actor);
       const base = parseCreateLoginLinkResponse(data, retry);
-      return appendLoginRedirectPath(base, redirect);
+      return finish(appendLoginRedirectPath(base, redirect));
     }
     throw err;
   }

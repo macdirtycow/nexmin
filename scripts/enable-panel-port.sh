@@ -34,6 +34,13 @@ systemctl reload nginx
 
 bash "$ROOT/scripts/open-host-firewall-port.sh" "$PORT"
 
+PUBLIC_IP="$(curl -fsS --max-time 3 ifconfig.me 2>/dev/null || true)"
+if [[ -n "$PUBLIC_IP" ]]; then
+  export QADBAK_PANEL_URL="http://${PUBLIC_IP}:${PORT}"
+  export QADBAK_PANEL_PORT="$PORT"
+  bash "$ROOT/scripts/sync-webmin-embed-env.sh" 2>/dev/null || true
+fi
+
 echo ""
 echo "Contabo: Network Services → Firewall → Inbound: TCP $PORT Accept (before Block all), VPS assigned."
 echo "Also open TCP $PORT in your VPS provider firewall (Contabo panel)."

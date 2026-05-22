@@ -2,7 +2,18 @@
 
 ## Universal behaviour
 
-Embeds use `create-login-link` for **every** domain — no hardcoded hostname. The panel passes `domain=…` and an optional redirect path (`/xterm/`, `/filemin/index.cgi`, etc.).
+Embeds use `create-login-link` for **every** domain — no hardcoded hostname. The panel passes `domain=…` and an optional redirect path (`/xterm/index.cgi?user=…`, `/filemin/index.cgi`, etc.).
+
+Webmin is proxied at **`/embed/webmin/`** on the same host/port as Qadbak so Terminal works inside the panel iframe (avoids blank screen from `:10000` cross-origin blocking).
+
+On the VPS after `git pull`:
+
+```bash
+sudo bash scripts/install-hosting-stack.sh
+sudo bash scripts/sync-webmin-embed-env.sh
+sudo -u qadbak bash -c 'cd /opt/qadbak && npm run build'
+sudo bash scripts/pm2-restart-qadbak.sh
+```
 
 ## Error: `Virtual server … has no Webmin login`
 

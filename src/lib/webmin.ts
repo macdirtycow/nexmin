@@ -22,6 +22,10 @@ export interface WebminModule {
 }
 
 export function webminUiBase(): string {
+  const embed = process.env.QADBAK_WEBMIN_EMBED_BASE?.replace(/\/$/, "");
+  if (embed) return embed;
+  const panel = process.env.QADBAK_PANEL_URL?.replace(/\/$/, "");
+  if (panel) return `${panel}/embed/webmin`;
   return (
     process.env.WEBMIN_UI_URL ??
     process.env.VIRTUALMIN_UI_URL ??
