@@ -11,8 +11,50 @@ import path from "node:path";
 
 const execFileAsync = promisify(execFile);
 
-const MAX_READ_BYTES = 2 * 1024 * 1024;
+const MAX_READ_BYTES = 5 * 1024 * 1024;
 const MAX_WRITE_BYTES = 10 * 1024 * 1024;
+
+/** Keep in sync with TEXT_EXTENSIONS in src/lib/domain-files.ts */
+const TEXT_EXTENSIONS = new Set([
+  "html",
+  "htm",
+  "css",
+  "js",
+  "mjs",
+  "json",
+  "txt",
+  "md",
+  "xml",
+  "svg",
+  "php",
+  "cgi",
+  "sh",
+  "py",
+  "yml",
+  "yaml",
+  "env",
+  "htaccess",
+  "conf",
+  "ini",
+  "log",
+]);
+
+function fileExtension(name) {
+  if (name === ".htaccess" || name.startsWith(".env")) return "htaccess";
+  if (name.startsWith(".")) {
+    const parts = name.slice(1).split(".");
+    return parts.length > 1 ? parts.pop().toLowerCase() : name.slice(1).toLowerCase();
+  }
+  const idx = name.lastIndexOf(".");
+  return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
+}
+
+function isTextByPath(filePath) {
+  const base = path.basename(filePath);
+  if (base === ".htaccess" || base.startsWith(".env")) return true;
+  const ext = fileExtension(base);
+  return ext !== "" && TEXT_EXTENSIONS.has(ext);
+}
 
 function fail(message, code = 1) {
   process.stderr.write(`${message}\n`);
@@ -65,21 +107,30 @@ async function readFile(absPath) {
   if (!st.isFile()) fail("Not a file.");
   if (st.size > MAX_READ_BYTES) fail("File too large to read in panel.");
   const buf = await fs.readFile(resolved);
-  const base64 = buf.toString("base64");
-  const text = buf.toString("utf8");
-  const isText = !buf.includes(0) && text.length === buf.length;
+  if (isTextByPath(resolved)) {
+    emit({
+      ok: true,
+      sizeBytes: st.size,
+      encoding: "text",
+      content: buf.toString("latin1"),
+    });
+    return;
+  }
+  const hasNull = buf.includes(0);
+  const isText = !hasNull;
   emit({
     ok: true,
     sizeBytes: st.size,
     encoding: isText ? "text" : "base64",
-    content: isText ? text : base64,
+    content: isText ? buf.toString("utf8") : buf.toString("base64"),
   });
 }
 
 async function writeFile(absPath, content) {
   const parent = path.dirname(absPath);
   await assertHomePath(parent);
-  const bytes = Buffer.from(content, "utf8");
+  const encoding = isTextByPath(absPath) ? "latin1" : "utf8";
+  const bytes = Buffer.from(content, encoding);
   if (bytes.length > MAX_WRITE_BYTES) fail("File too large.");
   await fs.writeFile(absPath, bytes, { flag: "w" });
   emit({ ok: true });
