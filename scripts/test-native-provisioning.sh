@@ -3,9 +3,9 @@ set -euo pipefail
 ROOT="${QADBAK_DIR:-/opt/qadbak}"
 DOMAIN="${TEST_DOMAIN:-siccamanagement.nl}"
 WRAPPER="$ROOT/scripts/run-provisioning-helper.sh"
-FEATURES="${QADBAK_NATIVE_FEATURES:-}"
 
 [[ -f "$ROOT/.env.local" ]] && source "$ROOT/.env.local"
+FEATURES="${QADBAK_NATIVE_FEATURES:-}"
 
 has() { echo "$FEATURES" | tr ',' '\n' | grep -qx "$1"; }
 
