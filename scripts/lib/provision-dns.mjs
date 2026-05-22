@@ -112,10 +112,35 @@ async function findZonePath(domain) {
   );
 }
 
-function parseZone(text, origin) {
-  const records = [];
+/** Collapse BIND multi-line SOA ( ... ) into one line for parsing. */
+function normalizeZoneText(text) {
+  const out = [];
+  let soaLine = null;
   for (const raw of text.split("\n")) {
     const line = raw.split(";")[0].trim();
+    if (!line) continue;
+    if (soaLine !== null) {
+      soaLine += ` ${line}`;
+      if (line.includes(")")) {
+        out.push(soaLine);
+        soaLine = null;
+      }
+      continue;
+    }
+    if (/\bSOA\b/i.test(line) && line.includes("(") && !line.includes(")")) {
+      soaLine = line;
+      continue;
+    }
+    out.push(line);
+  }
+  if (soaLine) out.push(soaLine);
+  return out.join("\n");
+}
+
+function parseZone(text, origin) {
+  const records = [];
+  for (const raw of normalizeZoneText(text).split("\n")) {
+    const line = raw.trim();
     if (!line || line.startsWith("$")) continue;
     const parts = line.split(/\s+/).filter(Boolean);
     if (parts.length < 3) continue;
@@ -134,6 +159,9 @@ function parseZone(text, origin) {
     const type = parts[i++]?.toUpperCase();
     if (!type) continue;
     let value = parts.slice(i).join(" ").replace(/\.$/, "");
+    if (type === "SOA") {
+      value = value.replace(/^\(/, "").replace(/\)\s*$/, "").replace(/\s+/g, " ").trim();
+    }
     let priority;
     if (type === "MX" || type === "SRV") {
       const m = value.match(/^(\d+)\s+(.+)$/);

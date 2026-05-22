@@ -26,6 +26,11 @@ set_env QADBAK_NATIVE_FEATURES "$FEATURES"
 bash "$QADBAK_DIR/scripts/configure-provisioning-helper-sudo.sh"
 bash "$QADBAK_DIR/scripts/export-native-domains.sh" 2>/dev/null || true
 
+if echo ",$FEATURES," | grep -q ',dns,'; then
+  echo "==> Discover BIND zone files"
+  bash "$QADBAK_DIR/scripts/discover-all-bind-zones.sh" || true
+fi
+
 sudo -u qadbak bash -c "cd '$QADBAK_DIR' && npm run build"
 sudo -u qadbak bash -c "cd '$QADBAK_DIR' && bash scripts/pm2-restart-qadbak.sh"
 

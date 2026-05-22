@@ -45,12 +45,12 @@ Prioriteit voor **één testdomein** (`siccamanagement.nl`) — daarna pas `apt 
 | Website / vhost | Qadbak nginx scripts | ✅ grotendeels | `apply-customer-nginx-vhosts.sh`, `fix-domain-website.sh` |
 | Bestanden | `domain-fs-helper` | ✅ klaar | — |
 | Terminal | `qadbak-terminal` WS | ✅ klaar | — |
-| SSL Let's Encrypt | VM API | 🔴 | `certbot` wrapper per domein |
-| DNS records | VM API | 🔴 | zone files / `nsupdate` helper |
-| Mail mailboxen | VM API | 🔴 | Postfix/Dovecot maps + scripts |
-| Databases | VM API | 🔴 | `mysql` CLI + user per domein |
-| Cron | VM API + helper | 🟡 | helper uitbreiden |
-| Backups | VM API | 🔴 | tar/rsync + schema |
+| SSL Let's Encrypt | native `ssl` flag | 🟡 | `certbot` — test op VPS |
+| DNS records | native `dns` flag | 🟡 | `.hosts` zone files — test panel |
+| Mail mailboxen | native `mail` (VM CLI) | 🟡 | `virtualmin list-users` — geen API |
+| Databases | native `db` flag | 🟡 | `mysql` root — test panel |
+| Cron | native `cron` flag | 🟡 | `crontab -u` |
+| Backups | native `backup` flag | 🟡 | `~/backups/*.tar.gz` |
 | Nieuw/verwijder domein | VM API | 🔴 | Hestia-achtige `qadbak-add-domain.sh` |
 | PHP versie / pool | VM API | 🔴 | php-fpm pool templates |
 | FTP accounts | VM API | 🔴 | pure-ftpd / proftpd scripts |
