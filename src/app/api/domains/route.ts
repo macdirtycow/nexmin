@@ -7,6 +7,7 @@ import {
   findDomainByName,
   listDomains,
 } from "@/lib/virtualmin";
+import { repairAvailable, repairDomainWebsite } from "@/lib/domain-repair";
 import { VirtualMinError } from "@/lib/errors";
 
 export async function GET() {
@@ -91,7 +92,20 @@ export async function POST(request: Request) {
     }
 
     await auditLog(session.username, "create-domain", domainName);
-    return jsonOk({ ok: true, domain: created.name });
+
+    let hostingNote: string | undefined;
+    if (await repairAvailable()) {
+      try {
+        await repairDomainWebsite(created.name);
+        hostingNote =
+          "Website hosting configured for this domain (nginx public_html vhost, same as Repair).";
+      } catch {
+        hostingNote =
+          "Domain created. Open Overview → Repair on server if the site does not load yet.";
+      }
+    }
+
+    return jsonOk({ ok: true, domain: created.name, hostingNote });
   } catch (err) {
     return handleApiError(err);
   }

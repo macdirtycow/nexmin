@@ -34,8 +34,14 @@ sudo -u "$QADBAK_USER" sudo -n "$FS_WRAP" list /home 2>/dev/null | grep -q '"ok"
   exit 1
 }
 
-echo "==> Test VirtualMin login link"
-sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && bash scripts/test-login-link.sh siccamanagement.nl" || true
+FIRST_DOMAIN=""
+if command -v virtualmin &>/dev/null; then
+  FIRST_DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
+fi
+if [[ -n "$FIRST_DOMAIN" ]]; then
+  echo "==> Test VirtualMin login link ($FIRST_DOMAIN)"
+  sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && bash scripts/test-login-link.sh '$FIRST_DOMAIN'" || true
+fi
 
 echo "==> Verify repair sudo"
 REPAIR="$QADBAK_DIR/scripts/fix-domain-website.sh"
@@ -47,8 +53,15 @@ echo "==> Build + restart"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && npm run build"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"
 
-echo "==> Website repair (Cloudflare 523)"
-bash "$QADBAK_DIR/scripts/fix-domain-website.sh" siccamanagement.nl || true
+echo "==> Website repair (all VirtualMin domains)"
+if command -v virtualmin &>/dev/null; then
+  while read -r d; do
+    [[ -z "$d" ]] && continue
+    bash "$QADBAK_DIR/scripts/fix-domain-website.sh" "$d" || true
+  done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d')
+else
+  echo "    virtualmin not found — skip per-domain repair"
+fi
 
 echo ""
 echo "Done. Open Files in Qadbak — you should see native file list or working embed."

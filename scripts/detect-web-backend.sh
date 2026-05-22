@@ -2,7 +2,11 @@
 # Find where VirtualMin/Apache answers HTTP for hosted domains (for nginx proxy_pass).
 set -euo pipefail
 
-DOMAIN="${DETECT_DOMAIN:-siccamanagement.nl}"
+DOMAIN="${DETECT_DOMAIN:-}"
+if [[ -z "$DOMAIN" ]] && command -v virtualmin &>/dev/null; then
+  DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
+fi
+DOMAIN="${DOMAIN:-localhost}"
 DEFAULT="127.0.0.1:8080"
 
 probe() {

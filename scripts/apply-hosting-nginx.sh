@@ -39,7 +39,13 @@ for candidate in "$PANEL_HOST" "$SERVER_FQDN"; do
   fi
 done
 
-DETECT_DOMAIN="${DETECT_DOMAIN:-siccamanagement.nl}"
+# shellcheck source=lib/virtualmin-domains.sh
+source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
+DETECT_DOMAIN="${DETECT_DOMAIN:-$(first_virtualmin_domain 2>/dev/null || true)}"
+if [[ -z "$DETECT_DOMAIN" ]]; then
+  echo "WARN: No VirtualMin domain for backend probe — set DETECT_DOMAIN=your.domain" >&2
+  DETECT_DOMAIN="localhost"
+fi
 APACHE_BACKEND="$(DETECT_DOMAIN="$DETECT_DOMAIN" bash "$QADBAK_DIR/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
 echo "==> Web backend for hosted sites (probe Host: $DETECT_DOMAIN): $APACHE_BACKEND"
 PROBE_CODE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 -H "Host: $DETECT_DOMAIN" "http://$APACHE_BACKEND/" 2>/dev/null || echo 000)"
@@ -81,10 +87,10 @@ fi
 
 echo ""
 echo "Done."
-echo "  Customer domains (e.g. siccamanagement.nl) → Apache at $APACHE_BACKEND"
+echo "  All customer domains (VirtualMin) → public_html nginx vhosts + Apache $APACHE_BACKEND"
 if [[ -n "$SSL_CERT_HOST" ]]; then
   echo "  Qadbak panel → https://$PANEL_HOST/login  (and :11000 if enabled)"
 else
   echo "  Qadbak panel → http://$SERVER_FQDN/  or http://YOUR_IP:11000/login"
 fi
-echo "  Test site:  curl -sI -H 'Host: siccamanagement.nl' http://127.0.0.1/ | head -3"
+echo "  Test site:  curl -sI -H 'Host: YOUR_DOMAIN' http://127.0.0.1/ | head -3"

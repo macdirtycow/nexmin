@@ -79,4 +79,4 @@ done
 
 nginx -t
 systemctl reload nginx
-echo "Done. Test: curl -sI -H 'Host: siccamanagement.nl' http://127.0.0.1/ | head -3"
+echo "Done. Configured ${#DOMAINS[@]} domain(s). Test: curl -sI -H 'Host: YOUR_DOMAIN' http://127.0.0.1/ | head -3"
