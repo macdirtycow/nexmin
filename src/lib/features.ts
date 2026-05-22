@@ -135,12 +135,12 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "terminal",
     phase: 3,
     label: "Terminal",
-    description: "SSH shell in panel (Webmin xterm)",
+    description: "Native bash in panel (domain unix user)",
     path: "terminal",
     navOrder: 6,
     programs: {
-      admin: ["create-login-link"],
-      client: ["create-login-link"],
+      admin: ["list-domains"],
+      client: ["list-domains"],
     },
   },
   {

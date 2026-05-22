@@ -16,11 +16,15 @@
     "test:e2e:install": "bash scripts/run-install-e2e.sh"
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "bcryptjs": "^3.0.2",
     "jose": "^6.0.11",
     "next": "^15.3.3",
+    "node-pty": "^1.0.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
