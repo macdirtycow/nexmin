@@ -5,7 +5,7 @@ import {
   terminalAvailable,
   terminalWsUrl,
 } from "@/lib/terminal-ws";
-import { resolveDomainUnixUser } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const { domain, session } = await requireDomainApi((await params).domain);
-    const unixUser = await resolveDomainUnixUser(domain, session);
+    const unixUser = await getProvisioner().resolveDomainUnixUser(domain, session);
     const token = await createTerminalWsToken(domain, unixUser, session);
     const wsUrl = terminalWsUrl(request, token);
 

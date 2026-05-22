@@ -1,18 +1,14 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import {
-  createSharedAddress,
-  deleteSharedAddress,
-  listSharedAddresses,
-} from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
-    const addresses = await listSharedAddresses(domain, session);
+    const addresses = await getProvisioner().listSharedAddresses(domain, session);
     return jsonOk({ addresses });
   } catch (err) {
     return handleApiError(err);
@@ -29,7 +25,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.address || !body.users) {
       return jsonError("Address and users are required.");
     }
-    await createSharedAddress(domain, body.address, body.users, session);
+    await getProvisioner().createSharedAddress(domain, body.address, body.users, session);
     await auditLog(session.username, "create-shared-address", domain, body.address);
     return jsonOk({ ok: true });
   } catch (err) {
@@ -45,7 +41,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
     const body = (await request.json()) as { address?: string };
     if (!body.address) return jsonError("Address is required.");
-    await deleteSharedAddress(domain, body.address, session);
+    await getProvisioner().deleteSharedAddress(domain, body.address, session);
     await auditLog(session.username, "delete-shared-address", domain, body.address);
     return jsonOk({ ok: true });
   } catch (err) {

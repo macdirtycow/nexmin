@@ -1,15 +1,15 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { addDnsRecord, deleteDnsRecord, getDns } from "@/lib/virtualmin";
-import type { DnsRecord } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
+import type { DnsRecord } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
-    const result = await getDns(domain, session);
+    const result = await getProvisioner().getDns(domain, session);
     return jsonOk(result);
   } catch (err) {
     return handleApiError(err);
@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.name || !body.type || !body.value) {
       return jsonError("Name, type, and value are required.");
     }
-    await addDnsRecord(
+    await getProvisioner().addDnsRecord(
       domain,
       {
         name: body.name,
@@ -54,7 +54,7 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!body.name || !body.type || !body.value) {
       return jsonError("Name, type, and value are required to delete a record.");
     }
-    await deleteDnsRecord(domain, body, session);
+    await getProvisioner().deleteDnsRecord(domain, body, session);
     await auditLog(session.username, "delete-dns", domain, body.name);
     return jsonOk({ ok: true });
   } catch (err) {

@@ -2,18 +2,14 @@ import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireSession } from "@/lib/session";
-import {
-  createDomain,
-  findDomainByName,
-  listDomains,
-} from "@/lib/virtualmin";
 import { repairAvailable, repairDomainWebsite } from "@/lib/domain-repair";
 import { VirtualMinError } from "@/lib/errors";
+import { getProvisioner } from "@/lib/provisioner";
 
 export async function GET() {
   try {
     const session = await requireSession();
-    const domains = await listDomains(session);
+    const domains = await getProvisioner().listDomains(session);
     await auditLog(session.username, "list-domains");
     return jsonOk({ domains });
   } catch (err) {
@@ -38,7 +34,7 @@ export async function POST(request: Request) {
     const domainName = body.domain.trim().toLowerCase();
 
     try {
-      await createDomain(
+      await getProvisioner().createDomain(
         {
           domain: domainName,
           pass: body.pass,
@@ -55,7 +51,7 @@ export async function POST(request: Request) {
         err instanceof VirtualMinError &&
         /already exists|already been created|already in use/i.test(err.message)
       ) {
-        const existing = await findDomainByName(domainName, session);
+        const existing = await getProvisioner().findDomainByName(domainName, session);
         if (existing) {
           return jsonOk({
             ok: true,
@@ -67,15 +63,17 @@ export async function POST(request: Request) {
       throw err;
     }
 
-    let created: Awaited<ReturnType<typeof findDomainByName>> | undefined;
+    let created: Awaited<
+      ReturnType<ReturnType<typeof getProvisioner>["findDomainByName"]>
+    > | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
-      created = await findDomainByName(domainName, session);
+      created = await getProvisioner().findDomainByName(domainName, session);
       if (created) break;
       await new Promise((r) => setTimeout(r, 1500));
     }
 
     if (!created) {
-      const listed = await listDomains(session).catch(() => []);
+      const listed = await getProvisioner().listDomains(session).catch(() => []);
       const known = listed.some((d) => d.name.toLowerCase() === domainName);
       if (known) {
         return jsonOk({ ok: true, domain: domainName });

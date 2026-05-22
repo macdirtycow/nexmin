@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { resendEmail, searchMailLogs } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     const query = new URL(request.url).searchParams.get("q") ?? "";
-    const lines = await searchMailLogs(domain, query, session);
+    const lines = await getProvisioner().searchMailLogs(domain, query, session);
     return jsonOk({ lines });
   } catch (err) {
     return handleApiError(err);
@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: Params) {
     }
     const body = (await request.json()) as { messageId?: string };
     if (!body.messageId) return jsonError("messageId is required.");
-    await resendEmail(domain, body.messageId, session);
+    await getProvisioner().resendEmail(domain, body.messageId, session);
     await auditLog(session.username, "resend-email", domain);
     return jsonOk({ ok: true });
   } catch (err) {

@@ -5,7 +5,8 @@ import {
   readDomainFileLive,
 } from "@/lib/domain-files-service";
 import { requireDomainApi } from "@/lib/domain-api";
-import { VirtualMinError } from "@/lib/virtualmin";
+import { VirtualMinError } from "@/lib/errors";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 

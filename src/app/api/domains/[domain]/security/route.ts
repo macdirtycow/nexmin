@@ -1,18 +1,14 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import {
-  getMailSecurity,
-  setDkim,
-  setSpamFilter,
-} from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
-    const settings = await getMailSecurity(domain, session);
+    const settings = await getProvisioner().getMailSecurity(domain, session);
     return jsonOk({ settings });
   } catch (err) {
     return handleApiError(err);
@@ -27,11 +23,11 @@ export async function POST(request: Request, { params }: Params) {
       dkimEnabled?: boolean;
     };
     if (body.spamEnabled !== undefined) {
-      await setSpamFilter(domain, body.spamEnabled, session);
+      await getProvisioner().setSpamFilter(domain, body.spamEnabled, session);
       await auditLog(session.username, "set-spam", domain);
     }
     if (body.dkimEnabled !== undefined) {
-      await setDkim(domain, body.dkimEnabled, session);
+      await getProvisioner().setDkim(domain, body.dkimEnabled, session);
       await auditLog(session.username, "set-dkim", domain);
     }
     if (body.spamEnabled === undefined && body.dkimEnabled === undefined) {

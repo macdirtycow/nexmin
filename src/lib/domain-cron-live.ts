@@ -1,5 +1,6 @@
 import { parseCronJobs } from "./virtualmin-api-parse";
-import type { CronJob } from "./virtualmin";
+import { getProvisioner } from "./provisioner";
+import type { CronJob } from "./provisioner";
 import type { Role } from "./types";
 import { runDomainFsSudo } from "./domain-fs-sudo";
 
@@ -20,8 +21,7 @@ async function resolveUnixUser(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
-  const { listDomains } = await import("./virtualmin");
-  const rows = await listDomains(actor);
+  const rows = await getProvisioner().listDomains(actor);
   const row = rows.find((d) => d.name.toLowerCase() === domain.toLowerCase());
   if (row?.user) return row.user;
   return domain.split(".")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "") || "site";

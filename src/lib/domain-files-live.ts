@@ -11,7 +11,7 @@ import {
 } from "./domain-files";
 import { VirtualMinError } from "./errors";
 import type { VirtualMinDomain } from "./types";
-import { listDomains } from "./virtualmin";
+import { getProvisioner } from "./provisioner";
 import type { Role } from "./types";
 
 let liveFsProbe: boolean | null = null;
@@ -64,7 +64,7 @@ async function resolveUnixUser(
 ): Promise<string> {
   if (typeof domain !== "string" && domain.user) return domain.user;
   const name = typeof domain === "string" ? domain : domain.name;
-  const rows = await listDomains(actor);
+  const rows = await getProvisioner().listDomains(actor);
   const row = rows.find((d) => d.name.toLowerCase() === name.toLowerCase());
   if (row?.user) return row.user;
   return domainHomePath(domain).replace(/^\/home\//, "");

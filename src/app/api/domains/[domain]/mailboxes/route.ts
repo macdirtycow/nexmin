@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { copyMailbox, listImapMailboxes } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
     const user = new URL(request.url).searchParams.get("user") ?? undefined;
-    const mailboxes = await listImapMailboxes(domain, user, session);
+    const mailboxes = await getProvisioner().listImapMailboxes(domain, user, session);
     return jsonOk({ mailboxes });
   } catch (err) {
     return handleApiError(err);
@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.from || !body.to) {
       return jsonError("from and to are required.");
     }
-    await copyMailbox(domain, body.from, body.to, session);
+    await getProvisioner().copyMailbox(domain, body.from, body.to, session);
     await auditLog(session.username, "copy-mailbox", domain);
     return jsonOk({ ok: true });
   } catch (err) {

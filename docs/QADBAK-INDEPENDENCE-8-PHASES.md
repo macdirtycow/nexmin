@@ -100,16 +100,15 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 2 — Provisioner-laag (abstractie)
+## Fase 2 — Provisioner-laag (abstractie) ✅ in repo
 
-**Doel:** Geen `virtualmin.ts` meer direct in UI-routes; één interface om later te wisselen.
+**Doel:** Geen `virtualmin.ts` meer direct in API-routes; één interface om later te wisselen.
 
-- `src/lib/provisioner/types.ts` — `listDomains`, `createDomain`, `listMailboxes`, …
-- `src/lib/provisioner/virtualmin-adapter.ts` — huidige implementatie
+- `src/lib/provisioner/` — `getProvisioner()`, VirtualMin-adapter
 - `.env`: `QADBAK_PROVISIONER=virtualmin` (later `hestia` / `native`)
-- Tests: mock adapter voor CI
+- Docs: [PROVISIONER.md](./PROVISIONER.md)
 
-**Exit:** Alle domain-API’s via adapter; documentatie voor nieuwe adapter.
+**Exit:** Alle `src/app/api/**` routes + `domain-api.ts` via `getProvisioner()`. Server components migreren in fase 3.
 
 ---
 
@@ -225,7 +224,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 1. Terminal op VPS werkend krijgen (`install-node-build-deps`, `npm install` als `qadbak`, `check-terminal-ws.sh`).
 2. **Webmin**-nav en embed-routes voor rol `client` verbergen.
-3. Start **fase 2**: `provisioner/` interface + VirtualMin-adapter.
+3. **Fase 3**: server components (`src/app/(app)/**`) ook op `getProvisioner()` zetten.
 
 ---
 

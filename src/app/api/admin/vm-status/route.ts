@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonOk } from "@/lib/api";
-import { listDomains } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 import {
   virtualMinFetch,
   virtualMinTlsInsecureEnabled,
@@ -36,7 +36,7 @@ export async function GET() {
       probeBytes = text.length;
       probePreview = text.slice(0, 120).replace(/\s+/g, " ");
     }
-    const domains = await listDomains({
+    const domains = await getProvisioner().listDomains({
       role: "admin",
       domains: [],
     });

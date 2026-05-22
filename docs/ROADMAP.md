@@ -24,7 +24,7 @@ See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 | Phase | Summary |
 |-------|---------|
 | **I1** | No Webmin UI for customers — native files, terminal, API screens |
-| **I2** | Provisioner abstraction (swap VirtualMin later) |
+| **I2** | Provisioner abstraction ✅ — [PROVISIONER.md](./PROVISIONER.md) |
 | **I3** | Full hosting UI; VM API headless only |
 | **I4** | Server/reseller admin without Webmin |
 | **I5** | Config via scripts/helpers (Hestia-style) |

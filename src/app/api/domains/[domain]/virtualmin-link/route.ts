@@ -2,7 +2,7 @@ import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonOk } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { virtualminEmbedPath } from "@/lib/virtualmin-embed";
-import { createVirtualMinLoginLink, resolveDomainUnixUser } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -15,14 +15,14 @@ export async function GET(request: Request, { params }: Params) {
     const dest = urlParams.get("dest");
     const path = urlParams.get("path");
     const unixUser =
-      dest === "terminal" ? await resolveDomainUnixUser(domain, session) : undefined;
+      dest === "terminal" ? await getProvisioner().resolveDomainUnixUser(domain, session) : undefined;
     const redirectUrl =
       path != null
         ? path.startsWith("/")
           ? path
           : `/${path}`
         : virtualminEmbedPath(dest, unixUser);
-    const url = await createVirtualMinLoginLink(domain, session, { redirectUrl });
+    const url = await getProvisioner().createVirtualMinLoginLink(domain, session, { redirectUrl });
     await auditLog(session.username, "create-login-link", domain);
     return jsonOk({ url });
   } catch (err) {

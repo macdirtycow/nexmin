@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { restoreDomain } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -18,7 +18,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.source?.trim()) {
       return jsonError("Source path or S3 URL is required.");
     }
-    const result = await restoreDomain(
+    const result = await getProvisioner().restoreDomain(
       domain,
       body.source.trim(),
       { test: body.test === true },

@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { getDomainLimits, updateDomainLimits } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: Params) {
     if (session.role !== "admin") {
       return jsonError("Administrators only.", 403);
     }
-    const limits = await getDomainLimits(domain, session);
+    const limits = await getProvisioner().getDomainLimits(domain, session);
     return jsonOk({ limits });
   } catch (err) {
     return handleApiError(err);
@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
       mailboxes?: string;
       databases?: string;
     };
-    await updateDomainLimits(domain, body, session);
+    await getProvisioner().updateDomainLimits(domain, body, session);
     await auditLog(session.username, "modify-limits", domain);
     return jsonOk({ ok: true });
   } catch (err) {

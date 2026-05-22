@@ -1,18 +1,14 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import {
-  createCronJob,
-  deleteCronJob,
-  listCronJobsWithFallback,
-} from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
-    const jobs = await listCronJobsWithFallback(domain, session);
+    const jobs = await getProvisioner().listCronJobsWithFallback(domain, session);
     return jsonOk({ jobs, canEdit: session.role === "admin" });
   } catch (err) {
     return handleApiError(err);
@@ -33,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.schedule || !body.command) {
       return jsonError("Schedule and command are required.");
     }
-    await createCronJob(
+    await getProvisioner().createCronJob(
       domain,
       body.schedule,
       body.command,
@@ -55,7 +51,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
     const body = (await request.json()) as { id?: string };
     if (!body.id) return jsonError("Job id is required.");
-    await deleteCronJob(domain, body.id, session);
+    await getProvisioner().deleteCronJob(domain, body.id, session);
     await auditLog(session.username, "delete-cron-job", domain, body.id);
     return jsonOk({ ok: true });
   } catch (err) {

@@ -1,7 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
-import { listDomainFeatures, setDomainFeature } from "@/lib/virtualmin";
+import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: Params) {
     if (session.role !== "admin") {
       return jsonError("Administrators only.", 403);
     }
-    const features = await listDomainFeatures(domain, session);
+    const features = await getProvisioner().listDomainFeatures(domain, session);
     return jsonOk({ features });
   } catch (err) {
     return handleApiError(err);
@@ -31,7 +31,7 @@ export async function POST(request: Request, { params }: Params) {
     if (!body.feature || body.enabled === undefined) {
       return jsonError("Feature and enabled are required.");
     }
-    await setDomainFeature(domain, body.feature, body.enabled, session);
+    await getProvisioner().setDomainFeature(domain, body.feature, body.enabled, session);
     await auditLog(
       session.username,
       body.enabled ? "enable-feature" : "disable-feature",
