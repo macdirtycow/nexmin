@@ -10,6 +10,8 @@ export interface DomainFileEntry {
   modified?: string;
   editable?: boolean;
   downloadable?: boolean;
+  /** False only for read-only dirs (logs, Maildir). */
+  deletable?: boolean;
 }
 
 export interface DomainFilesListing {
@@ -309,7 +311,13 @@ export function enrichEntry(entry: DomainFileEntry): DomainFileEntry {
     downloadable: entry.downloadable ?? entry.type === "file",
     editable:
       entry.editable ??
-      (entry.type === "file" && isTextFileName(entry.name) && isDirWritable(entry.path.replace(/\/[^/]+$/, ""))),
+      (entry.type === "file" &&
+        isTextFileName(entry.name) &&
+        isDirWritable(entry.path.replace(/\/[^/]+$/, ""))),
+    deletable:
+      entry.deletable ??
+      (entry.type === "file" &&
+        isDirWritable(entry.path.replace(/\/[^/]+$/, ""))),
   };
 }
 

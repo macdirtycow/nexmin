@@ -111,6 +111,7 @@ export async function listDomainFilesLive(
         isTextFileName(e.name) &&
         isDirWritable(cwd),
       downloadable: e.type !== "dir",
+      deletable: e.type !== "dir" && isDirWritable(cwd),
     });
   });
 }

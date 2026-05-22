@@ -74,6 +74,22 @@ async function assertHomePath(target) {
   return resolved;
 }
 
+function homeUnixUser(resolvedPath) {
+  const m = String(resolvedPath).match(/^\/home\/([^/]+)\//);
+  return m ? m[1] : null;
+}
+
+async function chownToHomeUser(targetPath) {
+  const resolved = await fs.realpath(targetPath).catch(() => targetPath);
+  const user = homeUnixUser(resolved);
+  if (!user) return;
+  try {
+    await execFileAsync("chown", [`${user}:${user}`, resolved]);
+  } catch {
+    /* non-fatal */
+  }
+}
+
 async function listDir(absPath) {
   const resolved = await assertHomePath(absPath);
   const names = await fs.readdir(resolved);
@@ -133,12 +149,14 @@ async function writeFile(absPath, content) {
   const bytes = Buffer.from(content, encoding);
   if (bytes.length > MAX_WRITE_BYTES) fail("File too large.");
   await fs.writeFile(absPath, bytes, { flag: "w" });
+  await chownToHomeUser(absPath);
   emit({ ok: true });
 }
 
 async function mkdirPath(absPath) {
   await assertHomePath(path.dirname(absPath));
   await fs.mkdir(absPath, { recursive: false });
+  await chownToHomeUser(absPath);
   emit({ ok: true });
 }
 
@@ -206,6 +224,7 @@ async function main() {
       const buf = Buffer.from(String(payload.base64), "base64");
       if (buf.length > MAX_WRITE_BYTES) fail("File too large.");
       await fs.writeFile(target, buf);
+      await chownToHomeUser(target);
       emit({ ok: true, sizeBytes: buf.length });
       break;
     }

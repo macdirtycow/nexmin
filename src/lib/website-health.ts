@@ -9,6 +9,7 @@ export interface WebsiteProbeResult {
   servingPanelLanding?: boolean;
   cloudflare523?: boolean;
   cloudflare502?: boolean;
+  servingApacheDefault?: boolean;
 }
 
 export interface WebsiteHealthReport {
@@ -50,6 +51,16 @@ function looksLikeCloudflare523(body: string, status: number): boolean {
   return sample.includes("error code: 523") || sample.includes("origin is unreachable");
 }
 
+function looksLikeApacheDefaultPage(body: string): boolean {
+  const sample = body.slice(0, 20000).toLowerCase();
+  return (
+    sample.includes("apache2 ubuntu default") ||
+    sample.includes("ubuntu default page") ||
+    sample.includes("debian default page") ||
+    (sample.includes("it works!") && sample.includes("apache"))
+  );
+}
+
 function looksLikeCloudflare502(body: string, status: number): boolean {
   if (status === 502) return true;
   const sample = body.slice(0, 8000).toLowerCase();
@@ -74,18 +85,21 @@ async function probeHttp(
     const servingPanelLanding = looksLikeQadbakLanding(body, res.headers);
     const cloudflare523 = looksLikeCloudflare523(body, res.status);
     const cloudflare502 = looksLikeCloudflare502(body, res.status);
+    const servingApacheDefault = looksLikeApacheDefaultPage(body);
     const ok =
       res.status > 0 &&
       res.status < 500 &&
       !cloudflare523 &&
       !cloudflare502 &&
-      !servingPanelLanding;
+      !servingPanelLanding &&
+      !servingApacheDefault;
     return {
       ok,
       status: res.status,
       servingPanelLanding,
       cloudflare523,
       cloudflare502,
+      servingApacheDefault,
       error: servingPanelLanding
         ? "This hostname serves the Qadbak marketing page, not public_html."
         : cloudflare523
@@ -135,6 +149,12 @@ function buildIssues(
     );
   }
 
+  if (localProbe.servingApacheDefault || publicProbe.servingApacheDefault) {
+    issues.push(
+      "Visitors see the Ubuntu/Apache default page, not public_html — use Repair on server (disables default vhost, fixes DocumentRoot).",
+    );
+  }
+
   if (publicProbe.cloudflare523 && localProbe.ok) {
     issues.push(
       "Cloudflare returns 523 but the origin answers locally — check A record / Contabo firewall (ports 80/443).",
@@ -157,7 +177,9 @@ function buildIssues(
     !localProbe.ok &&
     !localProbe.servingPanelLanding &&
     !publicProbe.cloudflare523 &&
-    !publicProbe.cloudflare502
+    !publicProbe.cloudflare502 &&
+    !localProbe.servingApacheDefault &&
+    !publicProbe.servingApacheDefault
   ) {
     issues.push(
       "Web server on this VPS does not answer for this domain — use Repair on server.",
@@ -174,7 +196,9 @@ function buildIssues(
     localProbe.ok &&
     !publicProbe.cloudflare523 &&
     !publicProbe.cloudflare502 &&
-    !publicProbe.servingPanelLanding
+    !publicProbe.servingPanelLanding &&
+    !localProbe.servingApacheDefault &&
+    !publicProbe.servingApacheDefault
   ) {
     issues.push(
       "Origin responds on this server — if visitors still see errors, check Cloudflare DNS and SSL mode.",
