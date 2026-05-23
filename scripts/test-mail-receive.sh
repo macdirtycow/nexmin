@@ -11,7 +11,7 @@ OUT="$(sudo -u "${QADBAK_USER:-qadbak}" sudo -n "$ROOT/scripts/run-provisioning-
   mail-receive-test "$DOMAIN" "$USER_LOCAL" 2>&1 | tail -1)"
 echo "$OUT" | python3 -m json.tool 2>/dev/null || echo "$OUT"
 
-if echo "$OUT" | grep -q '"ok":true'; then
+if echo "$OUT" | grep -q '"delivered":true'; then
   echo "OK — message delivered to Maildir (check IMAP tab → INBOX)"
 else
   echo "FAIL — local delivery did not reach Maildir/new" >&2

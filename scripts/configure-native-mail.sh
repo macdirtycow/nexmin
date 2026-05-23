@@ -55,7 +55,7 @@ postconf -e "virtual_alias_maps = hash:${QADBAK_VIRTUAL}"
 postconf -e "virtual_mailbox_domains = hash:${QADBAK_DOMAINS}"
 postconf -e 'mailbox_transport = lmtp:unix:private/dovecot-lmtp'
 postconf -e 'inet_interfaces = all'
-postconf -e 'local_recipient_maps = unix:passwd.byname, $virtual_alias_maps'
+postconf -X local_recipient_maps 2>/dev/null || true
 
 for key in virtual_alias_domains virtual_mailbox_maps virtual_mailbox_base \
   mailbox_command virtual_transport home_mailbox content_filter \
