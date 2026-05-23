@@ -21,6 +21,12 @@ if [[ "$PORT" == "10000" ]]; then
   exit 1
 fi
 
+if [[ "$PORT" == "3000" ]]; then
+  echo "Port 3000 is the Next.js app (pm2). Public panel nginx must use e.g. 11000 (QADBAK_PANEL_PORT)." >&2
+  echo "If you see 500 errors, run: sudo bash scripts/fix-panel-nginx-port.sh" >&2
+  exit 1
+fi
+
 echo "==> nginx listen $PORT → 127.0.0.1:3000"
 # Remove legacy manual configs (avoid duplicate default_server on same port)
 rm -f "/etc/nginx/sites-enabled/qadbak-${PORT}" \

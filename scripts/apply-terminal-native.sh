@@ -11,14 +11,10 @@ QADBAK_USER="${QADBAK_USER:-qadbak}"
   exit 1
 }
 
-PORT="${QADBAK_TERMINAL_WS_PORT:-3001}"
-PANEL_PORT="11000"
-if [[ -f "$QADBAK_DIR/.env.local" ]]; then
-  # shellcheck disable=SC1091
-  source "$QADBAK_DIR/.env.local"
-  PORT="${QADBAK_TERMINAL_WS_PORT:-$PORT}"
-  PANEL_PORT="${QADBAK_PANEL_PORT:-$PANEL_PORT}"
-fi
+# shellcheck source=scripts/lib/read-env-local.sh
+source "$QADBAK_DIR/scripts/lib/read-env-local.sh"
+PORT="$(read_env_local_key QADBAK_TERMINAL_WS_PORT 3001)"
+PANEL_PORT="$(read_env_local_key QADBAK_PANEL_PORT 11000)"
 
 echo "==> Build tools for node-pty"
 bash "$QADBAK_DIR/scripts/install-node-build-deps.sh"
