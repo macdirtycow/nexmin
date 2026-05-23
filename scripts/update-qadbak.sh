@@ -70,7 +70,7 @@ fi
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/configure-native-mail.sh" ]]; then
   echo ""
   echo "==> Mail stack sync"
-  bash "$ROOT/scripts/configure-native-mail.sh" 2>/dev/null || true
+  bash "$ROOT/scripts/configure-native-mail.sh" --force 2>/dev/null || true
   sudo -u "$USER" sudo -n "$ROOT/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
 fi
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/apply-phase8-independent.sh" ]]; then

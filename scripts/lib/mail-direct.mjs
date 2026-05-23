@@ -8,10 +8,11 @@ import {
   listMailboxesFromLayout,
   appendMapEntry,
   removeMapEntry,
-  postmapReload,
+  postmapReloadAll,
   ensureMaildir,
+  QADBAK_POSTFIX_VIRTUAL,
 } from "./mail-layout.mjs";
-import { ensureNativeMailStack, syncVirtualDomainsFile } from "./mail-sync.mjs";
+import { ensureNativeMailStack, syncVirtualDomainsFile, rebuildVirtualAliasMap } from "./mail-sync.mjs";
 import { ensureInboundMailDns } from "./mail-dns.mjs";
 
 const exec = promisify(execFile);
@@ -80,10 +81,11 @@ export async function mailCreateDirect(domain, localUser, pass, real) {
     await exec("chown", ["-R", `${local}:${owner}`, userHome], { timeout: 60_000 });
   }
 
-  const mapPath = layout.aliasMap || "/etc/postfix/virtual";
+  const mapPath = layout.aliasMap || QADBAK_POSTFIX_VIRTUAL;
   await appendMapEntry(mapPath, email, isOwner ? owner : local);
   await syncVirtualDomainsFile();
-  await postmapReload(mapPath);
+  await rebuildVirtualAliasMap();
+  await postmapReloadAll();
   await ensureInboundMailDns(domain).catch(() => {});
 
   if (pass) {
@@ -103,9 +105,10 @@ export async function mailDeleteDirect(domain, localUser) {
   const local = String(localUser || "").trim().toLowerCase();
   const email = `${local}@${domain}`;
 
-  const mapPath = layout.aliasMap || "/etc/postfix/virtual";
+  const mapPath = layout.aliasMap || QADBAK_POSTFIX_VIRTUAL;
   await removeMapEntry(mapPath, email);
-  await postmapReload(mapPath);
+  await rebuildVirtualAliasMap();
+  await postmapReloadAll();
 
   if (local !== owner && (await unixUserExists(local))) {
     const userHome = path.join(layout.homesDir || path.join(home, "homes"), local);

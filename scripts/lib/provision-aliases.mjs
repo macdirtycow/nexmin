@@ -9,7 +9,8 @@ import {
   discoverMailLayout,
   appendMapEntry,
   removeMapEntry,
-  postmapReload,
+  postmapReloadAll,
+  QADBAK_POSTFIX_VIRTUAL,
 } from "./mail-layout.mjs";
 
 function normFrom(domain, from) {
@@ -36,9 +37,9 @@ export async function aliasCreate(domain, from, to) {
   await writeDomainConfigJson(domain, "aliases.json", aliases);
 
   const layout = await discoverMailLayout(domain, user, home);
-  const mapPath = layout.aliasMap || "/etc/postfix/virtual";
+  const mapPath = layout.aliasMap || QADBAK_POSTFIX_VIRTUAL;
   await appendMapEntry(mapPath, address, dest);
-  await postmapReload(mapPath);
+  await postmapReloadAll();
   emit({ ok: true, from: address, to: dest });
 }
 
@@ -50,8 +51,8 @@ export async function aliasDelete(domain, from) {
   await writeDomainConfigJson(domain, "aliases.json", aliases);
 
   const layout = await discoverMailLayout(domain, user, home);
-  const mapPath = layout.aliasMap || "/etc/postfix/virtual";
+  const mapPath = layout.aliasMap || QADBAK_POSTFIX_VIRTUAL;
   await removeMapEntry(mapPath, address);
-  await postmapReload(mapPath);
+  await postmapReloadAll();
   emit({ ok: true });
 }

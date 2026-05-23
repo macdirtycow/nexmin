@@ -44,7 +44,7 @@ fi
 
 if echo ",$FEATURES," | grep -q ',mail,'; then
   echo "==> Postfix + Dovecot (native mail)"
-  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" || true
+  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" --force || true
   sudo -u qadbak sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
 fi
 
