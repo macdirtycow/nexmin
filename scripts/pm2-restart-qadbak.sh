@@ -18,6 +18,11 @@ if [[ ! -f "$ROOT/.env.local" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$ROOT/.next/BUILD_ID" ]]; then
+  echo "Missing production build — run: sudo -u $USER bash -c 'cd $ROOT && npm run build'" >&2
+  exit 1
+fi
+
 grep -q '^VIRTUALMIN_TLS_INSECURE=' "$ROOT/.env.local" || {
   echo 'VIRTUALMIN_TLS_INSECURE=true' >>"$ROOT/.env.local"
   chown "$USER:$USER" "$ROOT/.env.local" 2>/dev/null || true

@@ -15,7 +15,8 @@ FEATURES="${1:-ssl,dns,mail,db,domain,backup,cron,aliases,redirects,features,log
 echo "==> Phase 8 INDEPENDENT (geen VirtualMin API fallback)"
 bash "$QADBAK_DIR/scripts/apply-phase8-native-phase.sh" "$FEATURES" independent
 
-echo "==> Native terminals (pm2 + nginx /ws/*)"
+echo "==> Panel nginx + terminals"
+bash "$QADBAK_DIR/scripts/fix-panel-nginx-port.sh"
 bash "$QADBAK_DIR/scripts/apply-terminal-native.sh"
 
 echo "==> Independent preflight"

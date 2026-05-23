@@ -1616,6 +1616,8 @@ export interface CreateDomainInput {
   user?: string;
   plan?: string;
   parent?: string;
+  /** Panel API / native provisioning */
+  type?: "top" | "sub" | "alias";
   alias?: boolean;
   subdom?: boolean;
 }

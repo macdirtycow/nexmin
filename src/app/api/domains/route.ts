@@ -41,6 +41,7 @@ export async function POST(request: Request) {
           user: body.user,
           plan: body.plan,
           parent: body.parent,
+          type: body.type,
           alias: body.type === "alias",
           subdom: body.type === "sub",
         },

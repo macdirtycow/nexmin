@@ -43,7 +43,11 @@ if echo ",$FEATURES," | grep -q ',dns,'; then
 fi
 
 sudo -u qadbak bash -c "cd '$QADBAK_DIR' && npm run build"
-sudo -u qadbak bash -c "cd '$QADBAK_DIR' && bash scripts/pm2-restart-qadbak.sh"
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$QADBAK_DIR/scripts/fix-panel-nginx-port.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/fix-panel-nginx-port.sh"
+else
+  sudo -u qadbak bash -c "cd '$QADBAK_DIR' && bash scripts/pm2-restart-qadbak.sh"
+fi
 
 echo "==> Test enabled features"
 QADBAK_NATIVE_FEATURES="$FEATURES" bash "$QADBAK_DIR/scripts/test-native-provisioning.sh"
