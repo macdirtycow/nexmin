@@ -1,6 +1,6 @@
 # Native IMAP (Dovecot, no VirtualMin)
 
-The **IMAP** tab lists mail folders, message counts, and lets you **read mail** using **[Dovecot](https://www.dovecot.org/)** and on-disk **Maildir**.
+The **IMAP** tab lists mail folders, message counts, **reads mail**, and can **send mail** via Postfix using **[Dovecot](https://www.dovecot.org/)** and on-disk **Maildir**.
 
 ## How it works
 
@@ -16,6 +16,8 @@ Qadbak panel → provisioning-helper → doveadm + Maildir scan
 | List messages in folder | `imap-messages` |
 | Read one message | `imap-fetch` |
 | Copy folder (admin) | `imap-copy` |
+| Send message | `mail-send` |
+| Sync maps / diagnose | `mail-sync`, `mail-diagnose` |
 
 Folder **messages** and **size** use `doveadm mailbox status` per folder (Dovecot 2.3-friendly), with Maildir counts when doveadm returns empty values.
 
@@ -23,7 +25,7 @@ Message list and body are read from **Maildir** (`cur`/`new`) when possible; dov
 
 Auth user resolution tries, in order:
 
-- `local@domain` (e.g. `info@siccamanagement.nl`)
+- `local@domain` (e.g. `info@example.com`)
 - Unix user `local` or domain owner
 - Accounts from Postfix virtual maps + `~/homes/*` (same as **Email** tab)
 
@@ -37,16 +39,22 @@ Auth user resolution tries, in order:
 
 ```bash
 cd /opt/qadbak
-sudo bash scripts/pull-and-helpers.sh
-sudo bash scripts/apply-phase8-independent.sh
-sudo bash scripts/check-imap-dovecot.sh siccamanagement.nl info
-# Version: doveadm -V  (not --version on Dovecot 2.3)
+git pull
+sudo bash scripts/configure-native-mail.sh
+sudo bash scripts/run-provisioning-helper.sh mail-sync
+sudo bash scripts/check-native-mail.sh YOUR-DOMAIN info
+sudo bash scripts/check-imap-dovecot.sh YOUR-DOMAIN info
 
-# CLI smoke (messages in INBOX)
-sudo node scripts/provisioning-helper.mjs imap-messages siccamanagement.nl info INBOX
+# Send test (JSON payload)
+sudo node scripts/provisioning-helper.mjs mail-send YOUR-DOMAIN info \
+  '{"to":"you@gmail.com","subject":"test","body":"hello"}'
 ```
 
-Panel: **Domains → IMAP** → pick user → **Load folders** → click folder → click message.
+**Incoming mail** requires an **MX record** for the domain pointing to this server, and port **25** open in the firewall.
+
+**Outgoing mail** uses Postfix on this host; many providers require **SPF/DKIM** DNS records to avoid spam folders (see **Mail security** per domain).
+
+Panel: **Domains → IMAP** → pick user → **Load folders** → read mail, or use **Send email**.
 
 ## Related
 

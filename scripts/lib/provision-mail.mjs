@@ -7,6 +7,8 @@ import {
   mailDeleteDirect,
   mailPassDirect,
 } from "./mail-direct.mjs";
+import { mailSendDirect } from "./mail-send.mjs";
+import { mailSyncAll, mailDiagnose } from "./mail-sync.mjs";
 
 const exec = promisify(execFile);
 
@@ -112,4 +114,23 @@ export async function mailDelete(domain, user) {
 
 export async function mailPass(domain, user, pass) {
   await runMail(mailPassDirect, mailPassVm, domain, user, pass);
+}
+
+export async function mailSend(domain, localUser, payloadJson) {
+  if (useVirtualminCli() && (await virtualminAvailable())) {
+    fail("Send from panel is only available in native mail mode (QADBAK_MAIL_BACKEND=direct).");
+  }
+  await mailSendDirect(domain, localUser, payloadJson);
+}
+
+export async function mailSync() {
+  await mailSyncAll();
+  const { emit } = await import("./provisioning-common.mjs");
+  emit({ ok: true, source: "mail-sync" });
+}
+
+export async function mailDiagnoseDomain(domain) {
+  const checks = await mailDiagnose(domain);
+  const { emit } = await import("./provisioning-common.mjs");
+  emit({ ok: true, checks });
 }

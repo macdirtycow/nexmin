@@ -51,6 +51,12 @@ export function ImapMailboxesManager({
   const [selectedMessage, setSelectedMessage] = useState<ImapMessageDetail | null>(null);
   const [messageLoading, setMessageLoading] = useState(false);
 
+  const [sendTo, setSendTo] = useState("");
+  const [sendSubject, setSendSubject] = useState("");
+  const [sendBody, setSendBody] = useState("");
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState("");
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -132,6 +138,36 @@ export function ImapMailboxesManager({
     void load();
   }, [load]);
 
+  async function sendMail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !sendTo) return;
+    setSendLoading(true);
+    setError("");
+    setSendSuccess("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/mailboxes/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user,
+          to: sendTo,
+          subject: sendSubject,
+          body: sendBody,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Send failed.");
+      setSendSuccess(`Message sent to ${sendTo}.`);
+      setSendTo("");
+      setSendSubject("");
+      setSendBody("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setSendLoading(false);
+    }
+  }
+
   async function copy() {
     if (!copyFrom || !copyTo || !user) return;
     setLoading(true);
@@ -175,6 +211,7 @@ export function ImapMailboxesManager({
         (Maildir on disk; doveadm when available).
       </p>
       {error && <Alert>{error}</Alert>}
+      {sendSuccess && <Alert variant="success">{sendSuccess}</Alert>}
       <Card>
         <div className="flex flex-wrap items-end gap-3">
           <div>
@@ -336,6 +373,50 @@ export function ImapMailboxesManager({
               )}
             </div>
           )}
+        </Card>
+      )}
+
+      {user && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Send email</h2>
+          <p className="mt-1 text-sm text-panel-muted">
+            Sends via Postfix as {user}@{domain}. Ensure DNS MX points to this server for
+            incoming mail.
+          </p>
+          <form onSubmit={sendMail} className="mt-4 grid gap-3">
+            <div>
+              <Label>To</Label>
+              <Input
+                className="mt-1"
+                type="email"
+                placeholder="recipient@example.com"
+                value={sendTo}
+                onChange={(e) => setSendTo(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                className="mt-1"
+                value={sendSubject}
+                onChange={(e) => setSendSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-panel-border bg-panel-bg px-3 py-2 text-sm text-white"
+                rows={5}
+                value={sendBody}
+                onChange={(e) => setSendBody(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" disabled={sendLoading || !sendTo}>
+              {sendLoading ? "Sending…" : "Send"}
+            </Button>
+          </form>
         </Card>
       )}
 
