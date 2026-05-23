@@ -12,10 +12,13 @@ export function DomainDetail({
   domain,
   disabled,
   isAdmin,
+  showLegacyVmLinks = false,
 }: {
   domain: VirtualMinDomain;
   disabled: boolean;
   isAdmin: boolean;
+  /** VirtualMin / Webmin break-glass links (hybrid only). */
+  showLegacyVmLinks?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -81,12 +84,19 @@ export function DomainDetail({
           <Button onClick={() => router.push(`/domains/${enc}/files`)}>
             Files
           </Button>
-          <Button variant="secondary" onClick={() => router.push(`/domains/${enc}/webmin`)}>
-            Webmin
-          </Button>
-          <Button variant="ghost" onClick={openVirtualMin}>
-            VirtualMin
-          </Button>
+          {showLegacyVmLinks && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => router.push(`/domains/${enc}/webmin`)}
+              >
+                Webmin
+              </Button>
+              <Button variant="ghost" onClick={openVirtualMin}>
+                VirtualMin
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

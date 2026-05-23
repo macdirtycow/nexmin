@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Default",
+    "id": "default",
+    "desc": "Standard LAMP/LEMP site"
+  },
+  {
+    "name": "WordPress",
+    "id": "wordpress",
+    "desc": "PHP + MySQL for WordPress"
+  },
+  {
+    "name": "Minimal",
+    "id": "minimal",
+    "desc": "Static site only"
+  }
+]

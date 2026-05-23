@@ -1,5 +1,13 @@
 import type { Role } from "./types";
 
+/** Mirrors provisioner/native-stub (no import — keeps client bundles free of virtualmin). */
+function independentHostingFromEnv(): boolean {
+  const prov = process.env.QADBAK_PROVISIONER?.trim().toLowerCase();
+  const fb = process.env.QADBAK_VIRTUALMIN_FALLBACK?.trim().toLowerCase();
+  const fallbackOff = fb === "false" || fb === "0" || fb === "no";
+  return prov === "native" || (prov === "hybrid" && fallbackOff);
+}
+
 export type FeaturePhase = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface DomainFeature {
@@ -473,6 +481,7 @@ export function programsForRole(role: Role): readonly string[] {
 }
 
 function webminUiDisabled(): boolean {
+  if (independentHostingFromEnv()) return true;
   const v = process.env.QADBAK_DISABLE_WEBMIN?.trim().toLowerCase();
   return v === "true" || v === "1" || v === "yes";
 }

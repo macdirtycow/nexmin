@@ -1,5 +1,6 @@
 import { LifecycleManager } from "@/components/LifecycleManager";
 import { requireDomainAccess } from "@/lib/domain-api";
+import { isIndependentMode } from "@/lib/provisioner/native-stub";
 import { getProvisioner } from "@/lib/provisioner";
 import { redirect } from "next/navigation";
 
@@ -24,6 +25,7 @@ export default async function LifecyclePage({ params }: Props) {
       domain={domain}
       initialValidation={validation}
       initialError={error}
+      independentMode={isIndependentMode()}
     />
   );
 }

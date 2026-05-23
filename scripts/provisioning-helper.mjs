@@ -27,7 +27,25 @@ import {
   domainEnable,
   domainDisable,
   domainValidate,
+  domainClone,
+  domainMigrate,
+  domainTransfer,
 } from "./lib/provision-lifecycle.mjs";
+import {
+  adminLicenseGet,
+  adminTemplatesList,
+  adminAdminsList,
+  adminAdminsCreate,
+  adminAdminsDelete,
+  adminGlobalFeaturesList,
+  adminGlobalFeatureSet,
+  adminConfigSystem,
+  adminCheckConfig,
+  adminS3ListBuckets,
+  adminS3ListFiles,
+  adminS3Upload,
+  adminServerStatus,
+} from "./lib/provision-admin.mjs";
 import { mailSettingsGet, mailSettingsSet } from "./lib/provision-mail-settings.mjs";
 import { mailLogsSearch } from "./lib/provision-mail-logs.mjs";
 import { imapList, imapCopy, imapMessages, imapFetch } from "./lib/provision-imap.mjs";
@@ -201,6 +219,54 @@ async function main() {
       break;
     case "domain-validate":
       await domainValidate(args[0]);
+      break;
+    case "domain-clone":
+      await domainClone(args[0], args[1], args[2]);
+      break;
+    case "domain-migrate":
+      await domainMigrate(args[0], args[1]);
+      break;
+    case "domain-transfer":
+      await domainTransfer(args[0], args[1]);
+      break;
+    case "admin-license":
+      await adminLicenseGet();
+      break;
+    case "admin-templates":
+      await adminTemplatesList();
+      break;
+    case "admin-admins-list":
+      await adminAdminsList();
+      break;
+    case "admin-admins-create":
+      await adminAdminsCreate(args[0], args[1]);
+      break;
+    case "admin-admins-delete":
+      await adminAdminsDelete(args[0]);
+      break;
+    case "admin-global-features":
+      await adminGlobalFeaturesList();
+      break;
+    case "admin-global-feature-set":
+      await adminGlobalFeatureSet(args[0], args[1]);
+      break;
+    case "admin-config-system":
+      await adminConfigSystem(args[0]);
+      break;
+    case "admin-check-config":
+      await adminCheckConfig();
+      break;
+    case "admin-s3-buckets":
+      await adminS3ListBuckets(args[0], args[1]);
+      break;
+    case "admin-s3-files":
+      await adminS3ListFiles(args[0], args[1], args[2]);
+      break;
+    case "admin-s3-upload":
+      await adminS3Upload(args[0], args[1], args[2], args[3], args[4]);
+      break;
+    case "admin-server-status":
+      await adminServerStatus();
       break;
     case "mail-logs-search":
       await mailLogsSearch(args[0], args[1] || "");
