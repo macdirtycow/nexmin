@@ -3,8 +3,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PORT="${QADBAK_TERMINAL_WS_PORT:-3001}"
-PANEL_PORT="${QADBAK_PANEL_PORT:-11000}"
+QADBAK_DIR="${QADBAK_DIR:-$ROOT}"
+# shellcheck source=scripts/lib/read-env-local.sh
+source "$ROOT/scripts/lib/read-env-local.sh"
+PORT="$(read_env_local_key QADBAK_TERMINAL_WS_PORT 3001)"
+PANEL_PORT="$(read_env_local_key QADBAK_PANEL_PORT 11000)"
 USER="${QADBAK_USER:-qadbak}"
 
 echo "==> node-pty module"
