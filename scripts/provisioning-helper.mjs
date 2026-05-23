@@ -154,7 +154,7 @@ async function main() {
       await mailSync();
       break;
     case "mail-diagnose":
-      await mailDiagnoseDomain(args[0]);
+      await mailDiagnoseDomain(args[0], args[1]);
       break;
     case "mail-receive-test":
       await mailReceiveTestDomain(args[0], args[1]);

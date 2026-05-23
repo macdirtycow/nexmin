@@ -151,11 +151,11 @@ if [[ -x "$QADBAK_DIR/scripts/open-host-firewall-port.sh" ]]; then
   bash "$QADBAK_DIR/scripts/open-host-firewall-port.sh" 25 2>/dev/null || true
 fi
 
-echo "==> Sync mailbox maps + virtual domains (hash: ... OK)"
-sync_maps
-
 mkdir -p /var/lib/qadbak
 touch "$STAMP"
+
+echo "==> Sync mailbox maps + virtual domains (hash: ... OK)"
+sync_maps
 
 echo "OK — inbound mail: hash:${QADBAK_DOMAINS} + LMTP → Dovecot Maildir"
 echo "    Test: sudo bash scripts/check-native-mail.sh YOUR-DOMAIN info"

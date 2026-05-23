@@ -130,17 +130,18 @@ export async function mailSync() {
   emit({ ok: true, source: "mail-sync" });
 }
 
-export async function mailDiagnoseDomain(domain) {
-  const checks = await mailDiagnose(domain);
+export async function mailDiagnoseDomain(domain, localUser) {
+  const checks = await mailDiagnose(domain, localUser);
   const hints = await mailDnsHints(domain);
   const { emit } = await import("./provisioning-common.mjs");
-  emit({ ok: true, checks, dnsHints: hints });
+  emit({ ok: checks.every((c) => c.ok), checks, dnsHints: hints });
 }
 
 export async function mailReceiveTestDomain(domain, localUser) {
   const result = await mailReceiveTest(domain, localUser);
   const { emit } = await import("./provisioning-common.mjs");
-  emit({ ok: true, ...result, source: "local-delivery" });
+  emit({ ok: result.delivered, ...result, source: "local-delivery" });
+}
 }
 
 export async function mailDnsHintsDomain(domain) {
