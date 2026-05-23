@@ -22,13 +22,13 @@ for f in /etc/postfix/qadbak-domains /etc/postfix/qadbak-virtual; do
 done
 
 if [[ -n "$DOMAIN" ]]; then
-  echo "==> mail-diagnose $DOMAIN"
+  echo "==> mail-diagnose $DOMAIN $USER_LOCAL"
   OUT="$(sudo -u "${QADBAK_USER:-qadbak}" sudo -n "$ROOT/scripts/run-provisioning-helper.sh" \
-    mail-diagnose "$DOMAIN" 2>&1 | tail -1)"
+    mail-diagnose "$DOMAIN" "$USER_LOCAL" 2>&1 | tail -1)"
   echo "$OUT" | python3 -m json.tool 2>/dev/null || echo "$OUT"
 
-  echo "==> local delivery test"
-  bash "$ROOT/scripts/test-mail-receive.sh" "$DOMAIN" "$USER_LOCAL" 2>/dev/null || true
+  echo "==> local delivery test ($USER_LOCAL)"
+  bash "$ROOT/scripts/test-mail-receive.sh" "$DOMAIN" "$USER_LOCAL" || true
 
   echo "==> imap-list $DOMAIN $USER_LOCAL"
   IMAP="$(sudo -u "${QADBAK_USER:-qadbak}" sudo -n "$ROOT/scripts/run-provisioning-helper.sh" \
@@ -37,5 +37,5 @@ if [[ -n "$DOMAIN" ]]; then
 fi
 
 echo ""
-echo "If SMTP RCPT fails: sudo bash scripts/configure-native-mail.sh --force"
-echo "If RCPT OK but no external mail: open TCP 25 at provider + DNS MX (DNS only)"
+echo "External test from your Mac: nc -zv 173.212.250.158 25"
+echo "If RCPT/LMTP OK but no Gmail: provider firewall TCP 25 + MX DNS only"

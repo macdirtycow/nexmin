@@ -90,19 +90,24 @@ export async function ensureDomainMailSetup(domain, owner) {
   await ensureInboundMailDns(d).catch(() => {});
 }
 
+let stackConfiguring = false;
+
 export async function ensureNativeMailStack() {
-  if (stackConfigured || (await fileExists(MAIL_CONFIGURED_STAMP))) {
+  if (stackConfigured || stackConfiguring || (await fileExists(MAIL_CONFIGURED_STAMP))) {
     stackConfigured = true;
     return;
   }
   const script = path.join(QADBAK_DIR, "scripts", "configure-native-mail.sh");
   if (!(await fileExists(script))) return;
+  stackConfiguring = true;
   try {
     await exec("bash", [script, "--force"], { timeout: 180_000 });
     stackConfigured = true;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     throw new Error(`Native mail stack setup failed: ${msg}`);
+  } finally {
+    stackConfiguring = false;
   }
 }
 
@@ -140,6 +145,20 @@ export async function mailSyncAll() {
   }
 }
 
+async function countNewMessages(maildirNew) {
+  const { readdir } = await import("node:fs/promises");
+  try {
+    const files = await readdir(maildirNew);
+    return files.filter((f) => !f.startsWith(".")).length;
+  } catch {
+    return 0;
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function mailReceiveTest(domain, localUser) {
   const { user: owner, home } = await resolveDomainUser(domain);
   const local = String(localUser || owner).trim().toLowerCase();
@@ -150,6 +169,12 @@ export async function mailReceiveTest(domain, localUser) {
   }
 
   const to = `${local}@${domain}`;
+  const maildirNew =
+    local === owner
+      ? path.join(home, "Maildir", "new")
+      : path.join(layout.homesDir || path.join(home, "homes"), local, "Maildir", "new");
+
+  const before = await countNewMessages(maildirNew);
   const msg = [
     `To: ${to}`,
     `From: postmaster@${domain}`,
@@ -161,24 +186,23 @@ export async function mailReceiveTest(domain, localUser) {
 
   await exec("/usr/sbin/sendmail", ["-f", `postmaster@${domain}`, "-t", "-i"], {
     input: msg,
-    timeout: 20_000,
+    timeout: 30_000,
   });
 
-  const maildir =
-    local === owner
-      ? path.join(home, "Maildir", "new")
-      : path.join(layout.homesDir || path.join(home, "homes"), local, "Maildir", "new");
-
-  const { readdir } = await import("node:fs/promises");
-  let count = 0;
-  try {
-    const files = await readdir(maildir);
-    count = files.filter((f) => !f.startsWith(".")).length;
-  } catch {
-    count = 0;
+  let after = before;
+  for (let i = 0; i < 40; i += 1) {
+    await sleep(250);
+    after = await countNewMessages(maildirNew);
+    if (after > before) break;
   }
 
-  return { to, maildir, newMessages: count };
+  const delivered = after > before;
+  return {
+    to,
+    maildir: maildirNew,
+    newMessages: Math.max(0, after - before),
+    delivered,
+  };
 }
 
 /** SMTP RCPT probe — verifies Postfix accepts mail for mailbox@domain. */
@@ -222,7 +246,7 @@ sys.exit(0 if r.startswith("250") else 1)
   }
 }
 
-export async function mailDiagnose(domain) {
+export async function mailDiagnose(domain, localUser) {
   const rows = await loadRegistry();
   const row = rows.find((r) => r.name === domain);
   const checks = [];
@@ -275,13 +299,38 @@ export async function mailDiagnose(domain) {
     domains.join(", ") || "(none)",
   );
 
-  const probeUser = row?.user || "info";
+  let probeUser = String(localUser || "").trim().toLowerCase();
+  if (!probeUser) {
+    try {
+      const { user: owner, home } = await resolveDomainUser(domain);
+      const layout = await discoverMailLayout(domain, owner, home);
+      const mailboxes = await listMailboxesFromLayout(layout);
+      const infoBox = mailboxes.find((m) => m.user.toLowerCase() === "info");
+      probeUser = infoBox?.user || mailboxes[0]?.user || row?.user || "info";
+    } catch {
+      probeUser = row?.user || "info";
+    }
+  }
   const probe = await smtpInboundProbe(domain, probeUser);
   await ok(
     `SMTP RCPT TO ${probe.recipient}`,
     probe.ok,
     probe.response,
   );
+
+  try {
+    const delivery = await mailReceiveTest(domain, probeUser);
+    await ok(
+      `LMTP delivery → ${delivery.maildir}`,
+      delivery.delivered,
+      delivery.delivered
+        ? `${delivery.newMessages} new message(s)`
+        : "no message in Maildir/new after 10s — check journalctl -u postfix -u dovecot",
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await ok("LMTP delivery", false, msg);
+  }
 
   const hints = await mailDnsHints(domain);
   await ok("dns hints", true, JSON.stringify(hints.records));

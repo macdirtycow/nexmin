@@ -12,8 +12,8 @@ OUT="$(sudo -u "${QADBAK_USER:-qadbak}" sudo -n "$ROOT/scripts/run-provisioning-
 echo "$OUT" | python3 -m json.tool 2>/dev/null || echo "$OUT"
 
 if echo "$OUT" | grep -q '"ok":true'; then
-  echo "OK — message queued to Maildir (check IMAP tab → INBOX)"
+  echo "OK — message delivered to Maildir (check IMAP tab → INBOX)"
 else
-  echo "FAIL" >&2
+  echo "FAIL — local delivery did not reach Maildir/new" >&2
   exit 1
 fi
