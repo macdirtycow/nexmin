@@ -21,6 +21,7 @@ import {
   QADBAK_POSTFIX_DOMAINS,
 } from "./mail-layout.mjs";
 import { ensureInboundMailDns, mailDnsHints } from "./mail-dns.mjs";
+import { deliverLocalMessage } from "./mail-queue.mjs";
 
 const exec = promisify(execFile);
 
@@ -131,6 +132,7 @@ export async function mailSyncAll() {
           ? path.join(home, "Maildir")
           : await resolveMailboxMaildir(layout, local, row.user, home);
         await ensureMaildir(maildir);
+        await ensureMailboxOwnership(local, row.user, maildir, isOwner);
       }
     } catch {
       /* per-domain */
@@ -147,13 +149,28 @@ export async function mailSyncAll() {
   }
 }
 
-async function countNewMessages(maildirNew) {
+async function countInboxMessages(maildirRoot) {
   const { readdir } = await import("node:fs/promises");
+  let n = 0;
+  for (const sub of ["cur", "new"]) {
+    try {
+      const files = await readdir(path.join(maildirRoot, sub));
+      n += files.filter((f) => !f.startsWith(".")).length;
+    } catch {
+      /* */
+    }
+  }
+  return n;
+}
+
+async function ensureMailboxOwnership(local, owner, maildirRoot, isOwner) {
+  const target = isOwner ? owner : local;
+  const group = owner;
   try {
-    const files = await readdir(maildirNew);
-    return files.filter((f) => !f.startsWith(".")).length;
+    await exec("chown", ["-R", `${target}:${group}`, maildirRoot], { timeout: 60_000 });
+    await exec("chmod", ["-R", "u+rwX,g+rwX", maildirRoot], { timeout: 60_000 });
   } catch {
-    return 0;
+    /* best effort */
   }
 }
 
@@ -172,27 +189,24 @@ export async function mailReceiveTest(domain, localUser) {
 
   const to = `${local}@${domain}`;
   const maildirRoot = await resolveMailboxMaildir(layout, local, owner, home);
-  const maildirNew = path.join(maildirRoot, "new");
+  await ensureMailboxOwnership(local, owner, maildirRoot, local === owner);
 
-  const before = await countNewMessages(maildirNew);
-  const msg = [
-    `To: ${to}`,
-    `From: postmaster@${domain}`,
-    "Subject: Qadbak inbound test",
-    "",
-    "Inbound mail delivery test.",
-    "",
-  ].join("\r\n");
+  const before = await countInboxMessages(maildirRoot);
+  const subject = "Qadbak inbound test";
+  const body = "Inbound mail delivery test.";
 
-  await exec("/usr/sbin/sendmail", ["-f", `postmaster@${domain}`, "-t", "-i"], {
-    input: msg,
-    timeout: 30_000,
-  });
+  let inject;
+  try {
+    inject = await deliverLocalMessage(to, subject, body, "postmaster@localhost");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(msg);
+  }
 
   let after = before;
   for (let i = 0; i < 40; i += 1) {
     await sleep(250);
-    after = await countNewMessages(maildirNew);
+    after = await countInboxMessages(maildirRoot);
     if (after > before) break;
   }
 
@@ -200,9 +214,9 @@ export async function mailReceiveTest(domain, localUser) {
   return {
     to,
     maildir: maildirRoot,
-    maildirNew,
     newMessages: Math.max(0, after - before),
     delivered,
+    injectMethod: inject.method,
   };
 }
 
@@ -342,7 +356,7 @@ export async function mailDiagnose(domain, localUser) {
       delivery.delivered,
       delivery.delivered
         ? `${delivery.newMessages} new message(s)`
-        : "no message in Maildir/new after 10s — check journalctl -u postfix -u dovecot",
+        : "no message in Maildir cur/new after 10s — run: sudo bash scripts/repair-maildir-inbox.sh DOMAIN USER",
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

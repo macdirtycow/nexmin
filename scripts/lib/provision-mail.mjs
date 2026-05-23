@@ -140,7 +140,12 @@ export async function mailDiagnoseDomain(domain, localUser) {
 export async function mailReceiveTestDomain(domain, localUser) {
   const result = await mailReceiveTest(domain, localUser);
   const { emit } = await import("./provisioning-common.mjs");
-  emit({ ok: result.delivered, ...result, source: "local-delivery" });
+  emit({
+    ok: result.delivered,
+    ...result,
+    source: "local-delivery",
+    error: result.delivered ? undefined : "Message not in Maildir cur/new after inject",
+  });
 }
 
 export async function mailDnsHintsDomain(domain) {

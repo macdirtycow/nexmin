@@ -28,7 +28,7 @@ echo "========== 3. Unix user + Maildir on disk =========="
 if getent passwd "$USER_LOCAL" >/dev/null; then
   UHOME="$(getent passwd "$USER_LOCAL" | cut -d: -f6)"
   echo "passwd $USER_LOCAL → home $UHOME"
-  for sub in new cur; do
+  for sub in new cur tmp; do
     n="$(find "$UHOME/Maildir/$sub" -type f 2>/dev/null | wc -l | tr -d ' ')"
     echo "  $UHOME/Maildir/$sub → $n file(s)"
   done

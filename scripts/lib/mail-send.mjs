@@ -1,7 +1,8 @@
-import { spawn } from "node:child_process";
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, unlink } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import { emit, fail, resolveDomainUser, fileExists } from "./provisioning-common.mjs";
 import { listMailboxesFromLayout, discoverMailLayout } from "./mail-layout.mjs";
+import { queueSendmail } from "./mail-queue.mjs";
 
 const SENDMAIL = "/usr/sbin/sendmail";
 const MAIL_CONFIGURED_STAMP = "/var/lib/qadbak/native-mail-configured";
@@ -32,35 +33,6 @@ function buildMessage(from, to, subject, body) {
     text,
     "",
   ].join("\r\n");
-}
-
-/** Queue mail via Postfix sendmail (provisioning helper runs as root). */
-function queueSendmail(from, message, timeoutMs = 25_000) {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(SENDMAIL, ["-f", from, "-t", "-i"], {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    let stderr = "";
-    const timer = setTimeout(() => {
-      proc.kill("SIGTERM");
-      reject(new Error("sendmail timed out — check Postfix logs (mail.log)"));
-    }, timeoutMs);
-
-    proc.stderr.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-    proc.on("error", (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
-    proc.on("close", (code) => {
-      clearTimeout(timer);
-      if (code === 0) resolve();
-      else reject(new Error(stderr.trim() || `sendmail exited with code ${code}`));
-    });
-    proc.stdin.write(message);
-    proc.stdin.end();
-  });
 }
 
 export async function mailSendDirect(domain, localUser, payloadJson) {
