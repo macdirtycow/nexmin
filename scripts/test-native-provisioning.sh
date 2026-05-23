@@ -49,6 +49,8 @@ fi
 if has backup; then
   echo "==> backup-list $DOMAIN"
   check backup-list "$DOMAIN"
+  echo "==> backup-create $DOMAIN (full)"
+  check backup-create "$DOMAIN" full
 fi
 if has cron; then
   echo "==> cron-list $DOMAIN"

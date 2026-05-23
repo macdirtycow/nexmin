@@ -58,6 +58,7 @@ if [[ "$INDEPENDENT" -eq 1 ]]; then
   echo "  [x] clone-domain — domain-clone (rsync public_html + config)"
   echo "  [x] transfer-domain — panel user in data/users.json"
   echo "  [x] migrate-domain — backup tarball + manual rsync/DNS steps"
+  echo "  [x] backups — full tar (web+mail+mysql+config), restore, cron schedule"
   echo "  [x] license-info — Qadbak Independent (no VM license)"
   echo "  [x] list-templates — data/native-templates.json"
   echo "  [x] list-admins / create-admin / delete-admin — data/users.json"

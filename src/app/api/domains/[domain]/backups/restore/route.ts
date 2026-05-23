@@ -21,10 +21,10 @@ export async function POST(request: Request, { params }: Params) {
     const result = await getProvisioner().restoreDomain(
       domain,
       body.source.trim(),
-      { test: body.test === true },
+      { test: body.test === true, allFeatures: true },
       session,
     );
-    await auditLog(session.username, "restore-domain", domain);
+    await auditLog(session.username, "restore-domain", domain, body.source.trim());
     return jsonOk({ ok: true, result });
   } catch (err) {
     return handleApiError(err);

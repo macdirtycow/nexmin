@@ -114,7 +114,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "backups",
     phase: 2,
     label: "Backups",
-    description: "Backup, schedule, and restore",
+    description: "Qadbak backups — website, mail, databases, restore",
     path: "backups",
     navOrder: 60,
     programs: {
