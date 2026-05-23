@@ -7,9 +7,13 @@ import {
   moduleById,
   webminModulesForAdmin,
 } from "@/lib/webmin";
+import { webminUiEnabled } from "@/lib/independent-mode";
 
 export async function GET(request: Request) {
   try {
+    if (!webminUiEnabled()) {
+      return jsonError("Webmin is disabled in this panel.", 410);
+    }
     const session = await requireAdmin();
     const url = new URL(request.url);
     const moduleId = url.searchParams.get("module");

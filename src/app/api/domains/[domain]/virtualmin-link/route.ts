@@ -1,5 +1,6 @@
 import { auditLog } from "@/lib/audit";
-import { handleApiError, jsonOk } from "@/lib/api";
+import { handleApiError, jsonError, jsonOk } from "@/lib/api";
+import { webminUiEnabled } from "@/lib/independent-mode";
 import { requireSession } from "@/lib/session";
 import { virtualminEmbedPath } from "@/lib/virtualmin-embed";
 import { getProvisioner } from "@/lib/provisioner";
@@ -8,6 +9,9 @@ type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   try {
+    if (!webminUiEnabled()) {
+      return jsonError("VirtualMin/Webmin login links are disabled in this panel.", 410);
+    }
     const session = await requireSession();
     const { domain: encoded } = await params;
     const domain = decodeURIComponent(encoded);

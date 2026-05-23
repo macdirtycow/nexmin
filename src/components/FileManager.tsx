@@ -15,7 +15,6 @@ import {
 } from "@/lib/domain-files";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
-import { WebminEmbed } from "@/components/WebminEmbed";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function FileManager({
@@ -58,18 +57,6 @@ export function FileManager({
     },
     [enc, listing.cwd],
   );
-
-  async function openFileManager() {
-    setError("");
-    try {
-      const res = await fetch(`/api/domains/${enc}/virtualmin-link?dest=fileman`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Link failed.");
-      window.open(data.url, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error.");
-    }
-  }
 
   async function navigate(dir: string) {
     setLoading(true);
@@ -295,36 +282,15 @@ export function FileManager({
             {q.label}
           </Button>
         ))}
-        {!isQadbak && (
-          <Button
-            variant="ghost"
-            disabled={loading}
-            onClick={() => window.location.assign(`/domains/${enc}/webmin`)}
-          >
-            All Webmin modules
-          </Button>
-        )}
-        <Button variant="ghost" onClick={openFileManager} disabled={loading}>
-          {isQadbak ? "File manager (direct)" : "Open file manager"}
-        </Button>
       </div>
 
-      {!isQadbak && listing.fileManagerUrl && (
-        <WebminEmbed
-          title="File manager"
-          description="Webmin file manager for this domain (public_html and home)."
-          fetchUrl={`/api/domains/${enc}/virtualmin-link?dest=fileman`}
-          initialUrl={listing.fileManagerUrl}
-          height="min(70vh, 720px)"
-        />
-      )}
-      {!isQadbak && !listing.fileManagerUrl && (
+      {!isQadbak && (
         <Alert>
-          File manager link unavailable. Run on the server:{" "}
+          Native file manager is not enabled for this domain. On the server run:{" "}
           <code className="text-white">
             sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh
           </code>{" "}
-          then rebuild and restart Qadbak — or fix VirtualMin create-login-link.
+          then rebuild and restart Qadbak.
         </Alert>
       )}
 

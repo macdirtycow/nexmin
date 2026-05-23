@@ -152,19 +152,6 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     },
   },
   {
-    id: "webmin",
-    phase: 3,
-    label: "Webmin",
-    description: "Break-glass Virtualmin & Usermin (admins only)",
-    path: "webmin",
-    navOrder: 8,
-    adminOnly: true,
-    programs: {
-      admin: ["create-login-link"],
-      client: [],
-    },
-  },
-  {
     id: "logs",
     phase: 3,
     label: "Logs",
@@ -431,23 +418,8 @@ export const ADMIN_NAV = [
   { path: "/admin/cloud", label: "Cloud (S3)" },
 ] as const;
 
-/** Break-glass Webmin module browsers — hidden from main nav unless env enabled. */
-export const ADMIN_NAV_WEBMIN = [
-  { path: "/admin/webmin", label: "Webmin (break-glass)" },
-  { path: "/admin/system", label: "Virtualmin" },
-  { path: "/admin/system-menu", label: "System" },
-  { path: "/admin/servers-menu", label: "Servers" },
-  { path: "/admin/tools-menu", label: "Tools" },
-  { path: "/admin/networking-menu", label: "Network" },
-  { path: "/admin/hardware-menu", label: "Hardware" },
-  { path: "/admin/cluster-menu", label: "Cluster" },
-] as const;
-
 export function adminNavItems(): readonly { path: string; label: string }[] {
-  const showWebmin =
-    process.env.QADBAK_SHOW_WEBMIN_NAV === "true" ||
-    process.env.QADBAK_SHOW_WEBMIN_NAV === "1";
-  return showWebmin ? [...ADMIN_NAV, ...ADMIN_NAV_WEBMIN] : ADMIN_NAV;
+  return ADMIN_NAV;
 }
 
 const GLOBAL_ADMIN_BASE = [
@@ -480,16 +452,9 @@ export function programsForRole(role: Role): readonly string[] {
   return [...new Set([...GLOBAL_PROGRAMS[role], ...fromFeatures])];
 }
 
-function webminUiDisabled(): boolean {
-  if (independentHostingFromEnv()) return true;
-  const v = process.env.QADBAK_DISABLE_WEBMIN?.trim().toLowerCase();
-  return v === "true" || v === "1" || v === "yes";
-}
-
 export function featuresForDomain(role: Role, isAdmin: boolean): DomainFeature[] {
   return DOMAIN_FEATURES.filter((f) => {
     if (f.phase > IMPLEMENTED_PHASE) return false;
-    if (f.id === "webmin" && webminUiDisabled()) return false;
     if (f.adminOnly && !isAdmin) return false;
     const progs = isAdmin ? f.programs.admin : f.programs.client;
     return progs.length > 0;

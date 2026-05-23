@@ -7,12 +7,16 @@ import {
   moduleById,
   webminModulesForDomain,
 } from "@/lib/webmin";
+import { webminUiEnabled } from "@/lib/independent-mode";
 import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   try {
+    if (!webminUiEnabled()) {
+      return jsonError("Webmin is disabled in this panel.", 410);
+    }
     const { session, domain } = await requireDomainApi((await params).domain);
     const url = new URL(request.url);
     const moduleId = url.searchParams.get("module");
