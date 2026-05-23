@@ -48,8 +48,8 @@ export function DomainsList({
         <p className="text-red-300">{error}</p>
         {isAdmin && (
           <p className="text-sm text-panel-muted">
-            Check VirtualMin API (<code className="text-slate-400">npm run test-api</code> on
-            the server) or create a domain below.
+            Check native registry (<code className="text-slate-400">data/native-domains.json</code>)
+            and provisioning helper, or create a domain below.
           </p>
         )}
         {isAdmin && (

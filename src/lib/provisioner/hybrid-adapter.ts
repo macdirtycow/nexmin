@@ -1,6 +1,6 @@
 import * as vm from "../virtualmin";
 import { applyNativeOverrides } from "./apply-native-overrides";
-import { createUnimplementedProvisioner } from "./native-stub";
+import { createUnimplementedProvisioner, isIndependentMode } from "./native-stub";
 import { createVirtualminProvisioner } from "./virtualmin-adapter";
 import {
   findDomainByNameNative,
@@ -11,6 +11,7 @@ import { listEnabledNativeFeatures } from "./native-features";
 import type { Provisioner } from "./types";
 
 function webminDisabled(): boolean {
+  if (isIndependentMode()) return true;
   const v = process.env.QADBAK_DISABLE_WEBMIN?.trim().toLowerCase();
   return v === "true" || v === "1" || v === "yes";
 }

@@ -16,7 +16,7 @@ export default async function AdminTemplatesPage() {
       {error && <Alert>{error}</Alert>}
       <Card className="overflow-hidden p-0">
         <p className="px-6 pt-6 text-sm text-panel-muted">
-          Server templates (view only). Changes via VirtualMin.
+          Server templates for new domains (native registry). Edit data/native-templates.json on the server.
         </p>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="border-t border-panel-border text-panel-muted">

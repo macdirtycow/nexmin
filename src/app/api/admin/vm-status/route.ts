@@ -1,15 +1,41 @@
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonOk } from "@/lib/api";
+import { isIndependentMode } from "@/lib/provisioner/native-stub";
+import { getNativeServerStatus } from "@/lib/provisioner/independent-ops";
 import { getProvisioner } from "@/lib/provisioner";
 import {
   virtualMinFetch,
   virtualMinTlsInsecureEnabled,
 } from "@/lib/virtualmin-http";
 
-/** Admin-only: verify VirtualMin API from the running Qadbak process env. */
+/** Admin-only: server / provisioner health (native or legacy VirtualMin probe). */
 export async function GET() {
   try {
     await requireAdmin();
+
+    if (isIndependentMode()) {
+      const status = await getNativeServerStatus();
+      const domains = await getProvisioner().listDomains({
+        role: "admin",
+        domains: [],
+      });
+      return jsonOk({
+        mode: "native",
+        provisioner: "native",
+        virtualminConfigured: false,
+        virtualminUrl: "",
+        tlsInsecure: false,
+        mock: false,
+        probeStatus: 0,
+        probeBytes: 0,
+        probePreview: "VirtualMin API not used (independent mode)",
+        domainCount: domains.length,
+        domains: domains.map((d) => d.name),
+        services: status.services,
+        nginxTest: status.nginxTest,
+      });
+    }
+
     const url = process.env.VIRTUALMIN_URL ?? "";
     const user = process.env.VIRTUALMIN_USER ?? "";
     const pass = process.env.VIRTUALMIN_PASS ?? "";
@@ -41,6 +67,7 @@ export async function GET() {
       domains: [],
     });
     return jsonOk({
+      mode: "hybrid",
       virtualminUrl: url,
       tlsInsecure: virtualMinTlsInsecureEnabled(),
       mock: process.env.VIRTUALMIN_MOCK === "true",

@@ -295,13 +295,15 @@ export function FileManager({
             {q.label}
           </Button>
         ))}
-        <Button
-          variant="ghost"
-          disabled={loading}
-          onClick={() => window.location.assign(`/domains/${enc}/webmin`)}
-        >
-          All Webmin modules
-        </Button>
+        {!isQadbak && (
+          <Button
+            variant="ghost"
+            disabled={loading}
+            onClick={() => window.location.assign(`/domains/${enc}/webmin`)}
+          >
+            All Webmin modules
+          </Button>
+        )}
         <Button variant="ghost" onClick={openFileManager} disabled={loading}>
           {isQadbak ? "File manager (direct)" : "Open file manager"}
         </Button>

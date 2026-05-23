@@ -15,10 +15,12 @@ export function LifecycleManager({
   domain,
   initialValidation,
   initialError,
+  independentMode = false,
 }: {
   domain: string;
   initialValidation: { valid: boolean; messages: string[] };
   initialError: string;
+  independentMode?: boolean;
 }) {
   const router = useRouter();
   const enc = encodeURIComponent(domain);
@@ -126,29 +128,46 @@ export function LifecycleManager({
         </div>
       </Card>
 
-      <Card>
-        <h2 className="text-lg font-medium text-white">Migrate</h2>
-        <div className="mt-4 flex max-w-md gap-2">
-          <Input
-            placeholder="target-server.example.com"
-            value={destHost}
-            onChange={(e) => setDestHost(e.target.value)}
-          />
-          <Button
-            variant="secondary"
-            onClick={() => setConfirmAction("migrate")}
-            disabled={!destHost}
-          >
-            Migrate
-          </Button>
-        </div>
-      </Card>
+      {!independentMode && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Migrate</h2>
+          <div className="mt-4 flex max-w-md gap-2">
+            <Input
+              placeholder="target-server.example.com"
+              value={destHost}
+              onChange={(e) => setDestHost(e.target.value)}
+            />
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmAction("migrate")}
+              disabled={!destHost}
+            >
+              Migrate
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {independentMode && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Migrate to another server</h2>
+          <p className="mt-2 text-sm text-panel-muted">
+            Independent mode does not call VirtualMin migrate-domain. Export a backup,
+            copy DNS and files (rsync) to the target host, then create the domain there.
+          </p>
+        </Card>
+      )}
 
       <Card>
         <h2 className="text-lg font-medium text-white">Transfer ownership</h2>
+        {independentMode && (
+          <p className="mt-1 text-sm text-panel-muted">
+            Assigns the domain to another panel user (client). Unix owner is unchanged.
+          </p>
+        )}
         <div className="mt-4 flex max-w-md gap-2">
           <Input
-            placeholder="new-user"
+            placeholder={independentMode ? "panel username (client)" : "new-user"}
             value={newOwner}
             onChange={(e) => setNewOwner(e.target.value)}
           />
@@ -165,7 +184,9 @@ export function LifecycleManager({
       <Card className="border-red-900/40">
         <h2 className="text-lg font-medium text-red-300">Danger zone</h2>
         <p className="mt-1 text-sm text-panel-muted">
-          Permanently removes the virtual server from VirtualMin.
+          {independentMode
+            ? "Removes nginx vhost, registry entry, and unix user when marked by Qadbak."
+            : "Permanently removes the virtual server from VirtualMin."}
         </p>
         <Button
           className="mt-4"

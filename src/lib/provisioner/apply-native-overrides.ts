@@ -1,5 +1,7 @@
 import { nativeFeatureEnabled } from "./native-features";
+import * as indep from "./independent-ops";
 import * as native from "./native-ops";
+import { isIndependentMode } from "./native-stub";
 import type { Provisioner } from "./types";
 
 /** Patch provisioner methods when QADBAK_NATIVE_FEATURES includes a module. */
@@ -122,6 +124,24 @@ export function applyNativeOverrides<T extends Provisioner>(base: T): T {
     out.listPlans = native.listPlansNative;
     out.createPlan = native.createPlanNative;
     out.deletePlan = native.deletePlanNative;
+  }
+
+  if (isIndependentMode()) {
+    out.cloneDomain = indep.cloneDomainIndependent;
+    out.migrateDomain = indep.migrateDomainIndependent;
+    out.transferDomain = indep.transferDomainIndependent;
+    out.checkServerConfig = indep.checkServerConfigIndependent;
+    out.getLicenseInfo = indep.getLicenseInfoIndependent;
+    out.listTemplates = indep.listTemplatesIndependent;
+    out.listAdmins = indep.listAdminsIndependent;
+    out.createAdmin = indep.createAdminIndependent;
+    out.deleteAdmin = indep.deleteAdminIndependent;
+    out.listGlobalFeatures = indep.listGlobalFeaturesIndependent;
+    out.setGlobalFeature = indep.setGlobalFeatureIndependent;
+    out.runConfigSystem = indep.runConfigSystemIndependent;
+    out.listS3Buckets = indep.listS3BucketsIndependent;
+    out.listS3Files = indep.listS3FilesIndependent;
+    out.uploadS3File = indep.uploadS3FileIndependent;
   }
 
   return out;

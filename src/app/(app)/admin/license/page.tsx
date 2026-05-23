@@ -15,7 +15,7 @@ export default async function AdminLicensePage() {
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card>
-        <h2 className="text-lg font-medium text-white">VirtualMin license</h2>
+        <h2 className="text-lg font-medium text-white">Hosting license</h2>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-sm text-panel-muted">Type</dt>
@@ -31,7 +31,8 @@ export default async function AdminLicensePage() {
           </div>
         </dl>
         <p className="mt-6 text-sm text-panel-muted">
-          Run repository setup (`setup-repos`) in VirtualMin or via the CLI.
+          Independent Qadbak does not use a VirtualMin license. Domain limits follow your
+          server capacity and panel configuration.
         </p>
       </Card>
     </div>

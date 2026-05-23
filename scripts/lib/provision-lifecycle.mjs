@@ -1,13 +1,17 @@
-import { access } from "node:fs/promises";
+import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { domainCreate } from "./provision-domain.mjs";
 import {
   emit,
+  fail,
   resolveDomainUser,
   loadRegistry,
   saveRegistry,
   fileExists,
+  domainConfigDir,
+  QADBAK_DIR,
 } from "./provisioning-common.mjs";
 
 const exec = promisify(execFile);
@@ -80,4 +84,88 @@ export async function domainValidate(domain) {
     messages.push(`Domain marked disabled in registry`);
   }
   emit({ ok: true, valid, messages });
+}
+
+export async function domainClone(source, target, _pass) {
+  const src = String(source).trim().toLowerCase();
+  const tgt = String(target).trim().toLowerCase();
+  if (!src || !tgt) fail("source and target domain required");
+  if (src === tgt) fail("source and target must differ");
+
+  const rows = await loadRegistry();
+  const srow = rows.find((r) => String(r.name).toLowerCase() === src);
+  if (!srow) fail(`Unknown source domain: ${src}`);
+  if (rows.some((r) => String(r.name).toLowerCase() === tgt)) {
+    fail(`Target domain already exists: ${tgt}`);
+  }
+
+  const plan = srow.plan || "Default";
+  await domainCreate(tgt, "", "", JSON.stringify({ type: "top", plan }));
+
+  const { home: srcHome } = await resolveDomainUser(src);
+  const { home: dstHome } = await resolveDomainUser(tgt);
+  const pubSrc = path.join(srcHome, "public_html");
+  const pubDst = path.join(dstHome, "public_html");
+  await mkdir(pubDst, { recursive: true });
+  await exec(
+    "rsync",
+    ["-a", "--delete", `${pubSrc}/`, `${pubDst}/`],
+    { timeout: 600_000 },
+  );
+
+  const srcCfg = domainConfigDir(src);
+  const dstCfg = domainConfigDir(tgt);
+  if (await fileExists(srcCfg)) {
+    await cp(srcCfg, dstCfg, { recursive: true, force: true });
+  }
+
+  emit({ ok: true, domain: tgt, clonedFrom: src });
+}
+
+export async function domainMigrate(_domain, destHost) {
+  fail(
+    `Native mode: migrate to ${destHost} is manual — use domain backup, rsync home + DNS to the target server, then domain-create there. VirtualMin migrate-domain is not used.`,
+  );
+}
+
+export async function domainTransfer(domain, newOwner) {
+  const d = String(domain).trim().toLowerCase();
+  const owner = String(newOwner || "").trim();
+  if (!d || !owner) fail("domain and newOwner required");
+
+  const rows = await loadRegistry();
+  if (!rows.some((r) => String(r.name).toLowerCase() === d)) {
+    fail(`Unknown domain: ${d}`);
+  }
+
+  const usersPath = path.join(QADBAK_DIR, "data", "users.json");
+  const { readFile, writeFile } = await import("node:fs/promises");
+  let users;
+  try {
+    users = JSON.parse(await readFile(usersPath, "utf8"));
+  } catch {
+    fail("data/users.json missing");
+  }
+  if (!Array.isArray(users)) fail("invalid users.json");
+
+  const target = users.find(
+    (u) => String(u.username).toLowerCase() === owner.toLowerCase(),
+  );
+  if (!target) fail(`Panel user not found: ${owner}`);
+
+  for (const u of users) {
+    if (!Array.isArray(u.domains)) u.domains = [];
+    u.domains = u.domains.filter((x) => String(x).toLowerCase() !== d);
+  }
+  if (!target.domains) target.domains = [];
+  if (!target.domains.some((x) => String(x).toLowerCase() === d)) {
+    target.domains.push(d);
+  }
+  await writeFile(usersPath, `${JSON.stringify(users, null, 2)}\n`, "utf8");
+  emit({
+    ok: true,
+    domain: d,
+    panelUser: target.username,
+    note: "Panel access updated; unix system user unchanged.",
+  });
 }
