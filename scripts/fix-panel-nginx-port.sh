@@ -26,6 +26,10 @@ fi
 echo "==> Apply panel nginx on :$PANEL_PORT"
 bash "$QADBAK_DIR/scripts/apply-panel-nginx-fixes.sh" "$PANEL_PORT"
 
+if [[ -f "$QADBAK_DIR/scripts/tune-nginx-worker-connections.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/tune-nginx-worker-connections.sh" 4096 || true
+fi
+
 echo "==> pm2 qadbak (app on 127.0.0.1:3000)"
 sudo -u qadbak bash -c "cd '$QADBAK_DIR' && pm2 restart qadbak" 2>/dev/null || \
   bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"

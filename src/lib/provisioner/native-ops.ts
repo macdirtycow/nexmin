@@ -126,8 +126,10 @@ export async function createDomainNative(
   input: CreateDomainInput,
   _actor: Actor,
 ): Promise<void> {
+  const type =
+    input.type ?? (input.alias ? "alias" : input.subdom ? "sub" : "top");
   const extra = JSON.stringify({
-    type: input.type ?? "top",
+    type,
     parent: input.parent,
     plan: input.plan,
   });
