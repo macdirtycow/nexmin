@@ -1934,8 +1934,11 @@ export async function copyMailbox(
   from: string,
   to: string,
   actor: { role: Role; domains: string[] },
+  mailboxUser?: string,
 ): Promise<void> {
-  await virtualMinCall("copy-mailbox", { domain, from, to }, actor);
+  const params: Record<string, string> = { domain, from, to };
+  if (mailboxUser) params.user = mailboxUser;
+  await virtualMinCall("copy-mailbox", params, actor);
 }
 
 export async function searchMailLogs(

@@ -9,7 +9,7 @@ export default async function MailboxesPage({ params }: Props) {
   let mailboxes: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listImapMailboxes"]>> = [];
   let error = "";
   try {
-    mailboxes = await getProvisioner().listImapMailboxes(domain, "info", session);
+    mailboxes = await getProvisioner().listImapMailboxes(domain, "", session);
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load mailboxes.";
   }

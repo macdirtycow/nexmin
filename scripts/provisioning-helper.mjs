@@ -189,7 +189,7 @@ async function main() {
       await imapList(args[0], args[1]);
       break;
     case "imap-copy":
-      await imapCopy(args[0], args[1], args[2]);
+      await imapCopy(args[0], args[1], args[2], args[3]);
       break;
     case "protected-list":
       await protectedList(args[0]);

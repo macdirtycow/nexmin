@@ -98,7 +98,8 @@ if has mail-logs; then
   check mail-logs-search "$DOMAIN" "$DOMAIN"
 fi
 if has imap; then
-  check imap-list "$DOMAIN" ""
+  IMAP_USER="${TEST_MAIL_USER:-}"
+  check imap-list "$DOMAIN" "$IMAP_USER"
 fi
 if has protected; then
   check protected-list "$DOMAIN"
