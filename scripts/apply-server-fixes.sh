@@ -64,8 +64,13 @@ sudo -u "$QADBAK_USER" sudo -n "$REPAIR" __probe__ || {
   echo "Repair sudo failed — run: sudo bash scripts/configure-domain-repair-sudo.sh" >&2
 }
 
-echo "==> Dovecot IMAP (native tab)"
+echo "==> Native mail (Postfix + Dovecot)"
+if [[ -f "$QADBAK_DIR/scripts/configure-native-mail.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" 2>/dev/null || true
+  sudo -u "$QADBAK_USER" sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
+fi
 if command -v doveadm &>/dev/null; then
+  bash "$QADBAK_DIR/scripts/check-native-mail.sh" 2>/dev/null || true
   bash "$QADBAK_DIR/scripts/check-imap-dovecot.sh" 2>/dev/null || true
 else
   echo "    Install Dovecot: apt install dovecot-core dovecot-imapd"

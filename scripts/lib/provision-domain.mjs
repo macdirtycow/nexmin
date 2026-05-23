@@ -10,6 +10,7 @@ import {
   domainConfigDir,
   QADBAK_DIR,
 } from "./provisioning-common.mjs";
+import { ensureDomainMailSetup, ensureNativeMailStack } from "./mail-sync.mjs";
 
 const exec = promisify(execFile);
 
@@ -120,6 +121,12 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     isDefault: rows.length === 0,
   });
   await saveRegistry(rows);
+
+  if (type !== "alias") {
+    await ensureNativeMailStack();
+    await ensureDomainMailSetup(name, user);
+  }
+
   emit({ ok: true, domain: name, user, home, type, parent: parent || null, plan });
 }
 

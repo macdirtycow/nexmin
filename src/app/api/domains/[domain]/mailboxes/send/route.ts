@@ -1,0 +1,51 @@
+import { auditLog } from "@/lib/audit";
+import { handleApiError, jsonError, jsonOk } from "@/lib/api";
+import { requireDomainApi } from "@/lib/domain-api";
+import { nativeFeatureEnabled } from "@/lib/provisioner/native-features";
+import { runProvisioningHelper } from "@/lib/provisioner/native-exec";
+
+type Params = { params: Promise<{ domain: string }> };
+
+export async function POST(request: Request, { params }: Params) {
+  try {
+    const { session, domain } = await requireDomainApi((await params).domain);
+    if (!nativeFeatureEnabled("imap") && !nativeFeatureEnabled("mail")) {
+      return jsonError("Native mail send is not enabled on this server.", 503);
+    }
+
+    const body = (await request.json()) as {
+      user?: string;
+      to?: string;
+      subject?: string;
+      body?: string;
+    };
+    if (!body.user?.trim()) {
+      return jsonError("Mailbox user is required.");
+    }
+    if (!body.to?.trim()) {
+      return jsonError("Recipient (to) is required.");
+    }
+
+    const payload = JSON.stringify({
+      to: body.to.trim(),
+      subject: body.subject ?? "",
+      body: body.body ?? "",
+    });
+
+    const raw = await runProvisioningHelper(
+      "mail-send",
+      domain,
+      body.user.trim(),
+      payload,
+    );
+
+    await auditLog(session.username, "send-mail", domain);
+    return jsonOk({
+      ok: true,
+      from: raw.from as string | undefined,
+      to: raw.to as string | undefined,
+    });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}

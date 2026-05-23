@@ -26,6 +26,11 @@ apt-get install -y -qq \
 
 systemctl enable nginx apache2 mariadb postfix dovecot bind9 2>/dev/null || true
 
+if [[ -f "$QADBAK_DIR/scripts/configure-native-mail.sh" ]]; then
+  echo "==> Postfix + Dovecot (native mail)"
+  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" || echo "WARN: configure-native-mail.sh failed" >&2
+fi
+
 echo "==> Apache backend (nginx front — do not switch mpm on VirtualMin servers)"
 if [[ -f "$QADBAK_DIR/scripts/ensure-apache-backend.sh" ]]; then
   bash "$QADBAK_DIR/scripts/ensure-apache-backend.sh"

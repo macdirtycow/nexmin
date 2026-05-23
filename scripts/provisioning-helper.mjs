@@ -6,7 +6,15 @@ import { emit } from "./lib/provisioning-common.mjs";
 import { loadEnvLocal } from "./lib/load-env-local.mjs";
 import { sslList, sslIssue } from "./lib/provision-ssl.mjs";
 import { dnsGet, dnsAdd, dnsDel } from "./lib/provision-dns.mjs";
-import { mailList, mailCreate, mailDelete, mailPass } from "./lib/provision-mail.mjs";
+import {
+  mailList,
+  mailCreate,
+  mailDelete,
+  mailPass,
+  mailSend,
+  mailSync,
+  mailDiagnoseDomain,
+} from "./lib/provision-mail.mjs";
 import { dbList, dbCreate, dbPass } from "./lib/provision-db.mjs";
 import { domainCreate, domainDelete } from "./lib/provision-domain.mjs";
 import {
@@ -136,6 +144,15 @@ async function main() {
       break;
     case "mail-pass":
       await mailPass(args[0], args[1], args[2]);
+      break;
+    case "mail-send":
+      await mailSend(args[0], args[1], args[2]);
+      break;
+    case "mail-sync":
+      await mailSync();
+      break;
+    case "mail-diagnose":
+      await mailDiagnoseDomain(args[0]);
       break;
     case "db-list":
       await dbList(args[0]);

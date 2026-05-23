@@ -42,6 +42,12 @@ if echo ",$FEATURES," | grep -q ',dns,'; then
   bash "$QADBAK_DIR/scripts/discover-all-bind-zones.sh" || true
 fi
 
+if echo ",$FEATURES," | grep -q ',mail,'; then
+  echo "==> Postfix + Dovecot (native mail)"
+  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" || true
+  sudo -u qadbak sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
+fi
+
 sudo -u qadbak bash -c "cd '$QADBAK_DIR' && npm run build"
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$QADBAK_DIR/scripts/fix-panel-nginx-port.sh" ]]; then
   bash "$QADBAK_DIR/scripts/fix-panel-nginx-port.sh"

@@ -11,6 +11,7 @@ import {
   postmapReload,
   ensureMaildir,
 } from "./mail-layout.mjs";
+import { ensureNativeMailStack, syncVirtualDomainsFile } from "./mail-sync.mjs";
 
 const exec = promisify(execFile);
 
@@ -35,6 +36,7 @@ export async function mailListDirect(domain) {
 }
 
 export async function mailCreateDirect(domain, localUser, pass, real) {
+  await ensureNativeMailStack();
   const { user: owner, home } = await resolveDomainUser(domain);
   const layout = await discoverMailLayout(domain, owner, home);
   const local = String(localUser || "").trim().toLowerCase();
@@ -79,6 +81,7 @@ export async function mailCreateDirect(domain, localUser, pass, real) {
 
   const mapPath = layout.aliasMap || "/etc/postfix/virtual";
   await appendMapEntry(mapPath, email, isOwner ? owner : local);
+  await syncVirtualDomainsFile();
   await postmapReload(mapPath);
 
   if (pass) {
