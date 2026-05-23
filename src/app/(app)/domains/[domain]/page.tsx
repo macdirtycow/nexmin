@@ -1,5 +1,4 @@
 import { DomainDetail } from "@/components/DomainDetail";
-import { webminUiEnabled } from "@/lib/independent-mode";
 import { getSession } from "@/lib/session";
 import { isDomainDisabled } from "@/lib/domain-utils";
 import { getProvisioner } from "@/lib/provisioner";
@@ -25,7 +24,6 @@ export default async function DomainDetailPage({ params }: Props) {
         domain={domain}
         disabled={isDomainDisabled(domain)}
         isAdmin={session.role === "admin"}
-        showLegacyVmLinks={webminUiEnabled()}
       />
     </>
   );

@@ -12,13 +12,10 @@ export function DomainDetail({
   domain,
   disabled,
   isAdmin,
-  showLegacyVmLinks = false,
 }: {
   domain: VirtualMinDomain;
   disabled: boolean;
   isAdmin: boolean;
-  /** VirtualMin / Webmin break-glass links (hybrid only). */
-  showLegacyVmLinks?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -40,18 +37,6 @@ export function DomainDetail({
       setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function openVirtualMin() {
-    setError("");
-    try {
-      const res = await fetch(`/api/domains/${enc}/virtualmin-link`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not create link.");
-      window.open(data.url, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error.");
     }
   }
 
@@ -84,19 +69,6 @@ export function DomainDetail({
           <Button onClick={() => router.push(`/domains/${enc}/files`)}>
             Files
           </Button>
-          {showLegacyVmLinks && (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => router.push(`/domains/${enc}/webmin`)}
-              >
-                Webmin
-              </Button>
-              <Button variant="ghost" onClick={openVirtualMin}>
-                VirtualMin
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -124,7 +96,7 @@ export function DomainDetail({
       <div>
         <h2 className="text-lg font-medium text-white">Quick links</h2>
         <p className="mt-1 text-sm text-panel-muted">
-          Files (public_html), email, DNS, and more — or use the menu above.
+          Email, DNS, SSL, backups, and more — all in Qadbak.
         </p>
         <div className="mt-4">
           <DomainQuickLinks domain={domain.name} isAdmin={isAdmin} />
