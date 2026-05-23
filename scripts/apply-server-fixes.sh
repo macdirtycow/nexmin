@@ -63,6 +63,13 @@ sudo -u "$QADBAK_USER" sudo -n "$REPAIR" __probe__ || {
   echo "Repair sudo failed — run: sudo bash scripts/configure-domain-repair-sudo.sh" >&2
 }
 
+echo "==> Dovecot IMAP (native tab)"
+if command -v doveadm &>/dev/null; then
+  bash "$QADBAK_DIR/scripts/check-imap-dovecot.sh" 2>/dev/null || true
+else
+  echo "    Install Dovecot: apt install dovecot-core dovecot-imapd"
+fi
+
 echo "==> Build + restart"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && npm run build"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"

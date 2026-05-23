@@ -416,8 +416,9 @@ export async function copyMailboxNative(
   from: string,
   to: string,
   _actor: Actor,
+  mailboxUser?: string,
 ): Promise<void> {
-  await runProvisioningHelper("imap-copy", domain, from, to);
+  await runProvisioningHelper("imap-copy", domain, from, to, mailboxUser ?? "");
 }
 
 export async function listProtectedDirectoriesNative(
