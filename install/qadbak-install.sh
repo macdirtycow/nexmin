@@ -152,7 +152,7 @@ echo "==> Native provisioning"
 bash "$QADBAK_DIR/scripts/apply-phase8-independent.sh" || true
 
 echo "==> Inbound mail (Postfix receive + Dovecot + maps)"
-bash "$QADBAK_DIR/scripts/configure-native-mail.sh"
+bash "$QADBAK_DIR/scripts/configure-native-mail.sh" --force
 sudo -u "$QADBAK_USER" sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
 
 bash "$QADBAK_DIR/scripts/ensure-terminal-deps.sh"

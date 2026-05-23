@@ -66,7 +66,7 @@ sudo -u "$QADBAK_USER" sudo -n "$REPAIR" __probe__ || {
 
 echo "==> Native mail (Postfix + Dovecot)"
 if [[ -f "$QADBAK_DIR/scripts/configure-native-mail.sh" ]]; then
-  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" 2>/dev/null || true
+  bash "$QADBAK_DIR/scripts/configure-native-mail.sh" --force 2>/dev/null || true
   sudo -u "$QADBAK_USER" sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
 fi
 if command -v doveadm &>/dev/null; then

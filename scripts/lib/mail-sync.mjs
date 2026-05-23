@@ -10,17 +10,18 @@ import {
 import {
   appendMapEntry,
   ensureMaildir,
-  postmapReload,
   discoverMailLayout,
   listMailboxesFromLayout,
   writeVirtualMapFile,
+  writeVirtualDomainsFile,
+  postmapReloadAll,
+  QADBAK_POSTFIX_VIRTUAL,
+  QADBAK_POSTFIX_DOMAINS,
 } from "./mail-layout.mjs";
 import { ensureInboundMailDns, mailDnsHints } from "./mail-dns.mjs";
 
 const exec = promisify(execFile);
 
-const VIRTUAL = "/etc/postfix/virtual";
-const VIRTUAL_DOMAINS = "/etc/postfix/virtual_domains";
 const MAIL_CONFIGURED_STAMP = "/var/lib/qadbak/native-mail-configured";
 let stackConfigured = false;
 
@@ -33,16 +34,11 @@ export async function syncVirtualDomainsFile() {
         .map((r) => String(r.name).toLowerCase()),
     ),
   ].sort();
-  const { writeFile } = await import("node:fs/promises");
-  await writeFile(
-    VIRTUAL_DOMAINS,
-    domains.length ? `${domains.join("\n")}\n` : "",
-    "utf8",
-  );
+  await writeVirtualDomainsFile(domains);
   return domains;
 }
 
-/** Rebuild /etc/postfix/virtual from all domains + mailboxes in native-domains.json. */
+/** Rebuild qadbak-virtual from all domains + mailboxes in native-domains.json. */
 export async function rebuildVirtualAliasMap() {
   const rows = await loadRegistry();
   const entries = new Map();
@@ -74,13 +70,12 @@ export async function rebuildVirtualAliasMap() {
 
   const sorted = [...entries.entries()].sort(([a], [b]) => a.localeCompare(b));
   await writeVirtualMapFile(
-    VIRTUAL,
+    QADBAK_POSTFIX_VIRTUAL,
     sorted.map(([address, destination]) => ({ address, destination })),
   );
   return sorted.length;
 }
 
-/** Ensure default Postfix entries + Maildir for a domain owner. */
 export async function ensureDomainMailSetup(domain, owner) {
   const d = String(domain).trim().toLowerCase();
   const u = String(owner).trim();
@@ -88,10 +83,10 @@ export async function ensureDomainMailSetup(domain, owner) {
 
   const home = `/home/${u}`;
   await ensureMaildir(path.join(home, "Maildir"));
-  await appendMapEntry(VIRTUAL, `${u}@${d}`, u);
-  await appendMapEntry(VIRTUAL, `postmaster@${d}`, u);
+  await appendMapEntry(QADBAK_POSTFIX_VIRTUAL, `${u}@${d}`, u);
+  await appendMapEntry(QADBAK_POSTFIX_VIRTUAL, `postmaster@${d}`, u);
   await syncVirtualDomainsFile();
-  await postmapReload(VIRTUAL);
+  await postmapReloadAll();
   await ensureInboundMailDns(d).catch(() => {});
 }
 
@@ -103,7 +98,7 @@ export async function ensureNativeMailStack() {
   const script = path.join(QADBAK_DIR, "scripts", "configure-native-mail.sh");
   if (!(await fileExists(script))) return;
   try {
-    await exec("bash", [script], { timeout: 180_000 });
+    await exec("bash", [script, "--force"], { timeout: 180_000 });
     stackConfigured = true;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -137,7 +132,7 @@ export async function mailSyncAll() {
 
   await rebuildVirtualAliasMap();
   await syncVirtualDomainsFile();
-  await postmapReload(VIRTUAL);
+  await postmapReloadAll();
 
   for (const row of rows) {
     if (!row.name || row.disabled || row.type === "alias") continue;
@@ -145,7 +140,6 @@ export async function mailSyncAll() {
   }
 }
 
-/** Local delivery test: inject message via sendmail to mailbox@domain. */
 export async function mailReceiveTest(domain, localUser) {
   const { user: owner, home } = await resolveDomainUser(domain);
   const local = String(localUser || owner).trim().toLowerCase();
@@ -187,7 +181,47 @@ export async function mailReceiveTest(domain, localUser) {
   return { to, maildir, newMessages: count };
 }
 
-/** Health info for mail-diagnose. */
+/** SMTP RCPT probe — verifies Postfix accepts mail for mailbox@domain. */
+export async function smtpInboundProbe(domain, localUser) {
+  const to = `${String(localUser).toLowerCase()}@${String(domain).toLowerCase()}`;
+  const script = `
+import socket, sys
+to = sys.argv[1]
+s = socket.create_connection(("127.0.0.1", 25), timeout=8)
+def rd():
+    return s.recv(4096).decode(errors="replace")
+def wr(m):
+    s.sendall((m + "\\r\\n").encode())
+rd()
+wr("HELO qadbak-probe")
+rd()
+wr("MAIL FROM:<probe@qadbak.local>")
+rd()
+wr("RCPT TO:<" + to + ">")
+r = rd()
+wr("QUIT")
+print(r.strip())
+sys.exit(0 if r.startswith("250") else 1)
+`;
+  try {
+    const { stdout, stderr } = await exec("python3", ["-c", script, to], {
+      timeout: 15_000,
+    });
+    const line = stdout.trim() || stderr.trim();
+    const ok = line.startsWith("250");
+    return { ok, response: line, recipient: to };
+  } catch (e) {
+    const err = e;
+    const detail =
+      err && typeof err === "object" && "stdout" in err
+        ? String(err.stdout || err.stderr || "").trim()
+        : e instanceof Error
+          ? e.message
+          : String(e);
+    return { ok: false, response: detail || "SMTP probe failed", recipient: to };
+  }
+}
+
 export async function mailDiagnose(domain) {
   const rows = await loadRegistry();
   const row = rows.find((r) => r.name === domain);
@@ -213,28 +247,40 @@ export async function mailDiagnose(domain) {
 
   try {
     const { stdout } = await exec("ss", ["-tln"], { timeout: 5000 });
-    await ok("smtp port 25", stdout.includes(":25 "), stdout.includes(":25 ") ? "listening" : "not listening");
+    await ok("smtp port 25", stdout.includes(":25 "), "listening");
   } catch {
     await ok("smtp port 25", false, "check failed");
   }
 
   try {
-    await import("node:fs/promises").then((fs) => fs.access(VIRTUAL));
-    await ok("postfix virtual map", true, VIRTUAL);
+    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "mailbox_transport"], {
+      timeout: 8000,
+    });
+    await ok(
+      "postfix config",
+      stdout.includes("qadbak-domains") && stdout.includes("dovecot-lmtp"),
+      stdout.replace(/\n/g, " "),
+    );
   } catch {
-    await ok("postfix virtual map", false, "missing — run configure-native-mail.sh");
+    await ok("postfix config", false, "postconf failed");
   }
 
-  if (row?.user) {
-    const md = path.join(`/home/${row.user}`, "Maildir");
-    await ok("owner Maildir", await fileExists(md), md);
-  }
+  await ok("qadbak-virtual map", await fileExists(QADBAK_POSTFIX_VIRTUAL), QADBAK_POSTFIX_VIRTUAL);
+  await ok("qadbak-domains map", await fileExists(QADBAK_POSTFIX_DOMAINS), QADBAK_POSTFIX_DOMAINS);
 
   const domains = await syncVirtualDomainsFile();
   await ok(
     "virtual domains",
     domains.includes(String(domain).toLowerCase()),
     domains.join(", ") || "(none)",
+  );
+
+  const probeUser = row?.user || "info";
+  const probe = await smtpInboundProbe(domain, probeUser);
+  await ok(
+    `SMTP RCPT TO ${probe.recipient}`,
+    probe.ok,
+    probe.response,
   );
 
   const hints = await mailDnsHints(domain);

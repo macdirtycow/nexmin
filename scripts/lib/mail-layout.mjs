@@ -6,6 +6,10 @@ import { fileExists } from "./provisioning-common.mjs";
 
 const exec = promisify(execFile);
 
+/** Qadbak-owned Postfix maps (hash format — avoids VirtualMin path conflicts). */
+export const QADBAK_POSTFIX_VIRTUAL = "/etc/postfix/qadbak-virtual";
+export const QADBAK_POSTFIX_DOMAINS = "/etc/postfix/qadbak-domains";
+
 /** @typedef {{ domain: string, owner: string, home: string, aliasMap?: string, mailboxMap?: string, mailboxBase?: string, homesDir?: string, primaryMaildir?: string }} MailLayout */
 
 export async function discoverMailLayout(domain, owner, home) {
@@ -52,6 +56,7 @@ export async function discoverMailLayout(domain, owner, home) {
 
   for (const candidate of [
     layout.aliasMap,
+    QADBAK_POSTFIX_VIRTUAL,
     "/etc/postfix/virtual",
     "/etc/postfix/vmailbox",
   ]) {
@@ -163,11 +168,34 @@ export async function removeMapEntry(mapPath, address) {
 
 export async function postmapReload(mapPath) {
   await exec("postmap", [mapPath], { timeout: 30_000 });
+  await reloadPostfix();
+}
+
+export async function postmapReloadAll() {
+  if (await fileExists(QADBAK_POSTFIX_VIRTUAL)) {
+    await exec("postmap", [QADBAK_POSTFIX_VIRTUAL], { timeout: 30_000 });
+  }
+  if (await fileExists(QADBAK_POSTFIX_DOMAINS)) {
+    await exec("postmap", [QADBAK_POSTFIX_DOMAINS], { timeout: 30_000 });
+  }
+  await reloadPostfix();
+}
+
+async function reloadPostfix() {
   try {
     await exec("systemctl", ["reload", "postfix"], { timeout: 30_000 });
   } catch {
     await exec("postfix", ["reload"], { timeout: 30_000 }).catch(() => {});
   }
+}
+
+/** Write virtual_mailbox_domains hash source: "domain.tld OK" per line. */
+export async function writeVirtualDomainsFile(domains) {
+  const { writeFile, mkdir } = await import("node:fs/promises");
+  await mkdir("/etc/postfix", { recursive: true }).catch(() => {});
+  const body = domains.map((d) => `${d} OK\n`).join("");
+  await writeFile(QADBAK_POSTFIX_DOMAINS, body, "utf8");
+  await exec("postmap", [QADBAK_POSTFIX_DOMAINS], { timeout: 30_000 });
 }
 
 export async function ensureMaildir(dir) {
