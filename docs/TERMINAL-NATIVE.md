@@ -12,6 +12,8 @@ Browser (xterm.js) ←WebSocket→ nginx /ws/domain-terminal → qadbak-terminal
                                             /bin/bash -l in /home/USER
 ```
 
+The unix user comes from `data/native-domains.json` (or `/home/*/.qadbak-domain`) via `resolveDomainUnixUser` — works in **independent** mode without VirtualMin.
+
 ## Server setup (after `git pull`)
 
 ```bash

@@ -165,7 +165,7 @@ export function DomainTerminal({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const userLabel = info?.unixUser ?? domain;
+  const userLabel = info?.unixUser?.trim() || domain;
 
   return (
     <div className="space-y-4">
@@ -173,8 +173,9 @@ export function DomainTerminal({
         <div>
           <h2 className="text-lg font-medium text-white">Domain shell</h2>
           <p className="mt-1 text-sm text-panel-muted">
-            Native bash as <code className="text-white">{userLabel}</code> — no
-            Webmin login.
+            Run commands on the server as{" "}
+            <code className="text-white">{userLabel}</code> (domain unix user) —
+            no separate SSH or Webmin login.
           </p>
         </div>
         <div className="flex gap-2">

@@ -99,3 +99,20 @@ export async function findDomainByNameNative(
   const domains = await listDomainsNative(actor);
   return domains.find((d) => d.name.toLowerCase() === want);
 }
+
+/** Same convention as VirtualMin — first label of domain, sanitized. */
+export function defaultDomainUnixUser(domain: string): string {
+  const base = domain.split(".")[0] ?? "site";
+  const safe = base.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  return (safe || "site").slice(0, 32);
+}
+
+/** Unix user for domain shell / terminal (registry or home scan — no VirtualMin API). */
+export async function resolveDomainUnixUserNative(
+  domain: string,
+  actor: { role: Role; domains: string[] },
+): Promise<string> {
+  const hit = await findDomainByNameNative(domain, actor);
+  if (hit?.user) return hit.user;
+  return defaultDomainUnixUser(domain);
+}
