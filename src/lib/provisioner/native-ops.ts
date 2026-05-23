@@ -149,25 +149,108 @@ export async function deleteDomainNative(
   await runProvisioningHelper("domain-delete", domain);
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export async function listScheduledBackupsNative(
   domain: string,
   _actor: Actor,
 ): Promise<ScheduledBackup[]> {
   const r = await runProvisioningHelper("backup-list", domain);
-  const files = (r.backups as { name: string }[]) ?? [];
-  return files.map((f, i) => ({
-    id: String(i),
-    schedule: "manual",
-    dest: f.name,
-    enabled: "1",
-  }));
+  const files =
+    (r.backups as { name: string; sizeBytes?: number; modified?: string; kind?: string }[]) ??
+    [];
+  const sched = r.schedule as
+    | { schedule?: string; enabled?: boolean; retain?: number }
+    | undefined;
+  const rows: ScheduledBackup[] = [];
+  if (sched) {
+    rows.push({
+      id: "schedule",
+      schedule: sched.schedule ?? "0 3 * * *",
+      dest: `Automatic · keep ${sched.retain ?? 7} backups`,
+      enabled: sched.enabled ? "1" : "0",
+    });
+  }
+  for (const f of files) {
+    rows.push({
+      id: f.name,
+      schedule: f.kind === "scheduled" ? "Scheduled" : "Manual",
+      dest: `${formatBytes(f.sizeBytes ?? 0)} · ${f.name}`,
+      enabled: "1",
+    });
+  }
+  return rows;
 }
 
 export async function startBackupNative(
   domain: string,
   _actor: Actor,
-): Promise<unknown> {
-  return runProvisioningHelper("backup-create", domain);
+): Promise<{ file?: string; components?: string[] }> {
+  const r = await runProvisioningHelper("backup-create", domain, "full");
+  return {
+    file: r.file as string | undefined,
+    components: r.components as string[] | undefined,
+  };
+}
+
+export async function restoreDomainNative(
+  domain: string,
+  source: string,
+  opts: { test?: boolean; allFeatures?: boolean },
+  _actor: Actor,
+): Promise<{ restored?: string[]; preview?: string[]; test?: boolean }> {
+  const r = await runProvisioningHelper(
+    "backup-restore",
+    domain,
+    source,
+    opts.test ? "true" : "false",
+  );
+  return {
+    restored: r.restored as string[] | undefined,
+    preview: r.preview as string[] | undefined,
+    test: Boolean(r.test),
+  };
+}
+
+export async function modifyScheduledBackupNative(
+  domain: string,
+  id: string,
+  opts: { enabled?: boolean },
+  _actor: Actor,
+): Promise<void> {
+  if (id === "schedule") {
+    await runProvisioningHelper(
+      "backup-schedule-toggle",
+      domain,
+      opts.enabled ? "true" : "false",
+    );
+    return;
+  }
+  throw new Error("Only the automatic schedule can be enabled or disabled.");
+}
+
+export async function deleteBackupNative(
+  domain: string,
+  name: string,
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper("backup-delete", domain, name);
+}
+
+export async function setBackupScheduleNative(
+  domain: string,
+  schedule: { schedule?: string; enabled?: boolean; retain?: number },
+  _actor: Actor,
+): Promise<void> {
+  await runProvisioningHelper(
+    "backup-schedule-set",
+    domain,
+    JSON.stringify(schedule),
+  );
 }
 
 export async function listCronJobsNative(

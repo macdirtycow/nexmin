@@ -35,6 +35,8 @@ export function applyNativeOverrides<T extends Provisioner>(base: T): T {
   if (nativeFeatureEnabled("backup")) {
     out.listScheduledBackups = native.listScheduledBackupsNative;
     out.startBackup = native.startBackupNative;
+    out.restoreDomain = native.restoreDomainNative;
+    out.modifyScheduledBackup = native.modifyScheduledBackupNative;
   }
   if (nativeFeatureEnabled("cron")) {
     out.listCronJobs = native.listCronJobsNative;

@@ -9,7 +9,15 @@ import { dnsGet, dnsAdd, dnsDel } from "./lib/provision-dns.mjs";
 import { mailList, mailCreate, mailDelete, mailPass } from "./lib/provision-mail.mjs";
 import { dbList, dbCreate, dbPass } from "./lib/provision-db.mjs";
 import { domainCreate, domainDelete } from "./lib/provision-domain.mjs";
-import { backupList, backupCreate } from "./lib/provision-backup.mjs";
+import {
+  backupList,
+  backupCreate,
+  backupDelete,
+  backupRestore,
+  backupScheduleGet,
+  backupScheduleSet,
+  backupScheduleToggle,
+} from "./lib/provision-backup.mjs";
 import { cronList, cronCreate, cronDelete } from "./lib/provision-cron.mjs";
 import { aliasList, aliasCreate, aliasDelete } from "./lib/provision-aliases.mjs";
 import { redirectList, redirectCreate, redirectDelete } from "./lib/provision-redirects.mjs";
@@ -143,7 +151,22 @@ async function main() {
       await backupList(args[0]);
       break;
     case "backup-create":
-      await backupCreate(args[0]);
+      await backupCreate(args[0], args[1]);
+      break;
+    case "backup-delete":
+      await backupDelete(args[0], args[1]);
+      break;
+    case "backup-restore":
+      await backupRestore(args[0], args[1], args[2]);
+      break;
+    case "backup-schedule-get":
+      await backupScheduleGet(args[0]);
+      break;
+    case "backup-schedule-set":
+      await backupScheduleSet(args[0], args[1]);
+      break;
+    case "backup-schedule-toggle":
+      await backupScheduleToggle(args[0], args[1]);
       break;
     case "cron-list":
       await cronList(args[0]);
