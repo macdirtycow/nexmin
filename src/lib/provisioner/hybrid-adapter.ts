@@ -5,6 +5,7 @@ import { createVirtualminProvisioner } from "./virtualmin-adapter";
 import {
   findDomainByNameNative,
   listDomainsNative,
+  resolveDomainUnixUserNative,
 } from "./native-domains";
 import { listEnabledNativeFeatures } from "./native-features";
 import type { Provisioner } from "./types";
@@ -37,6 +38,7 @@ export function createHybridProvisioner(strictNative = false): Provisioner {
     id: independent ? "native" : "hybrid",
     label,
     listDomains: listDomainsNative,
+    resolveDomainUnixUser: resolveDomainUnixUserNative,
     findDomainByName: async (domainName, actor) => {
       const hit = await findDomainByNameNative(domainName, actor);
       if (hit) return hit;
