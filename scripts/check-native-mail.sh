@@ -9,7 +9,12 @@ USER_LOCAL="${2:-info}"
 
 echo "==> Postfix"
 systemctl is-active postfix 2>/dev/null || echo "WARN — postfix not active"
-postconf -n virtual_mailbox_domains virtual_alias_maps mailbox_transport 2>/dev/null || true
+postconf -n myhostname myorigin virtual_mailbox_domains virtual_alias_maps mailbox_transport 2>/dev/null || true
+MYH="$(postconf -h myhostname 2>/dev/null || true)"
+if [[ "$MYH" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "ERROR — myhostname is IP ($MYH). Run: sudo bash scripts/configure-native-mail.sh --force"
+  echo "       Set QADBAK_MAIL_HOST to your server FQDN (e.g. mail.example.com) in /opt/qadbak/.env.local"
+fi
 
 echo "==> Qadbak maps"
 for f in /etc/postfix/qadbak-domains /etc/postfix/qadbak-virtual; do
@@ -37,5 +42,5 @@ if [[ -n "$DOMAIN" ]]; then
 fi
 
 echo ""
-echo "External test from your Mac: nc -zv 173.212.250.158 25"
+echo "External test from your Mac: nc -zv YOUR_SERVER_IP 25"
 echo "If RCPT/LMTP OK but no Gmail: provider firewall TCP 25 + MX DNS only"

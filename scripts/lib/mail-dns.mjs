@@ -5,18 +5,38 @@ import { findZonePath, dnsAdd } from "./provision-dns.mjs";
 
 const exec = promisify(execFile);
 
+const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+
+export function isIpAddress(value) {
+  return IPV4.test(String(value || "").trim());
+}
+
+export function isMailFqdn(value) {
+  const v = String(value || "").trim();
+  return v.includes(".") && !isIpAddress(v);
+}
+
 export async function resolveMailHost() {
-  const fromEnv =
-    process.env.QADBAK_MAIL_HOST?.trim() ||
-    process.env.QADBAK_PUBLIC_HOST?.trim() ||
-    "";
-  if (fromEnv) return fromEnv.replace(/\.$/, "");
+  const candidates = [
+    process.env.QADBAK_MAIL_HOST?.trim(),
+    process.env.QADBAK_PUBLIC_HOST?.trim(),
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (isMailFqdn(c)) return c.replace(/\.$/, "");
+  }
+  for (const c of candidates) {
+    if (isIpAddress(c)) {
+      /* skip — IP breaks Postfix virtual alias expansion */
+    }
+  }
   try {
     const { stdout } = await exec("hostname", ["-f"], { timeout: 5000 });
-    return stdout.trim() || "mail.example.com";
+    const h = stdout.trim();
+    if (isMailFqdn(h)) return h;
   } catch {
-    return "mail.example.com";
+    /* */
   }
+  return "mail.example.com";
 }
 
 export async function resolveOriginIp() {

@@ -277,6 +277,22 @@ export async function mailDiagnose(domain, localUser) {
   }
 
   try {
+    const { stdout } = await exec("postconf", ["-n", "myhostname", "myorigin", "append_at_myorigin"], {
+      timeout: 8000,
+    });
+    const hostLine = stdout.split("\n").find((l) => l.startsWith("myhostname"));
+    const hostVal = hostLine?.split("=")[1]?.trim() || "";
+    const ipHost = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostVal);
+    await ok(
+      "postfix myhostname (FQDN, not IP)",
+      !ipHost && hostVal.includes("."),
+      stdout.replace(/\n/g, " "),
+    );
+  } catch {
+    await ok("postfix myhostname", false, "postconf failed");
+  }
+
+  try {
     const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "mailbox_transport"], {
       timeout: 8000,
     });

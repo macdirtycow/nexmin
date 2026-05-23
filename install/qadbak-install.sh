@@ -78,6 +78,10 @@ SECRET="$(openssl rand -base64 32)"
 DEFAULT_ORIGIN_IP="$(curl -4 -s --max-time 5 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
 read -rp "Mail hostname for MX/IMAP (FQDN) [$PANEL_HOST]: " MAIL_HOST
 MAIL_HOST="${MAIL_HOST:-$PANEL_HOST}"
+if [[ "$MAIL_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "  Do not use a bare IP as mail hostname (breaks inbound delivery). Using $FQDN instead." >&2
+  MAIL_HOST="$FQDN"
+fi
 read -rp "Public server IP (for DNS hints) [$DEFAULT_ORIGIN_IP]: " ORIGIN_IP_IN
 ORIGIN_IP="${ORIGIN_IP_IN:-$DEFAULT_ORIGIN_IP}"
 

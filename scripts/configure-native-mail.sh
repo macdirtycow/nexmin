@@ -72,13 +72,45 @@ postconf -e 'smtpd_sasl_path = private/auth'
 postconf -e 'smtpd_tls_security_level = may'
 postconf -e 'smtp_tls_security_level = may'
 
-HOST="$(hostname -f 2>/dev/null || hostname)"
-if [[ -f "$QADBAK_DIR/.env.local" ]]; then
-  MAIL_HOST="$(grep -E '^QADBAK_MAIL_HOST=' "$QADBAK_DIR/.env.local" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)"
-  [[ -n "$MAIL_HOST" ]] && HOST="$MAIL_HOST"
-fi
+is_ipv4() {
+  [[ "$1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]
+}
+
+is_mail_fqdn() {
+  [[ -n "$1" && "$1" == *.* ]] && ! is_ipv4 "$1"
+}
+
+# Postfix must not use a bare IP as myhostname — virtual aliases like "info" become info@IP (invalid).
+resolve_postfix_hostname() {
+  local val host
+  if [[ -f "$QADBAK_DIR/.env.local" ]]; then
+    for key in QADBAK_MAIL_HOST QADBAK_PUBLIC_HOST PANEL_HOST; do
+      val="$(grep -E "^${key}=" "$QADBAK_DIR/.env.local" 2>/dev/null | cut -d= -f2- | tr -d '"' | head -1)"
+      if is_mail_fqdn "$val"; then
+        echo "$val"
+        return
+      fi
+      if is_ipv4 "$val"; then
+        echo "WARN: $key=$val is an IP — Postfix needs an FQDN (fix QADBAK_MAIL_HOST in .env.local)" >&2
+      fi
+    done
+  fi
+  host="$(hostname -f 2>/dev/null || true)"
+  if is_mail_fqdn "$host"; then
+    echo "$host"
+    return
+  fi
+  host="$(hostname 2>/dev/null || echo localhost.localdomain)"
+  echo "$host"
+}
+
+HOST="$(resolve_postfix_hostname)"
 postconf -e "myhostname = ${HOST}"
+postconf -e 'myorigin = $myhostname'
+postconf -e 'append_at_myorigin = no'
 postconf -e 'mydestination = localhost, localhost.localdomain'
+
+echo "    Postfix myhostname = ${HOST}"
 
 DOVECOT_SNIPPET="/etc/dovecot/conf.d/99-qadbak-native.conf"
 cat >"$DOVECOT_SNIPPET" <<'EOF'
