@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build Premium bundle on the VPS and install into the local license server.
+# OPERATOR ONLY — build Premium on YOUR VPS and sync to local license server + panel.
+# License customers never run this; they use Activate + Refresh modules only.
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"

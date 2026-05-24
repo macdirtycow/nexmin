@@ -1,6 +1,8 @@
 # License server on license.omiiba.dev
 
-The license API is a **small Node service** in the private `qadbak-premium` repo (`license-server/`). Panel installs talk to it over HTTPS; you do **not** need the full Qadbak UI on the same host unless you also want to host sites there.
+The license API is a **small Node service** in the private `qadbak-premium` repo (`license-server/`). **Customers never clone that repo** — they only download Premium tarballs from this API after activating a license key. See [PREMIUM-DISTRIBUTION.md](./PREMIUM-DISTRIBUTION.md).
+
+Panel installs talk to it over HTTPS; you do **not** need the full Qadbak UI on the same host unless you also want to host sites there.
 
 ## Architecture
 
@@ -19,9 +21,11 @@ Point `license.omiiba.dev` A/AAAA to the server that runs the API (often your **
 sudo certbot certonly --nginx -d license.omiiba.dev
 ```
 
-## 2. Deploy the license server (no full Qadbak required)
+## 2. Deploy the license server (operator only — requires private repo access)
 
-On the license host:
+> **Not for customers.** License buyers only need `QADBAK_LICENSE_SERVER` + a key in the panel.
+
+On **your** license host (with your SSH deploy key or PAT — never share with customers):
 
 ```bash
 git clone git@github.com:macdirtycow/qadbak-premium.git /opt/qadbak-premium

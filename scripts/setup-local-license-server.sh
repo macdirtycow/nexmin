@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Run on siccamanagement (or any VPS) as root — local license API on :8787 for testing.
-# Production later: same app behind https://license.omiiba.dev
+# OPERATOR ONLY — not for license customers.
+# Run on your ops VPS as root — local license API on :8787 for testing.
+# Requires YOUR git access to private qadbak-premium (deploy key or PAT).
+# Customers use public qadbak + license key + Refresh modules (no premium repo clone).
+# Production: same app behind https://license.omiiba.dev
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
@@ -18,8 +21,16 @@ PORT="${LICENSE_PORT:-8787}"
 mkdir -p /etc/qadbak "$(dirname "$ENV_FILE")"
 
 if [[ ! -d "$PREMIUM_DIR/.git" ]]; then
-  echo "==> Clone qadbak-premium"
-  git clone https://github.com/macdirtycow/qadbak-premium.git "$PREMIUM_DIR"
+  echo "==> Clone qadbak-premium (operator SSH recommended — do not use customer PATs)"
+  if [[ -n "${QADBAK_PREMIUM_GIT_URL:-}" ]]; then
+    git clone "$QADBAK_PREMIUM_GIT_URL" "$PREMIUM_DIR"
+  elif [[ -f /root/.ssh/id_ed25519_github ]] || [[ -f /home/"$QADBAK_USER"/.ssh/id_ed25519 ]]; then
+    git clone git@github.com:macdirtycow/qadbak-premium.git "$PREMIUM_DIR"
+  else
+    echo "Set QADBAK_PREMIUM_GIT_URL or configure a GitHub deploy key, then re-run." >&2
+    echo "Customers never clone this repo — see docs/PREMIUM-DISTRIBUTION.md" >&2
+    exit 1
+  fi
 fi
 
 if [[ "$LICENSE_HOME" != "$PREMIUM_DIR/license-server" ]]; then
