@@ -29,7 +29,7 @@ cd qadbak
 sudo bash install/qadbak-install.sh
 ```
 
-During install you may enter a **Premium license key** or skip for Core-only evaluation.
+The installer uses the **`main`** branch on GitHub. Premium module **source** and the license **server** are not in this repo — customers receive modules via the license server after activation ([COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md)).
 This installs the hosting stack, Qadbak (`/opt/qadbak`), native provisioning, pm2, and
 nginx. See [install/README.md](install/README.md) and [docs/QADBAK-NATIVE-INSTALL.md](docs/QADBAK-NATIVE-INSTALL.md).
 

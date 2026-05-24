@@ -3,7 +3,7 @@
 set -euo pipefail
 
 QADBAK_REPO="${QADBAK_REPO:-https://github.com/macdirtycow/qadbak.git}"
-QADBAK_GIT_BRANCH="${QADBAK_GIT_BRANCH:-macdirtycow/proprietary-premium-commercialization}"
+QADBAK_GIT_BRANCH="${QADBAK_GIT_BRANCH:-main}"
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
 QADBAK_USER="${QADBAK_USER:-qadbak}"
 NODE_MAJOR="${NODE_MAJOR:-20}"
