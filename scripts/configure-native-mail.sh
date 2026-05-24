@@ -60,10 +60,11 @@ postconf -e "virtual_mailbox_maps = hash:${QADBAK_VMAILBOX}"
 postconf -e "virtual_uid_maps = hash:${QADBAK_VMAILBOX_UID}"
 postconf -e "virtual_gid_maps = hash:${QADBAK_VMAILBOX_GID}"
 postconf -e 'virtual_minimum_uid = 100'
+postconf -e 'virtual_mailbox_base = /var/mail'
+postconf -e 'virtual_transport = virtual'
 postconf -e 'mailbox_transport = lmtp:unix:private/dovecot-lmtp'
 postconf -e 'inet_interfaces = all'
 postconf -X local_recipient_maps 2>/dev/null || true
-postconf -X virtual_mailbox_base 2>/dev/null || true
 postconf -X virtual_transport 2>/dev/null || true
 
 for key in virtual_alias_domains \
@@ -240,10 +241,11 @@ done < <(grep -v '^#' "$QADBAK_VMAILBOX" 2>/dev/null | awk '{print $1}' || true)
 
 # Verify postfix can write to a sample Maildir (AppArmor probe).
 SAMPLE_VMAIL="$(grep -v '^#' "$QADBAK_VMAILBOX" 2>/dev/null | awk '{print $2}' | head -1 | tr -d ' ')"
-if [[ -n "$SAMPLE_VMAIL" ]]; then
+  if [[ -n "$SAMPLE_VMAIL" ]]; then
   SAMPLE_DIR="${SAMPLE_VMAIL%/}"
+  SAMPLE_USER="$(basename "$(dirname "$(dirname "$SAMPLE_DIR")")" 2>/dev/null || echo info)"
   if [[ -x "$QADBAK_DIR/scripts/probe-postfix-maildir-write.sh" ]]; then
-    bash "$QADBAK_DIR/scripts/probe-postfix-maildir-write.sh" "$SAMPLE_DIR" || true
+    bash "$QADBAK_DIR/scripts/probe-postfix-maildir-write.sh" "$SAMPLE_DIR" "$SAMPLE_USER" || true
   fi
 fi
 
