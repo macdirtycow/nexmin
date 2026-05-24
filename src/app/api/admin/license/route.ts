@@ -73,13 +73,20 @@ export async function POST(request: Request) {
     }
 
     if (action === "sync") {
-      await syncPremiumArtifact();
+      let modulesSyncError: string | undefined;
+      try {
+        await syncPremiumArtifact();
+      } catch (e) {
+        modulesSyncError =
+          e instanceof Error ? e.message : "Premium module sync failed";
+      }
       await auditLog(session.username, "license-sync");
       const license = await getLicensePublicInfo();
       return jsonOk({
         ok: true,
         license,
         modulesSynced: await isPremiumModulesSynced(),
+        modulesSyncError,
       });
     }
 

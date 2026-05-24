@@ -40,6 +40,9 @@ export function AdminLicensePanel({
       }
       setSyncHint(data.modulesSyncError ?? "");
       if (action === "activate") setKey("");
+      if (action === "sync" && data.modulesSynced) {
+        setSyncHint("");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
     } finally {
@@ -55,6 +58,12 @@ export function AdminLicensePanel({
           License saved, but Premium modules could not be downloaded: {syncHint}.
           Build/upload the Premium bundle on the license server, then click Refresh
           modules.
+        </Alert>
+      )}
+      {modulesSynced === true && !syncHint && (
+        <Alert>
+          Premium modules are installed on this server. Restart pm2 if admin
+          features still show locked.
         </Alert>
       )}
       {modulesSynced === false && license.features.length > 0 && !syncHint && (

@@ -9,6 +9,7 @@ import { promisify } from "node:util";
 import {
   artifactDownloadUrl,
   isPremiumActive,
+  licenseStatus,
   readStoredLicense,
 } from "../qadbak-license";
 import { PREMIUM_MANIFEST } from "./manifest";
@@ -88,10 +89,27 @@ async function extractTarball(tarball: string, dest: string): Promise<void> {
   await execFileAsync("tar", ["-xzf", tarball, "-C", dest]);
 }
 
-export async function syncPremiumArtifact(): Promise<ActivePremiumState | null> {
-  if (!(await isPremiumActive())) return null;
+export async function syncPremiumArtifact(): Promise<ActivePremiumState> {
   const stored = await readStoredLicense();
-  if (!stored?.artifactVersion) return null;
+  if (!stored) {
+    throw new Error("No license on this server — activate a key first.");
+  }
+  if (!isPremiumLicensed(stored)) {
+    throw new Error(
+      `License status is ${licenseStatus(stored)} — cannot download Premium modules.`,
+    );
+  }
+  const verified = await verifyLicenseToken(stored.token);
+  if (!verified.valid) {
+    throw new Error(
+      "License token is invalid (JWT secret mismatch or expired). Run Heartbeat now or re-activate your key.",
+    );
+  }
+  if (!stored.artifactVersion) {
+    throw new Error(
+      "License has no artifact version — run Heartbeat now or re-activate.",
+    );
+  }
 
   const version = stored.artifactVersion;
   const versionDir = premiumVersionDir(version);
