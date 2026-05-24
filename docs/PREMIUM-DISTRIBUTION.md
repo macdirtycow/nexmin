@@ -70,11 +70,18 @@ git clone https://github.com/macdirtycow/qadbak.git /opt/qadbak
 
 ## CI recommendation (operator)
 
-Use GitHub Actions (or your laptop) with a **repository secret** `LICENSE_ADMIN_TOKEN`:
+Workflow: `qadbak-premium/.github/workflows/publish-premium.yml`
 
-- Checkout `qadbak-premium` (private — uses `GITHUB_TOKEN` or deploy key in CI only).
-- `npm run build:release` with `LICENSE_SERVER` pointing at production.
-- Artifact never published to GitHub Releases for customers — only on **your** license server.
+Repository secrets on **qadbak-premium** (Settings → Secrets → Actions):
+
+| Secret | Value |
+|--------|--------|
+| `LICENSE_SERVER` | `https://license.omiiba.dev` (or `http://127.0.0.1:8787` for local test) |
+| `LICENSE_ADMIN_TOKEN` | From `/etc/qadbak/license-server.env` on your license host |
+
+Push a tag `v0.1.1` or run **Actions → Publish Premium artifact → Run workflow**.
+
+Customers never see these secrets; they only use license keys in the panel.
 
 ## Security notes
 

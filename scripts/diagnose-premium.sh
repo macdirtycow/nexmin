@@ -34,8 +34,15 @@ fi
 
 echo "==> License server artifact (local :8787)"
 VER="$(node -e "try{console.log(require('./data/license.json').artifactVersion||'0.1.0')}catch{console.log('0.1.0')}" 2>/dev/null)"
-ART="/opt/qadbak-premium/license-server/data/artifacts/${VER}/premium.tar.gz"
-[[ -f "$ART" ]] && echo "  OK $ART" || echo "  MISSING $ART — cd /opt/qadbak-premium && npm run build:release"
+ART_BASE="${LICENSE_ARTIFACTS_DIR:-/opt/qadbak-license-server/data/artifacts}"
+ART="${ART_BASE%/}/${VER}/premium.tar.gz"
+if [[ -f "$ART" ]]; then
+  echo "  OK $ART"
+elif [[ -f "${ART_BASE}/premium.tar.gz" ]]; then
+  echo "  WRONG LAYOUT ${ART_BASE}/premium.tar.gz — run: sudo bash $QADBAK_DIR/scripts/fix-license-artifact-layout.sh"
+else
+  echo "  MISSING $ART — sudo bash $QADBAK_DIR/scripts/build-premium-vps.sh"
+fi
 
 echo "==> CLI sync test (dry — only if licensed)"
 if [[ -f data/license.json ]]; then

@@ -13,7 +13,7 @@ ENV_FILE="${QADBAK_LICENSE_ENV:-/etc/qadbak/license-server.env}"
 }
 
 [[ -d "$PREMIUM_DIR" ]] || {
-  echo "Missing $PREMIUM_DIR — clone qadbak-premium first." >&2
+  echo "Missing $PREMIUM_DIR — clone with SSH: git clone git@github.com:macdirtycow/qadbak-premium.git" >&2
   exit 1
 }
 
@@ -23,11 +23,21 @@ if [[ -f "$ENV_FILE" ]]; then
   source "$ENV_FILE"
   set +a
   export LICENSE_SERVER="${LICENSE_SERVER:-http://127.0.0.1:${LICENSE_PORT:-8787}}"
-  export LICENSE_ARTIFACTS_DIR="${LICENSE_ARTIFACTS_DIR:-$PREMIUM_DIR/license-server/data/artifacts}"
+  export LICENSE_ARTIFACTS_DIR="${LICENSE_ARTIFACTS_DIR:-/opt/qadbak-license-server/data/artifacts}"
 fi
 
-echo "==> Update qadbak-premium"
-git -C "$PREMIUM_DIR" pull --ff-only origin main 2>/dev/null || true
+if [[ -f "$QADBAK_DIR/scripts/ensure-premium-git-ssh.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/ensure-premium-git-ssh.sh"
+fi
+
+echo "==> Update qadbak-premium (SSH)"
+git -C "$PREMIUM_DIR" fetch origin main
+git -C "$PREMIUM_DIR" merge --ff-only origin/main
+
+echo "==> Fix legacy flat artifact path (if any)"
+if [[ -f "$QADBAK_DIR/scripts/fix-license-artifact-layout.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/fix-license-artifact-layout.sh" "${LICENSE_ARTIFACTS_DIR}" || true
+fi
 
 echo "==> build:release"
 cd "$PREMIUM_DIR"
@@ -35,12 +45,20 @@ npm install --no-audit --no-fund
 npm run build:release
 
 VER="$(node -p "require('$PREMIUM_DIR/package.json').version")"
-ART="$PREMIUM_DIR/license-server/data/artifacts/$VER/premium.tar.gz"
+ART_BASE="${LICENSE_ARTIFACTS_DIR:-$PREMIUM_DIR/license-server/data/artifacts}"
+ART="${ART_BASE%/}/$VER/premium.tar.gz"
 if [[ ! -f "$ART" ]]; then
-  echo "FAIL: artifact not found at $ART" >&2
+  ART="$PREMIUM_DIR/license-server/data/artifacts/$VER/premium.tar.gz"
+fi
+if [[ ! -f "$ART" ]]; then
+  echo "FAIL: artifact not found under $ART_BASE/$VER/ or premium repo" >&2
+  echo "      Run: sudo bash $QADBAK_DIR/scripts/fix-license-artifact-layout.sh" >&2
   exit 1
 fi
 echo "OK — artifact $ART ($(du -h "$ART" | awk '{print $1}'))"
+
+echo "==> Restart license server (pick up new files)"
+pm2 restart qadbak-license 2>/dev/null || true
 
 echo "==> Sync to panel"
 sudo -u qadbak bash -c "
