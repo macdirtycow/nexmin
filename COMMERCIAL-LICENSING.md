@@ -15,7 +15,7 @@ Premium is distributed as a **signed bundle** from the license server after you
 activate your key. It is **not** in the public GitHub repo, and you **do not**
 need GitHub access to `qadbak-premium` or any developer Personal Access Token.
 
-See [docs/PREMIUM-DISTRIBUTION.md](docs/PREMIUM-DISTRIBUTION.md) for the full model.
+Premium modules are downloaded from the license server after activation (no separate public GitHub repo for Premium source).
 
 ## How to buy
 
