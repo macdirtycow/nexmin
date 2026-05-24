@@ -53,12 +53,13 @@ fi
 echo "==> Postfix (Qadbak virtual domains + Dovecot LMTP delivery)"
 postconf -e "virtual_alias_maps = hash:${QADBAK_VIRTUAL}"
 postconf -e "virtual_mailbox_domains = hash:${QADBAK_DOMAINS}"
+postconf -e 'virtual_transport = lmtp:unix:private/dovecot-lmtp'
 postconf -e 'mailbox_transport = lmtp:unix:private/dovecot-lmtp'
 postconf -e 'inet_interfaces = all'
 postconf -X local_recipient_maps 2>/dev/null || true
 
 for key in virtual_alias_domains virtual_mailbox_maps virtual_mailbox_base \
-  mailbox_command virtual_transport home_mailbox content_filter \
+  mailbox_command home_mailbox content_filter \
   canonical_maps sender_canonical_maps recipient_canonical_maps \
   relay_domains transport_maps; do
   postconf -X "$key" 2>/dev/null || true
@@ -138,6 +139,7 @@ ssl_key = </etc/ssl/private/ssl-cert-snakeoil.key
 
 auth_mechanisms = plain login
 disable_plaintext_auth = yes
+auth_username_format = %n
 
 passdb {
   driver = passwd
@@ -160,6 +162,10 @@ service lmtp {
     user = postfix
     group = postfix
   }
+}
+
+protocol lmtp {
+  mail_plugins = $mail_plugins
 }
 EOF
 

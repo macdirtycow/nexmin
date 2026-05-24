@@ -121,6 +121,7 @@ export async function mailSyncAll() {
   for (const row of rows) {
     if (!row.name || row.disabled || row.type === "alias" || !row.user) continue;
     const home = `/home/${row.user}`;
+    await ensureHomesTraversal(row.user);
     await ensureMaildir(path.join(home, "Maildir"));
     try {
       const layout = await discoverMailLayout(row.name, row.user, home);
@@ -165,12 +166,30 @@ async function countInboxMessages(maildirRoot) {
 
 async function ensureMailboxOwnership(local, owner, maildirRoot, isOwner) {
   const target = isOwner ? owner : local;
-  const group = owner;
+  let group = owner;
+  try {
+    const { stdout } = await exec("id", ["-gn", target], { timeout: 5000 });
+    group = stdout.trim() || owner;
+  } catch {
+    /* use owner */
+  }
   try {
     await exec("chown", ["-R", `${target}:${group}`, maildirRoot], { timeout: 60_000 });
     await exec("chmod", ["-R", "u+rwX,g+rwX", maildirRoot], { timeout: 60_000 });
   } catch {
     /* best effort */
+  }
+}
+
+async function ensureHomesTraversal(owner) {
+  const home = `/home/${owner}`;
+  const homes = `${home}/homes`;
+  for (const p of [home, homes]) {
+    try {
+      await exec("chmod", ["u+rx,g+rx", p], { timeout: 5000 });
+    } catch {
+      /* */
+    }
   }
 }
 
@@ -211,12 +230,26 @@ export async function mailReceiveTest(domain, localUser) {
   }
 
   const delivered = after > before;
+  let mailLogHint = "";
+  if (!delivered) {
+    try {
+      const { stdout } = await exec(
+        "bash",
+        ["-c", "grep -iE 'lmtp|dovecot|info@' /var/log/mail.log 2>/dev/null | tail -8"],
+        { timeout: 5000 },
+      );
+      mailLogHint = stdout.trim();
+    } catch {
+      /* */
+    }
+  }
   return {
     to,
     maildir: maildirRoot,
     newMessages: Math.max(0, after - before),
     delivered,
     injectMethod: inject.method,
+    mailLogHint: mailLogHint || undefined,
   };
 }
 
@@ -308,7 +341,7 @@ export async function mailDiagnose(domain, localUser) {
   }
 
   try {
-    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "mailbox_transport"], {
+    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "virtual_transport", "mailbox_transport"], {
       timeout: 8000,
     });
     await ok(
