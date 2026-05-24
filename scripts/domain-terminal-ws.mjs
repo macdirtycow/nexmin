@@ -6,11 +6,14 @@
  */
 import http from "node:http";
 import { readFileSync, existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { WebSocketServer } from "ws";
-import pty from "node-pty";
 import { jwtVerify } from "jose";
+
+const require = createRequire(import.meta.url);
+const { WebSocketServer } = require("ws");
+const pty = require("node-pty");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");

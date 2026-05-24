@@ -26,8 +26,8 @@ import('ws').then(() => import('node-pty')).then(() => import('jose')).then(() =
 }
 
 install_terminal_deps() {
-  echo "==> npm install (ws, node-pty, jose for terminal)"
-  run_as_qadbak "cd '$ROOT' && npm install ws node-pty jose --no-audit --no-fund"
+  echo "==> npm install (panel + terminal deps)"
+  run_as_qadbak "cd '$ROOT' && npm install --no-audit --no-fund"
 }
 
 missing=()
