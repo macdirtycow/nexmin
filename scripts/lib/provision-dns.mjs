@@ -80,9 +80,9 @@ async function zoneFromFind(domain) {
   return null;
 }
 
-export async function findZonePath(domain) {
+async function locateZonePath(domain) {
   const cached = await zoneFromRegistry(domain);
-  if (cached) return cached;
+  if (cached && (await fileExists(cached))) return cached;
 
   const candidates = [
     `/var/lib/bind/${domain}.hosts`,
@@ -107,8 +107,42 @@ export async function findZonePath(domain) {
   const found = await zoneFromFind(domain);
   if (found) return found;
 
+  return null;
+}
+
+async function domainInRegistry(domain) {
+  const rows = await loadRegistry();
+  return rows.some((r) => String(r.name).toLowerCase() === domain.toLowerCase());
+}
+
+/** Create BIND zone for a panel domain (idempotent). Requires root (provisioning helper). */
+export async function ensureBindZone(domain) {
+  const existing = await locateZonePath(domain);
+  if (existing) return existing;
+
+  const script = path.join(QADBAK_DIR, "scripts", "create-bind-zone.sh");
+  if (!(await fileExists(script))) {
+    fail(`Missing ${script} — git pull Qadbak`);
+  }
+  await exec("bash", [script, domain], { timeout: 120_000 });
+
+  const created = await locateZonePath(domain);
+  if (!created) {
+    fail(`BIND zone creation failed for ${domain}`);
+  }
+  return created;
+}
+
+export async function findZonePath(domain) {
+  const hit = await locateZonePath(domain);
+  if (hit) return hit;
+
+  if (await domainInRegistry(domain)) {
+    return ensureBindZone(domain);
+  }
+
   fail(
-    `No BIND zone file for ${domain}. Run: sudo bash ${QADBAK_DIR}/scripts/discover-bind-zone.sh ${domain}`,
+    `No BIND zone file for ${domain}. Add the domain in the panel first, or run: sudo bash ${QADBAK_DIR}/scripts/create-bind-zone.sh ${domain}`,
   );
 }
 

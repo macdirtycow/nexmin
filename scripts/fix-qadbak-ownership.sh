@@ -16,4 +16,6 @@ if ! id "$QADBAK_USER" &>/dev/null; then
 fi
 
 chown -R "$QADBAK_USER:$QADBAK_USER" "$QADBAK_DIR"
+git config --global --add safe.directory "$QADBAK_DIR" 2>/dev/null || true
+sudo -u "$QADBAK_USER" git config --global --add safe.directory "$QADBAK_DIR" 2>/dev/null || true
 echo "OK — $QADBAK_DIR owned by $QADBAK_USER"

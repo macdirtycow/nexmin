@@ -26,3 +26,5 @@ sudo -u "$QADBAK_USER" sudo -n "$WRAPPER" ping | grep -q '"ok"' || {
 }
 echo "OK — $WRAPPER"
 echo "     node:    $NODE_BIN (runtime: command -v node)"
+echo "     test:    sudo -u $QADBAK_USER sudo -n $WRAPPER ping"
+echo "     note:    use run-provisioning-helper.sh — not provisioning-helper.mjs (sudoers allows .sh only)"

@@ -90,7 +90,11 @@ export async function liveFilesActive(): Promise<boolean> {
   return probeLiveFilesystem();
 }
 
-export { liveFilesEnabled } from "./domain-files-live";
+export {
+  liveFilesEnabled,
+  extractArchiveLive,
+  createArchiveLive,
+} from "./domain-files-live";
 
 export {
   readDomainFileLive,

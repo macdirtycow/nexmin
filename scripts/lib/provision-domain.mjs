@@ -13,6 +13,7 @@ import {
   QADBAK_DIR,
 } from "./provisioning-common.mjs";
 import { ensureDomainMailSetup, ensureNativeMailStack } from "./mail-sync.mjs";
+import { ensureBindZone } from "./provision-dns.mjs";
 
 const exec = promisify(execFile);
 
@@ -103,6 +104,10 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     isDefault: rows.length === 0,
   });
   await saveRegistry(rows);
+
+  if (type !== "alias") {
+    await ensureBindZone(name);
+  }
 
   if (ownedByQadbak && type !== "alias") {
     await writeDomainConfigJson(name, "php.json", {

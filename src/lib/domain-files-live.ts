@@ -27,12 +27,13 @@ async function runHelper(
   cmd: string,
   absPath: string,
   payload?: Record<string, unknown>,
+  opts?: { timeoutMs?: number },
 ): Promise<Record<string, unknown>> {
   const args = [cmd, absPath];
   if (payload) args.push(JSON.stringify(payload));
 
   const stdout = await runDomainFsSudo(args, {
-    timeout: 30_000,
+    timeout: opts?.timeoutMs ?? 30_000,
     maxBuffer: 8 * 1024 * 1024,
   });
 
@@ -211,4 +212,72 @@ export async function deleteDomainFileLive(
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
   await runHelper("unlink", abs);
+}
+
+export async function extractArchiveLive(
+  domain: VirtualMinDomain | string,
+  archivePath: string,
+  destDir: string,
+  actor: { role: Role; domains: string[] },
+): Promise<{ destDir: string; format: string }> {
+  const parent = archivePath.includes("/")
+    ? archivePath.replace(/\/[^/]+$/, "")
+    : "";
+  if (!isDirWritable(parent)) {
+    throw new VirtualMinError("This directory is read-only.");
+  }
+  const unixUser = await resolveUnixUser(domain, actor);
+  const absArchive = absFileFromPanel(unixUser, archivePath);
+  const destNorm = normalizeDir(destDir);
+  const payload: Record<string, unknown> = {};
+  if (destNorm) {
+    payload.destAbs = absDirFromPanel(unixUser, destNorm);
+  } else {
+    const base = archivePath.split("/").pop() ?? "archive";
+    payload.destName = base.replace(/\.(tar\.gz|tgz|zip|tar)$/i, "");
+  }
+  const data = await runHelper("archive-extract", absArchive, payload, {
+    timeoutMs: 120_000,
+  });
+  const destName = String(data.destName ?? payload.destName ?? "extracted");
+  const panelDest = parent ? `${parent}/${destName}` : destName;
+  return {
+    destDir: destNorm || panelDest,
+    format: String(data.format ?? ""),
+  };
+}
+
+export async function createArchiveLive(
+  domain: VirtualMinDomain | string,
+  parent: string,
+  opts: {
+    format: "zip" | "tar.gz";
+    name: string;
+    items?: string[];
+  },
+  actor: { role: Role; domains: string[] },
+): Promise<{ path: string; sizeBytes: number; format: string }> {
+  const parentNorm = normalizeDir(parent);
+  if (!isDirWritable(parentNorm)) {
+    throw new VirtualMinError("This directory is read-only.");
+  }
+  const unixUser = await resolveUnixUser(domain, actor);
+  const absParent = absDirFromPanel(unixUser, parentNorm);
+  const data = await runHelper(
+    "archive-create",
+    absParent,
+    {
+      format: opts.format,
+      name: opts.name,
+      items: opts.items ?? [],
+    },
+    { timeoutMs: 120_000 },
+  );
+  const fileName = String(data.name ?? opts.name);
+  const panelPath = parentNorm ? `${parentNorm}/${fileName}` : fileName;
+  return {
+    path: panelPath,
+    sizeBytes: Number(data.sizeBytes ?? 0),
+    format: String(data.format ?? opts.format),
+  };
 }

@@ -13,6 +13,7 @@ const execFileAsync = promisify(execFile);
 
 const MAX_READ_BYTES = 5 * 1024 * 1024;
 const MAX_WRITE_BYTES = 10 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES = 250 * 1024 * 1024;
 
 /** Keep in sync with TEXT_EXTENSIONS in src/lib/domain-files.ts */
 const TEXT_EXTENSIONS = new Set([
@@ -88,6 +89,115 @@ async function chownToHomeUser(targetPath) {
   } catch {
     /* non-fatal */
   }
+}
+
+async function chownTree(targetPath) {
+  const resolved = await fs.realpath(targetPath).catch(() => targetPath);
+  const user = homeUnixUser(resolved);
+  if (!user) return;
+  try {
+    await execFileAsync("chown", ["-R", `${user}:${user}`, resolved]);
+  } catch {
+    /* non-fatal */
+  }
+}
+
+function archiveKind(filePath) {
+  const n = path.basename(filePath).toLowerCase();
+  if (n.endsWith(".zip")) return "zip";
+  if (n.endsWith(".tar.gz") || n.endsWith(".tgz")) return "tar.gz";
+  if (n.endsWith(".tar")) return "tar";
+  return null;
+}
+
+function safeBaseName(name) {
+  const safe = String(name ?? "")
+    .replace(/[/\\]/g, "")
+    .trim();
+  if (!safe || safe === "." || safe === "..") fail("Invalid name.");
+  return safe;
+}
+
+async function archiveExtract(absArchive, payload) {
+  const resolved = await assertHomePath(absArchive);
+  const st = await fs.stat(resolved);
+  if (!st.isFile()) fail("Not a file.");
+  if (st.size > MAX_ARCHIVE_BYTES) fail("Archive too large to extract in panel.");
+  const kind = archiveKind(resolved);
+  if (!kind) fail("Unsupported archive. Use .zip, .tar, .tar.gz or .tgz.");
+
+  let dest = payload.destAbs
+    ? await assertHomePath(payload.destAbs)
+    : path.join(
+        path.dirname(resolved),
+        safeBaseName(
+          payload.destName ??
+            path.basename(resolved).replace(/\.(tar\.gz|tgz|zip|tar)$/i, ""),
+        ),
+      );
+
+  await fs.mkdir(dest, { recursive: true });
+
+  if (kind === "zip") {
+    await execFileAsync("unzip", ["-q", "-o", resolved, "-d", dest], {
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } else if (kind === "tar.gz") {
+    await execFileAsync("tar", ["-xzf", resolved, "-C", dest], {
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } else {
+    await execFileAsync("tar", ["-xf", resolved, "-C", dest], {
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  }
+
+  await chownTree(dest);
+  emit({
+    ok: true,
+    destAbs: dest,
+    destName: path.basename(dest),
+    format: kind,
+  });
+}
+
+async function archiveCreate(absParent, payload) {
+  const parent = await assertHomePath(absParent);
+  const st = await fs.stat(parent);
+  if (!st.isDirectory()) fail("Parent is not a directory.");
+
+  const format = payload.format === "zip" ? "zip" : "tar.gz";
+  const outName = safeBaseName(payload.name);
+  if (!/\.(zip|tar\.gz|tgz)$/i.test(outName)) {
+    fail(format === "zip" ? "Output name must end with .zip" : "Output must end with .tar.gz");
+  }
+  const outAbs = path.join(parent, outName);
+  await assertHomePath(outAbs);
+
+  let items = Array.isArray(payload.items)
+    ? payload.items.map((x) => safeBaseName(x))
+    : [];
+  if (items.length === 0) {
+    const names = await fs.readdir(parent);
+    items = names.filter((n) => n !== outName && !n.startsWith("."));
+  }
+  if (items.length === 0) fail("Nothing to compress.");
+
+  if (format === "zip") {
+    await execFileAsync("zip", ["-r", "-q", outAbs, ...items], { cwd: parent });
+  } else {
+    await execFileAsync("tar", ["-czf", outAbs, ...items], { cwd: parent });
+  }
+
+  await chownToHomeUser(outAbs);
+  const outSt = await fs.stat(outAbs);
+  emit({
+    ok: true,
+    name: outName,
+    sizeBytes: outSt.size,
+    format,
+    itemCount: items.length,
+  });
 }
 
 async function listDir(absPath) {
@@ -226,6 +336,16 @@ async function main() {
       await fs.writeFile(target, buf);
       await chownToHomeUser(target);
       emit({ ok: true, sizeBytes: buf.length });
+      break;
+    }
+    case "archive-extract": {
+      const payload = payloadRaw ? JSON.parse(payloadRaw) : {};
+      await archiveExtract(target, payload);
+      break;
+    }
+    case "archive-create": {
+      const payload = payloadRaw ? JSON.parse(payloadRaw) : {};
+      await archiveCreate(target, payload);
       break;
     }
     default:

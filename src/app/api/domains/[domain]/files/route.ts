@@ -9,7 +9,9 @@ import {
   saveDomainFileContent,
 } from "@/lib/domain-files";
 import {
+  createArchiveLive,
   deleteDomainFileLive,
+  extractArchiveLive,
   liveFilesEnabled,
   mkdirDomainLive,
   resolveDomainFilesListing,
@@ -47,6 +49,9 @@ export async function POST(request: Request, { params }: Params) {
       content?: string;
       parent?: string;
       name?: string;
+      destDir?: string;
+      format?: "zip" | "tar.gz";
+      items?: string[];
     };
 
     if (body.action === "mkdir") {
@@ -89,6 +94,41 @@ export async function POST(request: Request, { params }: Params) {
       }
       await auditLog(session.username, "create-file", domain, path);
       return jsonOk({ path });
+    }
+
+    if (body.action === "extract-archive") {
+      if (!body.path) return jsonError("Archive path is required.");
+      if (!live) {
+        return jsonError("Extract archives on the server with native file access.", 501);
+      }
+      const result = await extractArchiveLive(
+        domain,
+        body.path,
+        body.destDir ?? "",
+        session,
+      );
+      await auditLog(session.username, "extract-archive", domain, body.path);
+      return jsonOk(result);
+    }
+
+    if (body.action === "create-archive") {
+      if (!body.name) return jsonError("Archive file name is required.");
+      const format = body.format === "tar.gz" ? "tar.gz" : "zip";
+      if (!live) {
+        return jsonError("Create archives on the server with native file access.", 501);
+      }
+      const result = await createArchiveLive(
+        domain,
+        body.parent ?? "",
+        {
+          format,
+          name: body.name,
+          items: body.items,
+        },
+        session,
+      );
+      await auditLog(session.username, "create-archive", domain, result.path);
+      return jsonOk(result);
     }
 
     return jsonError("Unknown action.");

@@ -1,5 +1,9 @@
 import type { VirtualMinDomain } from "./types";
 import { VirtualMinError } from "./errors";
+import {
+  detectArchiveFormat,
+  isArchiveFileName,
+} from "./domain-files-archives";
 
 export interface DomainFileEntry {
   name: string;
@@ -12,6 +16,9 @@ export interface DomainFileEntry {
   downloadable?: boolean;
   /** False only for read-only dirs (logs, Maildir). */
   deletable?: boolean;
+  /** ZIP / TAR archive — extract via panel. */
+  archive?: boolean;
+  archiveFormat?: ReturnType<typeof detectArchiveFormat>;
 }
 
 export interface DomainFilesListing {
@@ -305,19 +312,26 @@ export function enrichEntry(entry: DomainFileEntry): DomainFileEntry {
   const size =
     entry.size ??
     (entry.sizeBytes !== undefined ? formatBytes(entry.sizeBytes) : undefined);
+  const archive =
+    entry.archive ?? (entry.type === "file" && isArchiveFileName(entry.name));
+  const parentDir = entry.path.replace(/\/[^/]+$/, "");
   return {
     ...entry,
     size,
+    archive,
+    archiveFormat:
+      entry.archiveFormat ??
+      (archive ? detectArchiveFormat(entry.name) : undefined),
     downloadable: entry.downloadable ?? entry.type === "file",
     editable:
       entry.editable ??
       (entry.type === "file" &&
+        !archive &&
         isTextFileName(entry.name) &&
-        isDirWritable(entry.path.replace(/\/[^/]+$/, ""))),
+        isDirWritable(parentDir)),
     deletable:
       entry.deletable ??
-      (entry.type === "file" &&
-        isDirWritable(entry.path.replace(/\/[^/]+$/, ""))),
+      (entry.type === "file" && isDirWritable(parentDir)),
   };
 }
 
