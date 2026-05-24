@@ -26,7 +26,8 @@ apt-get install -y -qq \
   rsync \
   unzip zip \
   awscli \
-  proftpd-basic
+  proftpd-basic \
+  jq
 
 # Keep Qadbak tooling off apt autoremove lists (backups, S3 admin, FTP tab, archives).
 for pkg in mariadb-client unzip zip awscli proftpd-basic proftpd-core; do

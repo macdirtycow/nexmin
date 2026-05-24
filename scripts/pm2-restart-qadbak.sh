@@ -29,6 +29,17 @@ if [[ "$PROV" != "native" ]] && ! grep -q '^VIRTUALMIN_TLS_INSECURE=' "$ROOT/.en
   chown "$USER:$USER" "$ROOT/.env.local" 2>/dev/null || true
 fi
 
+LOCK_STAMP="$ROOT/node_modules/.package-lock.sha256"
+LOCK_HASH=""
+if [[ -f "$ROOT/package-lock.json" ]]; then
+  LOCK_HASH="$(sha256sum "$ROOT/package-lock.json" | awk '{print $1}')"
+fi
+if [[ -n "$LOCK_HASH" && "$(cat "$LOCK_STAMP" 2>/dev/null || true)" != "$LOCK_HASH" ]]; then
+  echo "==> package-lock.json changed — npm install"
+  run "cd '$ROOT' && npm install --no-audit --no-fund"
+  run "mkdir -p '$ROOT/node_modules' && echo '$LOCK_HASH' > '$LOCK_STAMP'"
+fi
+
 bash "$ROOT/scripts/ensure-terminal-deps.sh"
 
 echo "==> pm2 restart with ecosystem (.env.local → process env)"
