@@ -27,6 +27,7 @@ if [[ -f "$ENV" ]]; then
 fi
 
 echo "==> Switch VPS git branch to main"
+bash "$ROOT/scripts/reset-git-drift-before-pull.sh" 2>/dev/null || true
 bash "$ROOT/scripts/git-sync-origin.sh"
 bash "$ROOT/scripts/fix-qadbak-ownership.sh"
 echo ""

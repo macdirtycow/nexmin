@@ -64,6 +64,10 @@ resolve_target_branch() {
 log "fetch origin (prune stale branches)"
 git fetch --prune origin
 
+if [[ -f "$ROOT/scripts/reset-git-drift-before-pull.sh" ]]; then
+  bash "$ROOT/scripts/reset-git-drift-before-pull.sh"
+fi
+
 TARGET="$(resolve_target_branch)"
 
 if ! branch_exists_on_origin "$TARGET"; then
@@ -90,7 +94,11 @@ REMOTE_REF="origin/$TARGET"
 
 if [[ "$CURRENT" != "$TARGET" ]]; then
   log "checkout $TARGET from $REMOTE_REF"
-  git checkout -B "$TARGET" "$REMOTE_REF"
+  if ! git checkout -B "$TARGET" "$REMOTE_REF" 2>/dev/null; then
+    log "local changes blocked checkout — discarding tracked drift on server scripts"
+    bash "$ROOT/scripts/reset-git-drift-before-pull.sh" 2>/dev/null || true
+    git checkout -f -B "$TARGET" "$REMOTE_REF"
+  fi
 else
   git branch --set-upstream-to="$REMOTE_REF" "$TARGET" 2>/dev/null || true
 fi

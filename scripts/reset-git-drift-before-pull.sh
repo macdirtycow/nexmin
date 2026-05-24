@@ -5,6 +5,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 for rel in \
   package-lock.json \
+  scripts/install-native-stack.sh \
+  scripts/lib/ubuntu-release.sh \
   scripts/run-domain-fs-helper.sh \
   scripts/run-stack-helper.sh \
   scripts/run-provisioning-helper.sh; do
