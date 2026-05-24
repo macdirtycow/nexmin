@@ -82,6 +82,7 @@ export async function runStackAction(
     | "nginx-reload"
     | "apache-reload"
     | "apply-nginx-vhosts"
+    | "apply-php-fpm-pools"
     | "ufw-allow",
   options?: { port?: number },
 ): Promise<{ output?: string; action: string }> {

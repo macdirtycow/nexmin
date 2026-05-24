@@ -55,6 +55,17 @@ Port **25** must be open (UFW + provider firewall).
 With `QADBAK_PROVISIONER=native` (default in installer):
 
 - Create domains in the panel → `native-domains.json` + Postfix maps sync automatically
-- `sudo bash scripts/run-provisioning-helper.sh mail-sync` — rebuild maps after manual changes
+- `sudo bash scripts/run-provisioning-helper.sh mail-sync` — rebuild maps after manual edits
+
+## PHP isolation (per customer)
+
+Each domain unix user gets a dedicated PHP-FPM pool (`/run/php/qadbak-USER.sock`). Nginx serves `.php` via fastcgi under that user — not shared `www-data`.
+
+```bash
+sudo bash scripts/configure-php-fpm-sudo.sh
+sudo bash scripts/apply-all-php-fpm-pools.sh   # existing domains
+```
+
+New domains: pool + nginx vhost are applied on create. Change PHP version in the panel → pool and vhost refresh automatically.
 
 See [IMAP-NATIVE.md](./IMAP-NATIVE.md) and [MIGRATE-FROM-VIRTUALMIN.md](./MIGRATE-FROM-VIRTUALMIN.md).

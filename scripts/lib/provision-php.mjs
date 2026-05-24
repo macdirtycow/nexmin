@@ -4,13 +4,25 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
   emit,
+  fail,
   resolveDomainUser,
   readDomainConfigJson,
   writeDomainConfigJson,
   fileExists,
+  QADBAK_DIR,
 } from "./provisioning-common.mjs";
 
 const exec = promisify(execFile);
+
+async function syncPhpFpmAndNginx(domain) {
+  const { user, home } = await resolveDomainUser(domain);
+  const cfg = await loadPhpConfig(domain);
+  const ver = cfg.defaultVersion || "8.2";
+  const poolScript = path.join(QADBAK_DIR, "scripts", "apply-php-fpm-pool.sh");
+  await exec("bash", [poolScript, user, ver, home], { timeout: 120_000 }).catch(() => {});
+  const nginxScript = path.join(QADBAK_DIR, "scripts", "apply-domain-nginx.sh");
+  await exec("bash", [nginxScript, domain, user], { timeout: 120_000 }).catch(() => {});
+}
 
 const ALLOWED_INI_KEYS = new Set([
   "memory_limit",
@@ -61,7 +73,7 @@ async function loadPhpConfig(domain) {
   const defaultVersion = cfg.defaultVersion || "8.2";
   const directories = Array.isArray(cfg.directories)
     ? cfg.directories
-    : [{ dir: cfg.directory || "public_html", version: defaultVersion, mode: "cgi" }];
+    : [{ dir: cfg.directory || "public_html", version: defaultVersion, mode: "fpm" }];
   return { ...cfg, defaultVersion, directories };
 }
 
@@ -137,15 +149,16 @@ export async function phpSetDirectory(domain, dir, version) {
   const cfg = await loadPhpConfig(domain);
   const directories = [...cfg.directories];
   const idx = directories.findIndex((d) => d.dir === rel);
-  if (idx >= 0) directories[idx] = { ...directories[idx], version, mode: "cgi" };
-  else directories.push({ dir: rel, version, mode: "cgi" });
+  if (idx >= 0) directories[idx] = { ...directories[idx], version, mode: "fpm" };
+  else directories.push({ dir: rel, version, mode: "fpm" });
   await writeDomainConfigJson(domain, "php.json", {
     ...cfg,
     defaultVersion: version,
     directory: rel,
     directories,
   });
-  emit({ ok: true, dir: rel, version });
+  await syncPhpFpmAndNginx(domain);
+  emit({ ok: true, dir: rel, version, mode: "fpm" });
 }
 
 export async function phpModifyIni(domain, name, value, version) {
@@ -163,6 +176,7 @@ export async function phpModifyIni(domain, name, value, version) {
   await writeUserIniMap(file, map);
   await exec("chown", [`${user}:${user}`, file]);
   const cfg = await loadPhpConfig(domain);
+  await syncPhpFpmAndNginx(domain).catch(() => {});
   emit({
     ok: true,
     name: key,

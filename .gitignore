@@ -10,6 +10,9 @@ data/native-domains.json
 data/e2e-admin.pass
 .install-test.env
 data/audit.log
+data/linux-update-cache.json
+data/update-jobs/
+data/pre-update-backups/
 *.log
 .DS_Store
 /test-results/

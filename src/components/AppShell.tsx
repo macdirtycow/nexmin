@@ -45,9 +45,11 @@ export function AppShell({ children, username, role }: AppShellProps) {
                   Server admin
                 </NavLink>
               )}
-              <NavLink href="/fases" active={pathname === "/fases"}>
-                Phases
-              </NavLink>
+              {role === "admin" && (
+                <NavLink href="/fases" active={pathname === "/fases"}>
+                  Phases
+                </NavLink>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">

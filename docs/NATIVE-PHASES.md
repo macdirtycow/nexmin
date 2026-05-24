@@ -17,7 +17,7 @@ Elke sub-fase voegt scripts + `QADBAK_NATIVE_FEATURES` toe. Hybrid blijft VM-fal
 | 8i | `redirects` | redirect-* + `apply-domain-nginx.sh` | URL redirects in nginx |
 | 8j | `features` | feature-list, feature-set | Features-tab (local JSON) |
 | 8k | `logs` | logs-tail | Website logs (tail files) |
-| 8l | `php` | php-versions, php-directories, php-ini, php-set-directory | PHP-tab (versies uit `/etc/php`) |
+| 8l | `php` | php-versions, php-directories, php-ini, php-set-directory | PHP-tab; **per-tenant PHP-FPM** (`apply-php-fpm-pool.sh`, nginx fastcgi) |
 | 8m | `imap` | imap-list, imap-copy, imap-messages, imap-fetch | IMAP folders + read mail via **Dovecot** / Maildir |
 | 8n | `ftp` | ftp-list, ftp-create, ftp-delete, ftp-pass | FTP-accounts (unix users onder domein) |
 | 8o | `limits` | limits-get, limits-set | Limieten (JSON + registry) |

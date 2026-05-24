@@ -36,6 +36,9 @@ if [[ "$(id -u)" -eq 0 ]]; then
   for helper in \
     configure-domain-fs-sudo.sh \
     configure-domain-repair-sudo.sh \
+    configure-panel-vhost-sudo.sh \
+    configure-updates-sudo.sh \
+    configure-php-fpm-sudo.sh \
     configure-domain-terminal-sudo.sh \
     configure-host-services-sudo.sh \
     configure-stack-helper-sudo.sh \

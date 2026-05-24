@@ -5,6 +5,7 @@
  */
 import { execFile } from "node:child_process";
 import { access, readFile } from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
 
 const exec = promisify(execFile);
@@ -117,6 +118,16 @@ async function cmdApacheReload() {
   return { ok: true, action: "apache-reload", unit };
 }
 
+async function cmdApplyPhpFpmPools() {
+  const script = `${QADBAK_DIR}/scripts/apply-all-php-fpm-pools.sh`;
+  const { stdout, stderr } = await exec("bash", [script], { timeout: 600_000 });
+  return {
+    ok: true,
+    action: "apply-php-fpm-pools",
+    output: [stdout, stderr].filter(Boolean).join("\n").trim(),
+  };
+}
+
 async function cmdApplyNginxVhosts() {
   const script = `${QADBAK_DIR}/scripts/apply-customer-nginx-vhosts.sh`;
   if (!(await exists(script))) {
@@ -151,6 +162,19 @@ async function cmdUfwAllow(port) {
 }
 
 async function resolveDomainUser(domain) {
+  try {
+    const regPath = path.join(QADBAK_DIR, "data", "native-domains.json");
+    const raw = await readFile(regPath, "utf8");
+    const rows = JSON.parse(raw);
+    if (Array.isArray(rows)) {
+      const hit = rows.find(
+        (r) => String(r.name).toLowerCase() === String(domain).toLowerCase(),
+      );
+      if (hit?.user) return hit.user;
+    }
+  } catch {
+    /* */
+  }
   try {
     const { stdout } = await exec(
       "virtualmin",
@@ -204,6 +228,23 @@ async function cmdDomainValidate(domain) {
     detail: nginxHits[0] || "no server_name match in nginx sites",
   });
 
+  const fpmSock = `/run/php/qadbak-${user}.sock`;
+  let fpmOk = false;
+  try {
+    await access(fpmSock);
+    fpmOk = true;
+  } catch {
+    /* */
+  }
+  checks.push({
+    id: "php_fpm_pool",
+    label: "PHP-FPM tenant pool",
+    ok: fpmOk,
+    detail: fpmOk
+      ? fpmSock
+      : `missing — run: sudo bash ${QADBAK_DIR}/scripts/apply-php-fpm-pool.sh ${user}`,
+  });
+
   const apacheHits = await grepInDir("/etc/apache2/sites-enabled", `ServerName.*${domain}`);
   const apacheHits2 =
     apacheHits.length === 0
@@ -236,6 +277,9 @@ async function main() {
       break;
     case "apply-nginx-vhosts":
       result = await cmdApplyNginxVhosts();
+      break;
+    case "apply-php-fpm-pools":
+      result = await cmdApplyPhpFpmPools();
       break;
     case "ufw-status":
       result = { ok: true, check: await cmdUfwStatusInner() };

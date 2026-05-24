@@ -18,8 +18,15 @@ export function CreateDomainForm({
   const [user, setUser] = useState("");
   const [plan, setPlan] = useState("");
   const [parent, setParent] = useState(parentOptions[0] ?? "");
+  const [createClientAccount, setCreateClientAccount] = useState(true);
+  const [createPanelVhost, setCreatePanelVhost] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [clientCredentials, setClientCredentials] = useState<{
+    username: string;
+    password: string;
+    panelUrl?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -27,6 +34,7 @@ export function CreateDomainForm({
     setLoading(true);
     setError("");
     setSuccess("");
+    setClientCredentials(null);
     try {
       const res = await fetch("/api/domains", {
         method: "POST",
@@ -38,15 +46,22 @@ export function CreateDomainForm({
           plan: plan || undefined,
           parent: type !== "top" ? parent : undefined,
           type,
+          createClientAccount: type === "top" ? createClientAccount : false,
+          createPanelVhost: type === "top" ? createPanelVhost : false,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Create failed.");
+      if (data.clientAccount) {
+        setClientCredentials(data.clientAccount);
+      }
       setSuccess(`Domain ${domain} created.`);
-      setTimeout(() => {
-        router.push(`/domains/${encodeURIComponent(domain)}`);
-        router.refresh();
-      }, 800);
+      if (!data.clientAccount) {
+        setTimeout(() => {
+          router.push(`/domains/${encodeURIComponent(domain)}`);
+          router.refresh();
+        }, 800);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");
     } finally {
@@ -125,6 +140,71 @@ export function CreateDomainForm({
           <Label htmlFor="plan">Plan (optional)</Label>
           <Input id="plan" value={plan} onChange={(e) => setPlan(e.target.value)} />
         </div>
+        {type === "top" && (
+          <div className="space-y-3 rounded-lg border border-panel-border bg-panel-bg/50 p-4">
+            <p className="text-sm font-medium text-white">Client panel access</p>
+            <label className="flex cursor-pointer items-start gap-2 text-sm text-panel-muted">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={createClientAccount}
+                onChange={(e) => setCreateClientAccount(e.target.checked)}
+              />
+              <span>
+                Create client account in <code className="text-xs">users.json</code>{" "}
+                (username from domain; one-time password shown after create)
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2 text-sm text-panel-muted">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={createPanelVhost}
+                onChange={(e) => setCreatePanelVhost(e.target.checked)}
+                disabled={!createClientAccount}
+              />
+              <span>
+                Nginx vhost <code className="text-xs">panel.[domain]</code> → this panel
+                (requires sudo rule: configure-panel-vhost-sudo.sh)
+              </span>
+            </label>
+          </div>
+        )}
+        {clientCredentials && (
+          <Alert variant="success">
+            <p className="font-medium text-white">Client login (copy now — not shown again)</p>
+            <p className="mt-2 text-sm">
+              Username: <strong>{clientCredentials.username}</strong>
+              <br />
+              Password: <strong>{clientCredentials.password}</strong>
+              {clientCredentials.panelUrl && (
+                <>
+                  <br />
+                  Panel URL:{" "}
+                  <a
+                    className="text-emerald-300 underline"
+                    href={clientCredentials.panelUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {clientCredentials.panelUrl}
+                  </a>
+                </>
+              )}
+            </p>
+            <Button
+              type="button"
+              className="mt-3"
+              variant="secondary"
+              onClick={() => {
+                router.push(`/domains/${encodeURIComponent(domain)}`);
+                router.refresh();
+              }}
+            >
+              Continue to domain
+            </Button>
+          </Alert>
+        )}
         <Button type="submit" disabled={loading}>
           {loading ? "Working…" : "Create domain"}
         </Button>

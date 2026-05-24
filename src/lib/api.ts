@@ -13,6 +13,12 @@ export function handleApiError(err: unknown) {
   if (err instanceof Error && err.message === "UNAUTHORIZED") {
     return jsonError("You are not logged in.", 401);
   }
+  if (
+    err instanceof Error &&
+    (err as Error & { code?: string }).code === "FORBIDDEN"
+  ) {
+    return jsonError(err.message, 403);
+  }
   if (err instanceof VirtualMinError) {
     return jsonError(err.message, 502);
   }
