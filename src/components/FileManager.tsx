@@ -1,6 +1,8 @@
 "use client";
 
+import { FileArchiveDialog } from "@/components/FileArchiveDialog";
 import { FileCodeEditor } from "@/components/FileCodeEditor";
+import { archiveFormatLabel } from "@/lib/domain-files-archives";
 import {
   Alert,
   Button,
@@ -47,6 +49,10 @@ export function FileManager({
   const [deletePath, setDeletePath] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
 
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveMode, setArchiveMode] = useState<"extract" | "compress">("extract");
+  const [archiveEntry, setArchiveEntry] = useState<DomainFileEntry | null>(null);
+
   const refresh = useCallback(
     async (dir?: string) => {
       const cwd = dir ?? listing.cwd;
@@ -69,6 +75,30 @@ export function FileManager({
     } finally {
       setLoading(false);
     }
+  }
+
+  function openArchiveExtract(entry: DomainFileEntry) {
+    setArchiveEntry(entry);
+    setArchiveMode("extract");
+    setArchiveOpen(true);
+  }
+
+  function openArchiveCompress() {
+    setArchiveEntry(null);
+    setArchiveMode("compress");
+    setArchiveOpen(true);
+  }
+
+  async function openEntry(entry: DomainFileEntry, forceReadOnly = false) {
+    if (entry.type === "dir") {
+      await navigate(entry.path);
+      return;
+    }
+    if (entry.archive) {
+      openArchiveExtract(entry);
+      return;
+    }
+    await openEditor(entry, forceReadOnly);
   }
 
   async function openEditor(entry: DomainFileEntry, forceReadOnly = false) {
@@ -220,7 +250,7 @@ export function FileManager({
       setSuccess("File created.");
       await refresh();
       if (data.path) {
-        await openEditor({
+        await openEntry({
           name: newFileName,
           path: data.path,
           type: "file",
@@ -406,10 +436,14 @@ export function FileManager({
                       <button
                         type="button"
                         className="text-left font-medium text-white hover:text-panel-accent"
-                        onClick={() => openEditor(entry)}
+                        onClick={() => openEntry(entry)}
                       >
                         <span className="mr-2 inline-block w-14 text-xs uppercase text-panel-muted">
-                          {entry.type === "dir" ? "dir" : "file"}
+                          {entry.type === "dir"
+                            ? "dir"
+                            : entry.archive
+                              ? archiveFormatLabel(entry.archiveFormat)
+                              : "file"}
                         </span>
                         {entry.name}
                       </button>
@@ -429,12 +463,21 @@ export function FileManager({
                             Download
                           </a>
                         )}
-                        {entry.type === "file" && (
+                        {entry.type === "file" && entry.archive && writable && (
+                          <Button
+                            variant="ghost"
+                            className="!px-2 !py-1 text-xs text-panel-accent"
+                            onClick={() => openArchiveExtract(entry)}
+                          >
+                            Extract
+                          </Button>
+                        )}
+                        {entry.type === "file" && !entry.archive && (
                           <Button
                             variant="ghost"
                             className="!px-2 !py-1 text-xs"
                             onClick={() =>
-                              openEditor(
+                              openEntry(
                                 entry,
                                 entry.editable === false,
                               )
@@ -520,6 +563,25 @@ export function FileManager({
           )}
         </>
       )}
+
+      <FileArchiveDialog
+        open={archiveOpen}
+        mode={archiveMode}
+        domain={domain}
+        cwd={listing.cwd}
+        archiveEntry={archiveEntry ?? undefined}
+        entries={listing.entries ?? []}
+        onClose={() => {
+          setArchiveOpen(false);
+          setArchiveEntry(null);
+        }}
+        onSuccess={async (msg) => {
+          setSuccess(msg);
+          setArchiveOpen(false);
+          setArchiveEntry(null);
+          await refresh();
+        }}
+      />
 
       <ConfirmDialog
         open={!!deletePath}
