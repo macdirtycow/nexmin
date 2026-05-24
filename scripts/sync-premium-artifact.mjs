@@ -37,6 +37,11 @@ async function loadEnvLocal() {
 }
 
 function licenseServer() {
+  const internal = process.env.QADBAK_LICENSE_SERVER_INTERNAL?.trim().replace(
+    /\/$/,
+    "",
+  );
+  if (internal) return internal;
   return (
     process.env.QADBAK_LICENSE_SERVER?.replace(/\/$/, "") ??
     "https://license.omiiba.dev"
@@ -92,7 +97,7 @@ async function main() {
 
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Premium download failed (${res.status})`);
+    throw new Error(`Premium download failed (${res.status}) from ${licenseServer()}`);
   }
   await writeFile(tarball, Buffer.from(await res.arrayBuffer()));
 
@@ -138,6 +143,10 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(JSON.stringify({ ok: false, error: e.message }));
+  const msg =
+    e?.cause?.code === "ECONNREFUSED" || e?.message === "fetch failed"
+      ? `${e.message} — on same VPS set QADBAK_LICENSE_SERVER_INTERNAL=http://127.0.0.1:8787 in .env.local`
+      : e.message;
+  console.error(JSON.stringify({ ok: false, error: msg }));
   process.exit(1);
 });

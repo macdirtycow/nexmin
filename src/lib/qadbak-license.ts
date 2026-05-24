@@ -68,6 +68,16 @@ function licenseServer(): string {
   );
 }
 
+/** Same-host panel → license API (avoids NAT hairpin on the public hostname). */
+function licenseServerFetchBase(): string {
+  const internal = process.env.QADBAK_LICENSE_SERVER_INTERNAL?.trim().replace(
+    /\/$/,
+    "",
+  );
+  if (internal) return internal;
+  return licenseServer();
+}
+
 function getJwtSecret(): Uint8Array {
   const secret =
     process.env.QADBAK_LICENSE_JWT_SECRET?.trim() ||
@@ -223,7 +233,7 @@ export async function activateLicense(key: string): Promise<StoredLicense> {
     process.env.HOSTNAME?.trim() ||
     "unknown";
   const data = await postJson<ActivateResponse>(
-    `${licenseServer()}/v1/activate`,
+    `${licenseServerFetchBase()}/v1/activate`,
     { key: key.trim(), instanceId, hostname },
   );
   const now = new Date().toISOString();
@@ -251,7 +261,7 @@ export async function heartbeatLicense(): Promise<StoredLicense | null> {
   const stored = await readStoredLicense();
   if (!stored) return null;
   const data = await postJson<HeartbeatResponse>(
-    `${licenseServer()}/v1/heartbeat`,
+    `${licenseServerFetchBase()}/v1/heartbeat`,
     { token: stored.token, instanceId: stored.instanceId },
   );
   if (data.status === "revoked") {
@@ -312,5 +322,5 @@ export function artifactDownloadUrl(
   token: string,
   version: string,
 ): string {
-  return `${licenseServer()}/v1/artifacts/${encodeURIComponent(version)}/premium.tar.gz?token=${encodeURIComponent(token)}`;
+  return `${licenseServerFetchBase()}/v1/artifacts/${encodeURIComponent(version)}/premium.tar.gz?token=${encodeURIComponent(token)}`;
 }
