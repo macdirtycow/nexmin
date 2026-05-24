@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Rebuild customer nginx vhost (redirects + reverse proxies from domain-config).
+# PHP: per-user PHP-FPM socket when pool exists, else Apache backend proxy.
 set -euo pipefail
 DOMAIN="${1:?domain}"
 USER="${2:?unix-user}"
@@ -9,11 +10,20 @@ PUB="/home/${USER}/public_html"
 REDIR_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/redirects.json"
 PROXY_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/proxies.json"
 
+# shellcheck source=lib/php-fpm-pool.sh
+source "$QADBAK_DIR/scripts/lib/php-fpm-pool.sh"
+
 [[ -d "$PUB" ]] || mkdir -p "$PUB" && chown -R "${USER}:${USER}" "/home/${USER}"
+
+PHP_VER="$(php_fpm_domain_version "$DOMAIN" "$QADBAK_DIR")"
+PHP_VER="$(php_fpm_detect_version "$PHP_VER")"
+if [[ -f "$QADBAK_DIR/scripts/apply-php-fpm-pool.sh" ]]; then
+  bash "$QADBAK_DIR/scripts/apply-php-fpm-pool.sh" "$USER" "$PHP_VER" "/home/${USER}" 2>/dev/null || true
+fi
 
 OUT="/etc/nginx/sites-available/qadbak-customer-${DOMAIN}.conf"
 {
-  echo "# Qadbak native — ${DOMAIN}"
+  echo "# Qadbak native — ${DOMAIN} (user ${USER}, PHP ${PHP_VER})"
   echo "server {"
   echo "    listen 80;"
   echo "    listen [::]:80;"
@@ -46,16 +56,15 @@ OUT="/etc/nginx/sites-available/qadbak-customer-${DOMAIN}.conf"
   fi
 
   echo "    location / { try_files \$uri \$uri/ =404; }"
-  echo "    location ~ \\.php(/|\$) {"
-  echo "        proxy_pass http://${APACHE_BACKEND};"
-  echo "        proxy_http_version 1.1;"
-  echo "        proxy_set_header Host \$host;"
-  echo "        proxy_set_header X-Real-IP \$remote_addr;"
-  echo "    }"
+  nginx_php_location_lines "$USER" "$APACHE_BACKEND"
   echo "}"
 } >"$OUT"
 
 ln -sf "$OUT" "/etc/nginx/sites-enabled/qadbak-customer-${DOMAIN}.conf"
 nginx -t
 systemctl reload nginx
-echo "OK — nginx vhost ${DOMAIN}"
+if php_fpm_pool_available "$USER"; then
+  echo "OK — nginx vhost ${DOMAIN} (PHP-FPM unix:$(php_fpm_socket_path "$USER"))"
+else
+  echo "OK — nginx vhost ${DOMAIN} (PHP → Apache ${APACHE_BACKEND})"
+fi

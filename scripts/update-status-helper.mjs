@@ -1,0 +1,386 @@
+#!/usr/bin/env node
+/**
+ * Linux apt + Qadbak git update status and background jobs (admin Updates tab).
+ * Usage: update-status-helper.mjs <command> [args...]
+ */
+import { spawn } from "node:child_process";
+import { access, mkdir, readFile, writeFile, copyFile, chmod } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import path from "node:path";
+import { promisify } from "node:util";
+
+const exec = promisify(execFile);
+const QADBAK_DIR = process.env.QADBAK_DIR || "/opt/qadbak";
+const DATA_DIR = path.join(QADBAK_DIR, "data");
+const CACHE_PATH = path.join(DATA_DIR, "linux-update-cache.json");
+const JOBS_DIR = path.join(DATA_DIR, "update-jobs");
+const BACKUP_ROOT = path.join(DATA_DIR, "pre-update-backups");
+const DATA_BACKUP_FILES = [
+  "users.json",
+  "native-domains.json",
+  "sessions.json",
+  "audit.json",
+  "plans.json",
+  "resellers.json",
+];
+
+async function exists(p) {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureDirs() {
+  await mkdir(DATA_DIR, { recursive: true });
+  await mkdir(JOBS_DIR, { recursive: true });
+  await mkdir(BACKUP_ROOT, { recursive: true });
+}
+
+function emit(obj) {
+  console.log(JSON.stringify(obj));
+}
+
+function fail(msg) {
+  emit({ ok: false, error: msg });
+  process.exit(1);
+}
+
+async function run(cmd, args, opts = {}) {
+  const { stdout, stderr } = await exec(cmd, args, {
+    timeout: opts.timeout ?? 300_000,
+    maxBuffer: opts.maxBuffer ?? 8 * 1024 * 1024,
+    env: { ...process.env, DEBIAN_FRONTEND: "noninteractive", ...opts.env },
+  });
+  return [stdout, stderr].filter(Boolean).join("\n");
+}
+
+async function readJson(p, fallback = null) {
+  try {
+    return JSON.parse(await readFile(p, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+async function chownQadbak(p) {
+  try {
+    await exec("chown", [`${QADBAK_USER}:${QADBAK_USER}`, p], { timeout: 5000 });
+  } catch {
+    // ignore on dev machines
+  }
+}
+
+async function writeJson(p, data) {
+  await writeFile(p, JSON.stringify(data, null, 2), "utf8");
+  await chownQadbak(p);
+}
+
+async function parseLinuxUpgradeSim() {
+  if (!(await exists("/usr/bin/apt-get"))) {
+    return {
+      upgradable: 0,
+      security: 0,
+      summaryLine: "apt-get not available (non-Debian host?)",
+    };
+  }
+  let out = "";
+  try {
+    out = await run("apt-get", ["-s", "upgrade"], { timeout: 120_000 });
+  } catch (e) {
+    return {
+      upgradable: 0,
+      security: 0,
+      summaryLine: e.message?.slice(0, 200) ?? "apt-get -s upgrade failed",
+    };
+  }
+  const summary = out.match(/^(\d+)\s+upgraded/m);
+  const upgradable = summary ? Number(summary[1]) : 0;
+  const security = (out.match(/security/gi) ?? []).length;
+  const summaryLine =
+    out
+      .split("\n")
+      .find((l) => /upgraded/.test(l))
+      ?.trim() ?? (upgradable ? `${upgradable} upgradable` : "System up to date");
+  return { upgradable, security, summaryLine };
+}
+
+async function cmdLinuxRefresh() {
+  await ensureDirs();
+  if (await exists("/usr/bin/apt-get")) {
+    try {
+      await run("apt-get", ["update", "-qq"], { timeout: 300_000 });
+    } catch (e) {
+      emit({
+        ok: false,
+        error: `apt-get update failed: ${e.message ?? e}`,
+      });
+      process.exit(1);
+    }
+  }
+  const parsed = await parseLinuxUpgradeSim();
+  const rebootRequired = await exists("/var/run/reboot-required");
+  const cache = {
+    updatedAt: new Date().toISOString(),
+    rebootRequired,
+    ...parsed,
+  };
+  await writeJson(CACHE_PATH, cache);
+  return { linux: cache };
+}
+
+async function cmdLinuxStatus() {
+  await ensureDirs();
+  const cache = await readJson(CACHE_PATH);
+  if (cache?.updatedAt) {
+    const ageMs = Date.now() - new Date(cache.updatedAt).getTime();
+    if (ageMs < 60 * 60 * 1000) {
+      return { linux: cache, fromCache: true };
+    }
+  }
+  return cmdLinuxRefresh();
+}
+
+async function writeJobMeta(jobId, meta) {
+  await writeJson(path.join(JOBS_DIR, `${jobId}.json`), meta);
+}
+
+async function readJobMeta(jobId) {
+  return readJson(path.join(JOBS_DIR, `${jobId}.json`));
+}
+
+async function tailLog(jobId, maxLines = 80) {
+  const logPath = path.join(JOBS_DIR, `${jobId}.log`);
+  if (!(await exists(logPath))) return "";
+  const raw = await readFile(logPath, "utf8");
+  const lines = raw.split("\n");
+  return lines.slice(-maxLines).join("\n");
+}
+
+async function startNohupJob(jobId, type, shellBody) {
+  await ensureDirs();
+  const logPath = path.join(JOBS_DIR, `${jobId}.log`);
+  const metaPath = path.join(JOBS_DIR, `${jobId}.json`);
+  await writeFile(
+    logPath,
+    `==> Job ${jobId} (${type}) started ${new Date().toISOString()}\n`,
+    "utf8",
+  );
+  await writeJobMeta(jobId, {
+    id: jobId,
+    type,
+    status: "running",
+    startedAt: new Date().toISOString(),
+  });
+
+  const wrapped = `#!/bin/bash
+set -uo pipefail
+export META=${JSON.stringify(metaPath)}
+exec >>${JSON.stringify(logPath)} 2>&1
+echo "==> Running ${type}"
+${shellBody}
+EC=$?
+echo "==> Finished exit $EC"
+export EC
+if command -v node >/dev/null 2>&1; then
+  node <<'NODE'
+const fs = require("fs");
+const m = JSON.parse(fs.readFileSync(process.env.META, "utf8"));
+const ec = Number(process.env.EC);
+m.status = ec === 0 ? "done" : "failed";
+m.finishedAt = new Date().toISOString();
+m.exitCode = ec;
+fs.writeFileSync(process.env.META, JSON.stringify(m, null, 2));
+NODE
+fi
+exit $EC
+`;
+  const scriptPath = path.join(JOBS_DIR, `${jobId}.sh`);
+  await writeFile(scriptPath, wrapped, { mode: 0o700 });
+  await chmod(scriptPath, 0o700);
+  const child = spawn("nohup", ["bash", scriptPath], {
+    detached: true,
+    stdio: "ignore",
+    cwd: QADBAK_DIR,
+  });
+  child.unref();
+  return { jobId, type, status: "running" };
+}
+
+async function cmdLinuxUpgradeStart() {
+  if (!(await exists("/usr/bin/apt-get"))) {
+    fail("apt-get not available on this host.");
+  }
+  const jobId = `linux-${Date.now()}`;
+  await startNohupJob(
+    jobId,
+    "linux-upgrade",
+    `export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get upgrade -y
+`,
+  );
+  return { job: { id: jobId, type: "linux-upgrade", status: "running" } };
+}
+
+async function cmdQadbakStatus() {
+  if (!(await exists(path.join(QADBAK_DIR, ".git")))) {
+    return {
+      qadbak: {
+        isGit: false,
+        message: "Not a git checkout.",
+      },
+    };
+  }
+  let commit = "";
+  let branch = "main";
+  let remoteUrl = "";
+  let behind = 0;
+  try {
+    commit = (
+      await run("git", ["-C", QADBAK_DIR, "rev-parse", "--short", "HEAD"], {
+        timeout: 10_000,
+      })
+    ).trim();
+    branch = (
+      await run("git", ["-C", QADBAK_DIR, "rev-parse", "--abbrev-ref", "HEAD"], {
+        timeout: 10_000,
+      })
+    ).trim();
+    remoteUrl = (
+      await run("git", ["-C", QADBAK_DIR, "remote", "get-url", "origin"], {
+        timeout: 10_000,
+      })
+    ).trim();
+  } catch (e) {
+    return {
+      qadbak: {
+        isGit: true,
+        commit,
+        branch,
+        error: e.message?.slice(0, 200),
+      },
+    };
+  }
+  try {
+    await run(
+      "git",
+      ["-C", QADBAK_DIR, "fetch", "origin", branch, "--quiet"],
+      { timeout: 60_000 },
+    );
+    const count = (
+      await run(
+        "git",
+        ["-C", QADBAK_DIR, "rev-list", "--count", `HEAD..origin/${branch}`],
+        { timeout: 10_000 },
+      )
+    ).trim();
+    behind = Number(count) || 0;
+  } catch {
+    behind = -1;
+  }
+  return {
+    qadbak: {
+      isGit: true,
+      commit,
+      branch,
+      remoteUrl,
+      behind,
+      upToDate: behind === 0,
+      checkedAt: new Date().toISOString(),
+    },
+  };
+}
+
+async function backupPanelData() {
+  await ensureDirs();
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const dir = path.join(BACKUP_ROOT, stamp);
+  await mkdir(dir, { recursive: true });
+  const copied = [];
+  for (const name of DATA_BACKUP_FILES) {
+    const src = path.join(DATA_DIR, name);
+    if (await exists(src)) {
+      await copyFile(src, path.join(dir, name));
+      copied.push(name);
+    }
+  }
+  return { backupDir: dir, copied };
+}
+
+async function cmdQadbakUpgradeStart() {
+  const script = path.join(QADBAK_DIR, "scripts", "update-qadbak.sh");
+  if (!(await exists(script))) {
+    fail(`Missing ${script}`);
+  }
+  const { backupDir, copied } = await backupPanelData();
+  const jobId = `qadbak-${Date.now()}`;
+  await startNohupJob(
+    jobId,
+    "qadbak-upgrade",
+    `echo "==> Data backup: ${backupDir} (${copied.join(", ") || "none"})"
+cd ${JSON.stringify(QADBAK_DIR)}
+bash ${JSON.stringify(script)}
+`,
+  );
+  return {
+    job: { id: jobId, type: "qadbak-upgrade", status: "running" },
+    backupDir,
+    copied,
+  };
+}
+
+async function cmdJobStatus(jobId) {
+  if (!jobId || /[^a-zA-Z0-9_-]/.test(jobId)) {
+    fail("Invalid job id.");
+  }
+  const meta = await readJobMeta(jobId);
+  if (!meta) {
+    fail("Job not found.");
+  }
+  const log = await tailLog(jobId, 120);
+  return { job: meta, log };
+}
+
+async function main() {
+  const [cmd, arg] = process.argv.slice(2);
+  if (!cmd) {
+    fail(
+      "Usage: ping | linux-status | linux-refresh | linux-upgrade-start | qadbak-status | qadbak-upgrade-start | job-status JOB_ID",
+    );
+  }
+  let result;
+  switch (cmd) {
+    case "ping":
+      result = { pong: true };
+      break;
+    case "linux-status":
+      result = await cmdLinuxStatus();
+      break;
+    case "linux-refresh":
+      result = await cmdLinuxRefresh();
+      break;
+    case "linux-upgrade-start":
+      result = await cmdLinuxUpgradeStart();
+      break;
+    case "qadbak-status":
+      result = await cmdQadbakStatus();
+      break;
+    case "qadbak-upgrade-start":
+      result = await cmdQadbakUpgradeStart();
+      break;
+    case "job-status":
+      result = await cmdJobStatus(arg);
+      break;
+    default:
+      fail(`Unknown command: ${cmd}`);
+  }
+  emit({ ok: true, ...result });
+}
+
+main().catch((err) => {
+  emit({ ok: false, error: err.message ?? String(err) });
+  process.exit(1);
+});

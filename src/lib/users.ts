@@ -40,6 +40,16 @@ async function ensureUsersFile(): Promise<void> {
   }
 }
 
+export function invalidateUsersCache(): void {
+  cache = null;
+}
+
+export async function saveUsers(users: PanelUser[]): Promise<void> {
+  await ensureUsersFile();
+  await writeFile(USERS_PATH, JSON.stringify(users, null, 2), "utf8");
+  invalidateUsersCache();
+}
+
 export async function loadUsers(): Promise<PanelUser[]> {
   if (cache) return cache;
   await ensureUsersFile();
@@ -62,4 +72,57 @@ export async function verifyPassword(
   password: string,
 ): Promise<boolean> {
   return bcrypt.compare(password, user.passwordHash);
+}
+
+export async function createClientUser(opts: {
+  username: string;
+  password: string;
+  domains: string[];
+}): Promise<PanelUser> {
+  const users = await loadUsers();
+  const name = opts.username.trim();
+  const key = name.toLowerCase();
+  if (!key) throw new Error("Client username is required.");
+  const existing = users.find((u) => u.username.toLowerCase() === key);
+  if (existing) {
+    if (existing.role !== "client") {
+      throw new Error(`Username already used by an administrator: ${name}`);
+    }
+    throw new Error(`Panel client already exists: ${name}`);
+  }
+  const hash = await bcrypt.hash(opts.password, 10);
+  const user: PanelUser = {
+    id: `client-${Date.now()}`,
+    username: name,
+    passwordHash: hash,
+    role: "client",
+    domains: [...opts.domains],
+  };
+  users.push(user);
+  await saveUsers(users);
+  return user;
+}
+
+export async function assignDomainToClient(
+  username: string,
+  domain: string,
+): Promise<void> {
+  const users = await loadUsers();
+  const d = domain.trim().toLowerCase();
+  if (!d) throw new Error("Domain is required.");
+  for (const u of users) {
+    if (!u.domains) u.domains = [];
+    u.domains = u.domains.filter((x) => x.toLowerCase() !== d);
+  }
+  const target = users.find(
+    (u) => u.username.toLowerCase() === username.trim().toLowerCase(),
+  );
+  if (!target) throw new Error(`Panel user not found: ${username}`);
+  if (target.role !== "client") {
+    throw new Error(`User is not a client account: ${username}`);
+  }
+  if (!target.domains.some((x) => x.toLowerCase() === d)) {
+    target.domains.push(d);
+  }
+  await saveUsers(users);
 }

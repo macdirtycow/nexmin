@@ -66,6 +66,16 @@ if [[ -f "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" ]]; then
   bash "$QADBAK_DIR/scripts/configure-domain-terminal-sudo.sh" || true
 fi
 
+if [[ "${QADBAK_NATIVE_INSTALL:-}" == "1" ]]; then
+  echo "==> PHP-FPM pools (one pool per customer unix user)"
+  if [[ -f "$QADBAK_DIR/scripts/configure-php-fpm-sudo.sh" ]]; then
+    bash "$QADBAK_DIR/scripts/configure-php-fpm-sudo.sh" || true
+  fi
+  if [[ -f "$QADBAK_DIR/scripts/apply-all-php-fpm-pools.sh" ]]; then
+    bash "$QADBAK_DIR/scripts/apply-all-php-fpm-pools.sh" || true
+  fi
+fi
+
 echo "==> Hosting stack applied"
 if [[ -n "$FIRST_DOMAIN" ]]; then
   echo "    Test: curl -sI -H 'Host: $FIRST_DOMAIN' http://127.0.0.1/ | head -3"

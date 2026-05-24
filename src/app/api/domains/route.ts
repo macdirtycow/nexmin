@@ -1,11 +1,27 @@
+import { randomBytes } from "node:crypto";
 import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { requireSession } from "@/lib/session";
+import { domainToClientUsername } from "@/lib/domain-username";
 import { repairAvailable, repairDomainWebsite } from "@/lib/domain-repair";
+import {
+  applyClientPanelVhost,
+  panelVhostAvailable,
+  panelVhostHostname,
+} from "@/lib/panel-vhost";
+import { requireSession } from "@/lib/session";
+import {
+  assignDomainToClient,
+  createClientUser,
+  findUserByUsername,
+} from "@/lib/users";
 import { VirtualMinError } from "@/lib/errors";
 import { getProvisioner } from "@/lib/provisioner";
 import { isIndependentMode } from "@/lib/provisioner/native-stub";
+
+function randomPanelPassword(): string {
+  return randomBytes(12).toString("base64url").slice(0, 16);
+}
 
 export async function GET() {
   try {
@@ -28,6 +44,8 @@ export async function POST(request: Request) {
       plan?: string;
       parent?: string;
       type?: "top" | "sub" | "alias";
+      createClientAccount?: boolean;
+      createPanelVhost?: boolean;
     };
     if (!body.domain || !body.pass) {
       return jsonError("Domain name and password are required.");
@@ -95,6 +113,54 @@ export async function POST(request: Request) {
 
     await auditLog(session.username, "create-domain", domainName);
 
+    let clientAccount:
+      | { username: string; password: string; panelUrl?: string }
+      | undefined;
+    const wantClient =
+      body.type !== "sub" &&
+      body.type !== "alias" &&
+      body.createClientAccount !== false;
+    if (wantClient) {
+      const clientUsername = domainToClientUsername(domainName, body.user);
+      const panelPassword = randomPanelPassword();
+      const existing = await findUserByUsername(clientUsername);
+      if (existing?.role === "client") {
+        await assignDomainToClient(clientUsername, domainName);
+        clientAccount = {
+          username: clientUsername,
+          password: "(existing account — password unchanged)",
+        };
+      } else if (!existing) {
+        await createClientUser({
+          username: clientUsername,
+          password: panelPassword,
+          domains: [domainName],
+        });
+        clientAccount = {
+          username: clientUsername,
+          password: panelPassword,
+        };
+        await auditLog(
+          session.username,
+          "create-client-user",
+          `${clientUsername}@${domainName}`,
+        );
+      }
+      if (body.createPanelVhost && clientAccount) {
+        const host = panelVhostHostname(domainName);
+        clientAccount.panelUrl = `http://${host}/`;
+        if (await panelVhostAvailable()) {
+          try {
+            await applyClientPanelVhost(domainName);
+          } catch {
+            clientAccount.panelUrl = `${clientAccount.panelUrl} (vhost script failed — run configure-panel-vhost-sudo.sh)`;
+          }
+        } else {
+          clientAccount.panelUrl = `${clientAccount.panelUrl} (run: sudo bash scripts/configure-panel-vhost-sudo.sh)`;
+        }
+      }
+    }
+
     let hostingNote: string | undefined;
     if (await repairAvailable()) {
       try {
@@ -107,7 +173,12 @@ export async function POST(request: Request) {
       }
     }
 
-    return jsonOk({ ok: true, domain: created.name, hostingNote });
+    return jsonOk({
+      ok: true,
+      domain: created.name,
+      hostingNote,
+      clientAccount,
+    });
   } catch (err) {
     return handleApiError(err);
   }

@@ -41,9 +41,13 @@ export async function POST(request: Request) {
     const action = body.action;
     if (
       !action ||
-      !["nginx-reload", "apache-reload", "apply-nginx-vhosts", "ufw-allow"].includes(
-        action,
-      )
+      ![
+        "nginx-reload",
+        "apache-reload",
+        "apply-nginx-vhosts",
+        "apply-php-fpm-pools",
+        "ufw-allow",
+      ].includes(action)
     ) {
       return jsonError("Invalid action.");
     }
@@ -51,7 +55,12 @@ export async function POST(request: Request) {
       return jsonError("Valid port (1-65535) required for ufw-allow.");
     }
     const result = await runStackAction(
-      action as "nginx-reload" | "apache-reload" | "apply-nginx-vhosts" | "ufw-allow",
+      action as
+        | "nginx-reload"
+        | "apache-reload"
+        | "apply-nginx-vhosts"
+        | "apply-php-fpm-pools"
+        | "ufw-allow",
       { port: body.port },
     );
     await auditLog(session.username, `stack-${action}`, undefined, String(body.port ?? ""));

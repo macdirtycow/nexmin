@@ -27,6 +27,25 @@ function getSecret(): Uint8Array | null {
   return new TextEncoder().encode(secret);
 }
 
+function isClientBlockedPath(pathname: string): boolean {
+  if (pathname.startsWith("/admin")) return true;
+  if (pathname.startsWith("/api/admin")) return true;
+  if (pathname === "/fases" || pathname.startsWith("/fases/")) return true;
+  if (pathname === "/domains/new") return true;
+  if (pathname.startsWith("/api/server/")) return true;
+  return false;
+}
+
+function clientForbiddenResponse(request: NextRequest, pathname: string) {
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "This action is only available to administrators." },
+      { status: 403 },
+    );
+  }
+  return NextResponse.redirect(new URL("/dashboard", request.url));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -45,7 +64,11 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret);
+    const role = String(payload.role ?? "");
+    if (role === "client" && isClientBlockedPath(pathname)) {
+      return clientForbiddenResponse(request, pathname);
+    }
     return NextResponse.next();
   } catch {
     if (pathname.startsWith("/api/")) {

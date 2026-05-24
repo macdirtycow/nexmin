@@ -8,6 +8,8 @@ import {
   loadRegistry,
   saveRegistry,
   domainConfigDir,
+  readDomainConfigJson,
+  writeDomainConfigJson,
   QADBAK_DIR,
 } from "./provisioning-common.mjs";
 import { ensureDomainMailSetup, ensureNativeMailStack } from "./mail-sync.mjs";
@@ -31,41 +33,18 @@ function parseOpts(extraJson) {
   }
 }
 
+async function syncPhpFpmPool(user, domain) {
+  const cfg = await readDomainConfigJson(domain, "php.json", {});
+  const ver = cfg.defaultVersion || "8.2";
+  const script = path.join(QADBAK_DIR, "scripts", "apply-php-fpm-pool.sh");
+  await exec("bash", [script, user, ver, `/home/${user}`], { timeout: 120_000 }).catch(
+    () => {},
+  );
+}
+
 async function reloadNginx(domain, user) {
   const script = path.join(QADBAK_DIR, "scripts", "apply-domain-nginx.sh");
   await exec("bash", [script, domain, user], { timeout: 120_000 });
-}
-
-async function writeAliasVhost(aliasDomain, parentUser, parentDomain) {
-  const pub = `/home/${parentUser}/public_html`;
-  const out = `/etc/nginx/sites-available/qadbak-customer-${aliasDomain}.conf`;
-  const apache = process.env.APACHE_BACKEND || "127.0.0.1:8080";
-  const body = [
-    `# Qadbak alias ${aliasDomain} -> ${parentDomain}`,
-    "server {",
-    "    listen 80;",
-    "    listen [::]:80;",
-    `    server_name ${aliasDomain} www.${aliasDomain};`,
-    `    root ${pub};`,
-    "    index index.html index.htm index.php;",
-    '    location / { try_files $uri $uri/ =404; }',
-    '    location ~ \\.php(/|$) {',
-    `        proxy_pass http://${apache};`,
-    '        proxy_http_version 1.1;',
-    '        proxy_set_header Host $host;',
-    '        proxy_set_header X-Real-IP $remote_addr;',
-    "    }",
-    "}",
-    "",
-  ].join("\n");
-  await writeFile(out, body, "utf8");
-  await exec("ln", [
-    "-sf",
-    out,
-    `/etc/nginx/sites-enabled/qadbak-customer-${aliasDomain}.conf`,
-  ]);
-  await exec("nginx", ["-t"]);
-  await exec("systemctl", ["reload", "nginx"]);
 }
 
 export async function domainCreate(domain, pass, userOpt, extraJson) {
@@ -105,8 +84,11 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     await exec("chown", ["-R", `${user}:${user}`, home]);
   }
 
+  if (ownedByQadbak) {
+    await syncPhpFpmPool(user, name);
+  }
   if (type === "alias" && parentUser) {
-    await writeAliasVhost(name, parentUser, parent);
+    await reloadNginx(name, parentUser);
   } else {
     await reloadNginx(name, user);
   }
@@ -121,6 +103,13 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     isDefault: rows.length === 0,
   });
   await saveRegistry(rows);
+
+  if (ownedByQadbak && type !== "alias") {
+    await writeDomainConfigJson(name, "php.json", {
+      defaultVersion: "8.2",
+      directories: [{ dir: "public_html", version: "8.2", mode: "fpm" }],
+    });
+  }
 
   if (type !== "alias") {
     await ensureNativeMailStack();
@@ -140,6 +129,8 @@ export async function domainDelete(domain) {
   await exec("rm", ["-f", conf, `/etc/nginx/sites-available/qadbak-customer-${name}.conf`]).catch(
     () => {},
   );
+  const removePool = path.join(QADBAK_DIR, "scripts", "remove-php-fpm-pool.sh");
+  await exec("bash", [removePool, user], { timeout: 60_000 }).catch(() => {});
 
   const cfgDir = domainConfigDir(name);
   await rm(cfgDir, { recursive: true, force: true }).catch(() => {});

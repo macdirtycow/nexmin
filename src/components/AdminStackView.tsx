@@ -126,6 +126,13 @@ export function AdminStackView() {
           >
             Apply customer nginx vhosts
           </Button>
+          <Button
+            variant="secondary"
+            disabled={!available || acting !== null}
+            onClick={() => action("apply-php-fpm-pools")}
+          >
+            Apply PHP-FPM pools
+          </Button>
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-2">
           <label className="text-sm text-panel-muted">
