@@ -1,10 +1,10 @@
 # Qadbak installer
 
-One-shot setup for **Ubuntu 22.04**: hosting stack + independent Qadbak panel.
+One-shot setup for **Ubuntu 22.04 or 24.04 LTS**: hosting stack + independent Qadbak panel.
 
 ## Requirements
 
-- Ubuntu 22.04 VPS
+- Ubuntu 22.04 or 24.04 LTS VPS (see [docs/UBUNTU-24-LTS.md](../docs/UBUNTU-24-LTS.md))
 - Root access
 - DNS **A record** for panel hostname → server IP
 - 1+ GB RAM (2+ GB recommended)

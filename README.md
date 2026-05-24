@@ -13,7 +13,7 @@ In 2009, [Qadbak Investments](https://en.wikipedia.org/wiki/Qadbak_Investments) 
 
 ## Requirements
 
-- **Ubuntu 22.04** VPS (recommended)
+- **Ubuntu 22.04 or 24.04 LTS** VPS (recommended)
 - Node.js 20+
 - Root access for install scripts
 

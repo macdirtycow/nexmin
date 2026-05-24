@@ -3,24 +3,36 @@
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+# shellcheck source=lib/ubuntu-release.sh
+source "$(dirname "$0")/lib/ubuntu-release.sh"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run as root: sudo bash scripts/install-native-stack.sh" >&2
   exit 1
 fi
 
-echo "==> Native stack packages (Ubuntu)"
+qadbak_detect_ubuntu_release || {
+  echo "Qadbak native stack requires Ubuntu 22.04 or 24.04 LTS." >&2
+  exit 1
+}
+
+BIND_PKGS="$(qadbak_bind_apt_packages)"
+PHP_EXTRA="$(qadbak_php_extra_apt_packages)"
+
+echo "==> Native stack packages ($(qadbak_ubuntu_release_label))"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
+# shellcheck disable=SC2086
 apt-get install -y -qq \
   nginx \
   apache2 \
   mariadb-server \
   mariadb-client \
   postfix \
-  dovecot-core dovecot-imapd dovecot-pop3d \
-  bind9 bind9utils \
+  dovecot-core dovecot-imapd dovecot-pop3d dovecot-sieve \
+  $BIND_PKGS \
   php-fpm php-cli php-mysql php-curl php-xml php-mbstring php-zip \
+  $PHP_EXTRA \
   certbot python3-certbot-nginx \
   ufw \
   rsync \
