@@ -72,13 +72,15 @@ fi
 mkdir -p "$PW_CACHE"
 if [[ "$(id -u)" -eq 0 ]]; then
   chown -R "$USER:$USER" "$ROOT/.cache" 2>/dev/null || true
-  echo "==> Playwright system libraries (root)"
-  if ! run_as_user bash -c "cd '$ROOT' && npx playwright install-deps chromium" 2>/dev/null; then
-    npx playwright install-deps chromium 2>/dev/null || true
-  fi
+  echo "==> Playwright system libraries (root apt — qadbak has no sudo password)"
+  # install-deps must run as root. Running as qadbak makes Playwright call sudo and hang/fail.
+  (cd "$ROOT" && npx playwright install-deps chromium)
 else
   echo "==> Playwright system libraries"
-  run_as_user bash -c "cd '$ROOT' && npx playwright install-deps chromium" 2>/dev/null || true
+  if ! (cd "$ROOT" && npx playwright install-deps chromium); then
+    echo "WARN: install-deps needs root once:" >&2
+    echo "  sudo bash $ROOT/scripts/run-install-e2e.sh" >&2
+  fi
 fi
 
 echo "==> Playwright Chromium (as $USER → $PW_CACHE)"

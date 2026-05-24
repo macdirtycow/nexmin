@@ -48,10 +48,16 @@ if [[ ! "${USE_ALT_PORT:-Y}" =~ ^[Nn]$ ]]; then
   PANEL_ALT_PORT="${PANEL_ALT_PORT:-11000}"
 fi
 SERVER_FQDN="$FQDN"
-read -rp "Qadbak admin user [admin]: " QB_USER
+read -rp "Panel admin username (web login, not Linux user qadbak) [admin]: " QB_USER
 QB_USER="${QB_USER:-admin}"
-read -rsp "Qadbak admin password: " QB_PASS
-echo
+while true; do
+  read -rsp "Panel admin password (web login): " QB_PASS
+  echo
+  if [[ -n "$QB_PASS" ]]; then
+    break
+  fi
+  echo "  Password cannot be empty." >&2
+done
 read -rp "Certbot email (optional): " LE_EMAIL
 read -rp "Optional demo client user (RBAC tests)? [y/N]: " ADD_CLIENT
 ADD_CLIENT="${ADD_CLIENT:-N}"
@@ -74,6 +80,7 @@ fi
 command -v pm2 &>/dev/null || npm install -g pm2
 
 if ! id "$QADBAK_USER" &>/dev/null; then
+  # Service account for pm2 — no login/sudo password (panel login is separate in users.json).
   useradd -r -m -d "$QADBAK_DIR" -s /bin/bash "$QADBAK_USER"
 fi
 [[ -d "$QADBAK_DIR/.git" ]] || git clone -b "$QADBAK_GIT_BRANCH" "$QADBAK_REPO" "$QADBAK_DIR"

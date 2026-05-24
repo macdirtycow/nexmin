@@ -31,10 +31,16 @@ done
 
 if [[ ! -f "$QADBAK_DIR/data/users.json" ]]; then
   echo "==> Create admin user (install stopped before users.json)"
-  read -rp "Qadbak admin user [admin]: " QB_USER
+  read -rp "Panel admin username (web login) [admin]: " QB_USER
   QB_USER="${QB_USER:-admin}"
-  read -rsp "Qadbak admin password: " QB_PASS
-  echo
+  while true; do
+    read -rsp "Panel admin password (web login): " QB_PASS
+    echo
+    if [[ -n "$QB_PASS" ]]; then
+      break
+    fi
+    echo "  Password cannot be empty." >&2
+  done
   HASH="$(sudo -u "$QADBAK_USER" node "$QADBAK_DIR/scripts/hash-password.mjs" "$QB_PASS")"
   mkdir -p "$QADBAK_DIR/data"
   printf '[{"id":"admin-1","username":"%s","passwordHash":"%s","role":"admin","domains":[]}]\n' \

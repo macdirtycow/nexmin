@@ -20,6 +20,8 @@ npm run test:e2e:install   # as root, with .install-test.env present
 
 Uses `.install-test.env` (written by installer, gitignored).
 
+**Note:** Linux user `qadbak` has no login/sudo password (service account). `run-install-e2e.sh` installs Playwright system libraries as **root**; only the browser cache runs as `qadbak`. If you see `[sudo] password for qadbak`, pull the latest script and re-run verify as root.
+
 ## 2. Local / CI (mock)
 
 Fast regression without VirtualMin:

@@ -77,6 +77,11 @@ if [[ "$(id -u)" -eq 0 ]]; then
     echo "    sudo bash $ROOT/scripts/sync-e2e-credentials.sh" >&2
   fi
 fi
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/configure-bind-native.sh" ]]; then
+  echo ""
+  echo "==> BIND9 (native DNS)"
+  bash "$ROOT/scripts/configure-bind-native.sh" 2>/dev/null || true
+fi
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/configure-native-mail.sh" ]]; then
   echo ""
   echo "==> Mail stack sync"

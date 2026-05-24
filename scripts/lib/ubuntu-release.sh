@@ -53,3 +53,25 @@ qadbak_php_extra_apt_packages() {
     *) echo "" ;;
   esac
 }
+
+# awscli (v1) exists on Jammy; Noble removed it — try apt, then snap, else warn.
+qadbak_install_aws_cli() {
+  if command -v aws &>/dev/null; then
+    echo "  OK   aws CLI already on PATH"
+    return 0
+  fi
+  if apt-cache show awscli &>/dev/null 2>&1; then
+    apt-get install -y -qq awscli
+    apt-mark manual awscli 2>/dev/null || true
+    echo "  OK   awscli (apt)"
+    return 0
+  fi
+  if command -v snap &>/dev/null && snap install aws-cli --classic 2>/dev/null; then
+    ln -sf /snap/bin/aws /usr/local/bin/aws 2>/dev/null || true
+    echo "  OK   aws-cli (snap)"
+    return 0
+  fi
+  echo "  WARN aws CLI not installed (optional — S3 backup tab needs it)" >&2
+  echo "       Install later: snap install aws-cli --classic" >&2
+  return 0
+}

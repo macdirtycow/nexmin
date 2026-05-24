@@ -71,6 +71,7 @@ sudo -u qadbak sudo -n /opt/qadbak/scripts/run-provisioning-helper.sh dns-get ex
 ### DNS: zone file niet gevonden?
 
 ```bash
+sudo bash scripts/create-bind-zone.sh example.com
 sudo bash scripts/discover-bind-zone.sh example.com
 sudo bash scripts/export-native-domains.sh
 ```
