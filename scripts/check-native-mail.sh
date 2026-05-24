@@ -9,7 +9,7 @@ USER_LOCAL="${2:-info}"
 
 echo "==> Postfix"
 systemctl is-active postfix 2>/dev/null || echo "WARN — postfix not active"
-postconf -n myhostname myorigin virtual_mailbox_domains virtual_alias_maps mailbox_transport 2>/dev/null || true
+postconf -n myhostname myorigin virtual_mailbox_domains virtual_mailbox_maps virtual_uid_maps 2>/dev/null || true
 MYH="$(postconf -h myhostname 2>/dev/null || true)"
 if [[ "$MYH" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "ERROR — myhostname is IP ($MYH). Run: sudo bash scripts/configure-native-mail.sh --force"
@@ -17,7 +17,7 @@ if [[ "$MYH" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 echo "==> Qadbak maps"
-for f in /etc/postfix/qadbak-domains /etc/postfix/qadbak-virtual; do
+for f in /etc/postfix/qadbak-domains /etc/postfix/qadbak-vmailbox /etc/postfix/qadbak-virtual; do
   if [[ -f "$f" ]]; then
     echo "--- $f"
     sed '/^$/d' "$f" | head -15
