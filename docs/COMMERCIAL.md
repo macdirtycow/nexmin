@@ -7,7 +7,7 @@ Copyright (c) 2026 MacDirtyCow / Qadbak and Omiiba. See [LICENSE](../LICENSE).
 | Tier | Source | Use |
 |------|--------|-----|
 | **Core (public GitHub)** | `macdirtycow/qadbak` | Transparency, auditing, personal evaluation on **your own** VPS |
-| **Premium (private)** | `qadbak-premium` repo | Multi-tenant clients, admin updates, PHP-FPM isolation, panel vhost, dashboard pm2 control |
+| **Premium (private)** | [`macdirtycow/qadbak-premium`](https://github.com/macdirtycow/qadbak-premium) | Multi-tenant clients, admin updates, PHP-FPM isolation, panel vhost, dashboard pm2 control |
 | **Licensed runtime** | Core + signed Premium bundle | Production commercial installs |
 
 Public `git clone` gives **Core only**. Premium API routes return `503 PREMIUM_REQUIRED` until a license is activated and modules are synced.
@@ -17,7 +17,7 @@ Public `git clone` gives **Core only**. Premium API routes return `503 PREMIUM_R
 Until customers use the public eval build, run a **private Core + Premium** stack:
 
 1. Clone **public** qadbak to `/opt/qadbak` (Core updates via `git pull`).
-2. Keep **qadbak-premium** on the server (or CI) — build with `npm run build:release`.
+2. Clone **private** Premium (`git@github.com:macdirtycow/qadbak-premium.git` or deploy key) on the server or CI — build with `npm run build:release`.
 3. Deploy license server or use `license.omiiba.com`.
 4. Set in `/opt/qadbak/.env.local`:
 

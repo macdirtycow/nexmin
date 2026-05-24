@@ -20,5 +20,11 @@ Do not publish exploit details before a fix window is agreed.
 
 ## Commercial development
 
-Premium features are developed in a private repository. Commercial partners should
-contact us via [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md).
+Premium features are developed in the private repository
+[`macdirtycow/qadbak-premium`](https://github.com/macdirtycow/qadbak-premium).
+Commercial partners should contact us via [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md).
+
+## Git branches
+
+Use `macdirtycow/<topic>` for feature branches (for example `macdirtycow/proprietary-premium-commercialization`).
+Legacy `cursor/*` branch names were renamed; open new work under `macdirtycow/*` only.
