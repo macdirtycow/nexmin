@@ -33,6 +33,9 @@ if [[ -f "$ROOT/.env.local" ]]; then
   LE_EMAIL="$(grep -E '^QADBAK_LE_EMAIL=' "$ROOT/.env.local" | cut -d= -f2- | tr -d '"' || true)"
   [[ -z "$LE_EMAIL" ]] && LE_EMAIL="$(grep -E '^LE_EMAIL=' "$ROOT/.env.local" | cut -d= -f2- | tr -d '"' || true)"
 fi
+if [[ -z "$LE_EMAIL" ]]; then
+  LE_EMAIL="admin@${DOMAIN}"
+fi
 
 echo "==> DNS A record for ${PANEL_HOST}"
 bash "$ROOT/scripts/ensure-panel-dns-a.sh" "$DOMAIN" || true
@@ -87,7 +90,7 @@ systemctl reload nginx
 
 if [[ -n "$LE_EMAIL" ]] && command -v certbot &>/dev/null; then
   if [[ ! -f "/etc/letsencrypt/live/${PANEL_HOST}/fullchain.pem" ]]; then
-    echo "==> TLS for ${PANEL_HOST} (Let's Encrypt)"
+    echo "==> TLS for ${PANEL_HOST} (Let's Encrypt, ${LE_EMAIL})"
     if certbot --nginx -d "$PANEL_HOST" --non-interactive --agree-tos -m "$LE_EMAIL" --redirect; then
       echo "OK — HTTPS enabled for ${PANEL_HOST}"
     else
@@ -98,7 +101,7 @@ if [[ -n "$LE_EMAIL" ]] && command -v certbot &>/dev/null; then
     certbot --nginx -d "$PANEL_HOST" --non-interactive --agree-tos -m "$LE_EMAIL" --redirect 2>/dev/null || true
   fi
 else
-  echo "NOTE: HTTP only — set QADBAK_LE_EMAIL in .env.local and re-run for HTTPS"
+  echo "NOTE: certbot not installed — panel.${DOMAIN} is HTTP only on port 80"
 fi
 
 nginx -t

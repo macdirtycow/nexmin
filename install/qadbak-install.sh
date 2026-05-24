@@ -126,6 +126,9 @@ QADBAK_COOKIE_SECURE=false
 QADBAK_LICENSE_SERVER=https://license.omiiba.dev
 QADBAK_GIT_BRANCH=$QADBAK_GIT_BRANCH
 EOF
+if [[ -n "${LE_EMAIL// /}" ]]; then
+  echo "QADBAK_LE_EMAIL=$LE_EMAIL" >>"$ENV_FILE"
+fi
 LICENSE_ENV="/etc/qadbak/license-server.env"
 if [[ -f "$LICENSE_ENV" ]]; then
   # shellcheck disable=SC1090

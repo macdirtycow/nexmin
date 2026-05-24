@@ -213,8 +213,9 @@ export function DomainPanelClientCard({ domain }: { domain: string }) {
                 {panelUrl}
               </a>
               {" "}
-              — DNS A-record for <code>panel.{domain}</code> must point to this
-              server.
+              — with native DNS on this server, the{" "}
+              <code>panel.{domain}</code> A-record and HTTPS are applied
+              automatically when you click Apply panel vhost.
             </p>
           )}
         </div>
