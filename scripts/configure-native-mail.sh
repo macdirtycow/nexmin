@@ -15,6 +15,9 @@ FORCE=0
 STAMP="/var/lib/qadbak/native-mail-configured"
 QADBAK_VIRTUAL="/etc/postfix/qadbak-virtual"
 QADBAK_DOMAINS="/etc/postfix/qadbak-domains"
+QADBAK_VMAILBOX="/etc/postfix/qadbak-vmailbox"
+QADBAK_VMAILBOX_UID="/etc/postfix/qadbak-vmailbox-uid"
+QADBAK_VMAILBOX_GID="/etc/postfix/qadbak-vmailbox-gid"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run as root: sudo bash scripts/configure-native-mail.sh" >&2
@@ -41,24 +44,29 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y -qq postfix dovecot-core dovecot-imapd dovecot-lmtpd 2>/dev/null || true
 
-touch "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS"
-chmod 640 "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" 2>/dev/null || true
-chown root:postfix "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" 2>/dev/null || true
+touch "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_UID" "$QADBAK_VMAILBOX_GID"
+chmod 640 "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_UID" "$QADBAK_VMAILBOX_GID" 2>/dev/null || true
+chown root:postfix "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_UID" "$QADBAK_VMAILBOX_GID" 2>/dev/null || true
 
 # Migrate legacy VirtualMin map entries into qadbak-virtual if ours is empty
 if [[ ! -s "$QADBAK_VIRTUAL" && -f /etc/postfix/virtual ]]; then
   grep -v '^#' /etc/postfix/virtual | sed '/^$/d' >>"$QADBAK_VIRTUAL" 2>/dev/null || true
 fi
 
-echo "==> Postfix (Qadbak virtual domains + Dovecot LMTP delivery)"
+echo "==> Postfix (Qadbak virtual domains + direct Maildir delivery)"
 postconf -e "virtual_alias_maps = hash:${QADBAK_VIRTUAL}"
 postconf -e "virtual_mailbox_domains = hash:${QADBAK_DOMAINS}"
-postconf -e 'virtual_transport = lmtp:unix:private/dovecot-lmtp'
+postconf -e "virtual_mailbox_maps = hash:${QADBAK_VMAILBOX}"
+postconf -e "virtual_uid_maps = hash:${QADBAK_VMAILBOX_UID}"
+postconf -e "virtual_gid_maps = hash:${QADBAK_VMAILBOX_GID}"
+postconf -e 'virtual_minimum_uid = 100'
 postconf -e 'mailbox_transport = lmtp:unix:private/dovecot-lmtp'
 postconf -e 'inet_interfaces = all'
 postconf -X local_recipient_maps 2>/dev/null || true
+postconf -X virtual_mailbox_base 2>/dev/null || true
+postconf -X virtual_transport 2>/dev/null || true
 
-for key in virtual_alias_domains virtual_mailbox_maps virtual_mailbox_base \
+for key in virtual_alias_domains \
   mailbox_command home_mailbox content_filter \
   canonical_maps sender_canonical_maps recipient_canonical_maps \
   relay_domains transport_maps; do
@@ -204,5 +212,5 @@ touch "$STAMP"
 echo "==> Sync mailbox maps + virtual domains (hash: ... OK)"
 sync_maps
 
-echo "OK — inbound mail: hash:${QADBAK_DOMAINS} + LMTP → Dovecot Maildir"
+echo "OK — inbound mail: hash:${QADBAK_DOMAINS} + Maildir maps (qadbak-vmailbox)"
 echo "    Test: sudo bash scripts/check-native-mail.sh YOUR-DOMAIN info"

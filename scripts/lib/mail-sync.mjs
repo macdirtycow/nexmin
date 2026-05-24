@@ -6,9 +6,9 @@ import {
   QADBAK_DIR,
   fileExists,
   resolveDomainUser,
+  readDomainConfigJson,
 } from "./provisioning-common.mjs";
 import {
-  appendMapEntry,
   ensureMaildir,
   discoverMailLayout,
   listMailboxesFromLayout,
@@ -16,9 +16,12 @@ import {
   writeVirtualDomainsFile,
   postmapReloadAll,
   resolveMailboxMaildir,
-  resolveUnixHome,
+  resolveUnixIds,
   QADBAK_POSTFIX_VIRTUAL,
   QADBAK_POSTFIX_DOMAINS,
+  QADBAK_POSTFIX_VMAILBOX,
+  QADBAK_POSTFIX_VMAILBOX_UID,
+  QADBAK_POSTFIX_VMAILBOX_GID,
 } from "./mail-layout.mjs";
 import { ensureInboundMailDns, mailDnsHints } from "./mail-dns.mjs";
 import { deliverLocalMessage } from "./mail-queue.mjs";
@@ -41,10 +44,12 @@ export async function syncVirtualDomainsFile() {
   return domains;
 }
 
-/** Rebuild qadbak-virtual from all domains + mailboxes in native-domains.json. */
-export async function rebuildVirtualAliasMap() {
+/** Rebuild Postfix virtual_mailbox_maps (direct Maildir delivery — no LMTP). */
+export async function rebuildPostfixMailboxMaps() {
   const rows = await loadRegistry();
-  const entries = new Map();
+  const vmailbox = new Map();
+  const vuids = new Map();
+  const vgids = new Map();
 
   for (const row of rows) {
     if (!row.name || row.disabled || row.type === "alias" || !row.user) continue;
@@ -55,19 +60,63 @@ export async function rebuildVirtualAliasMap() {
       const resolved = await resolveDomainUser(domain);
       home = resolved.home || home;
     } catch {
-      /* use default home */
+      /* */
     }
 
     const layout = await discoverMailLayout(domain, owner, home);
     const mailboxes = await listMailboxesFromLayout(layout);
 
-    entries.set(`postmaster@${domain}`, owner);
+    const addBox = async (local) => {
+      const email = `${local}@${domain}`;
+      const destUser = local === owner ? owner : local;
+      const maildir = await resolveMailboxMaildir(layout, local, owner, home);
+      await ensureMaildir(maildir);
+      vmailbox.set(email, `${maildir}/`);
+      const ids = await resolveUnixIds(destUser);
+      if (ids) {
+        vuids.set(email, ids.uid);
+        vgids.set(email, ids.gid);
+      }
+    };
+
+    await addBox(owner);
+    const ownerIds = await resolveUnixIds(owner);
+    const ownerMaildir = await resolveMailboxMaildir(layout, owner, owner, home);
+    if (ownerIds) {
+      vmailbox.set(`postmaster@${domain}`, `${ownerMaildir}/`);
+      vuids.set(`postmaster@${domain}`, ownerIds.uid);
+      vgids.set(`postmaster@${domain}`, ownerIds.gid);
+    }
     for (const m of mailboxes) {
       const local = String(m.user || "").toLowerCase();
-      if (!local) continue;
-      const email = `${local}@${domain}`;
-      const dest = local === owner ? owner : local;
-      entries.set(email, dest);
+      if (!local || local === owner) continue;
+      await addBox(local);
+    }
+  }
+
+  const toRows = (map) =>
+    [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([address, destination]) => ({ address, destination }));
+
+  await writeVirtualMapFile(QADBAK_POSTFIX_VMAILBOX, toRows(vmailbox));
+  await writeVirtualMapFile(QADBAK_POSTFIX_VMAILBOX_UID, toRows(vuids));
+  await writeVirtualMapFile(QADBAK_POSTFIX_VMAILBOX_GID, toRows(vgids));
+  return vmailbox.size;
+}
+
+/** Email forwards only (virtual_alias_maps — must not overlap mailbox addresses). */
+export async function rebuildVirtualAliasMap() {
+  const rows = await loadRegistry();
+  const entries = new Map();
+
+  for (const row of rows) {
+    if (!row.name || row.disabled || row.type === "alias") continue;
+    const domain = String(row.name).toLowerCase();
+    const aliases = await readDomainConfigJson(domain, "aliases.json", []);
+    for (const a of aliases) {
+      if (!a.from || !a.to) continue;
+      entries.set(String(a.from).toLowerCase(), String(a.to).trim());
     }
   }
 
@@ -86,8 +135,7 @@ export async function ensureDomainMailSetup(domain, owner) {
 
   const home = `/home/${u}`;
   await ensureMaildir(path.join(home, "Maildir"));
-  await appendMapEntry(QADBAK_POSTFIX_VIRTUAL, `${u}@${d}`, u);
-  await appendMapEntry(QADBAK_POSTFIX_VIRTUAL, `postmaster@${d}`, u);
+  await rebuildPostfixMailboxMaps();
   await syncVirtualDomainsFile();
   await postmapReloadAll();
   await ensureInboundMailDns(d).catch(() => {});
@@ -140,6 +188,7 @@ export async function mailSyncAll() {
     }
   }
 
+  await rebuildPostfixMailboxMaps();
   await rebuildVirtualAliasMap();
   await syncVirtualDomainsFile();
   await postmapReloadAll();
@@ -341,12 +390,12 @@ export async function mailDiagnose(domain, localUser) {
   }
 
   try {
-    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "virtual_transport", "mailbox_transport"], {
+    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "virtual_mailbox_maps", "virtual_uid_maps"], {
       timeout: 8000,
     });
     await ok(
       "postfix config",
-      stdout.includes("qadbak-domains") && stdout.includes("dovecot-lmtp"),
+      stdout.includes("qadbak-domains") && stdout.includes("qadbak-vmailbox"),
       stdout.replace(/\n/g, " "),
     );
   } catch {
@@ -385,7 +434,7 @@ export async function mailDiagnose(domain, localUser) {
   try {
     const delivery = await mailReceiveTest(domain, probeUser);
     await ok(
-      `LMTP delivery → ${delivery.maildir}`,
+      `Maildir delivery → ${delivery.maildir}`,
       delivery.delivered,
       delivery.delivered
         ? `${delivery.newMessages} new message(s)`

@@ -9,6 +9,9 @@ const exec = promisify(execFile);
 /** Qadbak-owned Postfix maps (hash format — avoids VirtualMin path conflicts). */
 export const QADBAK_POSTFIX_VIRTUAL = "/etc/postfix/qadbak-virtual";
 export const QADBAK_POSTFIX_DOMAINS = "/etc/postfix/qadbak-domains";
+export const QADBAK_POSTFIX_VMAILBOX = "/etc/postfix/qadbak-vmailbox";
+export const QADBAK_POSTFIX_VMAILBOX_UID = "/etc/postfix/qadbak-vmailbox-uid";
+export const QADBAK_POSTFIX_VMAILBOX_GID = "/etc/postfix/qadbak-vmailbox-gid";
 
 /** @typedef {{ domain: string, owner: string, home: string, aliasMap?: string, mailboxMap?: string, mailboxBase?: string, homesDir?: string, primaryMaildir?: string }} MailLayout */
 
@@ -55,14 +58,20 @@ export async function discoverMailLayout(domain, owner, home) {
   }
 
   for (const candidate of [
+    layout.mailboxMap,
+    QADBAK_POSTFIX_VMAILBOX,
     layout.aliasMap,
     QADBAK_POSTFIX_VIRTUAL,
     "/etc/postfix/virtual",
     "/etc/postfix/vmailbox",
   ]) {
     if (candidate && (await fileExists(candidate))) {
-      layout.aliasMap = candidate;
-      break;
+      if (!layout.mailboxMap && (candidate === QADBAK_POSTFIX_VMAILBOX || candidate.includes("vmailbox"))) {
+        layout.mailboxMap = candidate;
+      }
+      if (!layout.aliasMap && candidate !== QADBAK_POSTFIX_VMAILBOX) {
+        layout.aliasMap = candidate;
+      }
     }
   }
 
@@ -122,6 +131,16 @@ export async function listMailboxesFromLayout(layout) {
     }
   }
 
+  if (layout.mailboxMap) {
+    const rows = await readMapFile(layout.mailboxMap);
+    for (const { address } of rows) {
+      const addr = address.toLowerCase();
+      if (!addr.endsWith(`@${domain}`)) continue;
+      const local = addr.split("@")[0];
+      if (local) add(local, local);
+    }
+  }
+
   if (layout.aliasMap) {
     const rows = await readMapFile(layout.aliasMap);
     for (const { address, destination } of rows) {
@@ -172,11 +191,16 @@ export async function postmapReload(mapPath) {
 }
 
 export async function postmapReloadAll() {
-  if (await fileExists(QADBAK_POSTFIX_VIRTUAL)) {
-    await exec("postmap", [QADBAK_POSTFIX_VIRTUAL], { timeout: 30_000 });
-  }
-  if (await fileExists(QADBAK_POSTFIX_DOMAINS)) {
-    await exec("postmap", [QADBAK_POSTFIX_DOMAINS], { timeout: 30_000 });
+  for (const mapPath of [
+    QADBAK_POSTFIX_VIRTUAL,
+    QADBAK_POSTFIX_DOMAINS,
+    QADBAK_POSTFIX_VMAILBOX,
+    QADBAK_POSTFIX_VMAILBOX_UID,
+    QADBAK_POSTFIX_VMAILBOX_GID,
+  ]) {
+    if (await fileExists(mapPath)) {
+      await exec("postmap", [mapPath], { timeout: 30_000 });
+    }
   }
   await reloadPostfix();
 }
@@ -206,17 +230,23 @@ export async function ensureMaildir(dir) {
   }
 }
 
-/** Real home directory from /etc/passwd (VirtualMin and Qadbak layouts differ). */
-export async function resolveUnixHome(username) {
+/** uid/gid/home from /etc/passwd. */
+export async function resolveUnixIds(username) {
   const u = String(username || "").trim();
   if (!u) return null;
   try {
     const { stdout } = await exec("getent", ["passwd", u], { timeout: 5000 });
-    const home = stdout.trim().split(":")[5];
-    return home || null;
+    const p = stdout.trim().split(":");
+    if (p.length < 7) return null;
+    return { uid: p[2], gid: p[3], home: p[5] };
   } catch {
     return null;
   }
+}
+
+export async function resolveUnixHome(username) {
+  const ids = await resolveUnixIds(username);
+  return ids?.home || null;
 }
 
 /** Maildir path for a mailbox — prefers passwd home over ~/homes/ guess. */

@@ -20,7 +20,7 @@ fi
 
 echo ""
 echo "========== 2. Virtual map lookup =========="
-postmap -q "${USER_LOCAL}@${DOMAIN}" hash:/etc/postfix/qadbak-virtual 2>/dev/null || echo "(no map entry)"
+postmap -q "${USER_LOCAL}@${DOMAIN}" hash:/etc/postfix/qadbak-vmailbox 2>/dev/null || echo "(no vmailbox entry)"
 postmap -q "${DOMAIN}" hash:/etc/postfix/qadbak-domains 2>/dev/null || echo "(domain not in qadbak-domains)"
 
 echo ""

@@ -59,7 +59,7 @@ done
 
 if command -v doveadm &>/dev/null; then
   echo "==> doveadm deliver probe (writes to INBOX if LMTP path works)"
-  doveadm -u "$USER_LOCAL" save -m "Qadbak repair probe $(date -Iseconds)" mailbox INBOX 2>&1 || true
+  doveadm save -u "$USER_LOCAL" -m "Qadbak repair probe $(date -Iseconds)" mailbox INBOX 2>&1 || true
 fi
 
 echo "==> mail-sync"
