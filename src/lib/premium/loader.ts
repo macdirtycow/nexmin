@@ -12,6 +12,7 @@ import {
   isPremiumLicensed,
   licenseStatus,
   readStoredLicense,
+  verifyLicenseToken,
 } from "../qadbak-license";
 import { PREMIUM_MANIFEST } from "./manifest";
 import type { LoadedPremiumModule, PremiumHandler } from "./types";
