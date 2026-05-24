@@ -420,12 +420,14 @@ export async function mailDiagnose(domain, localUser) {
   }
 
   try {
-    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "virtual_mailbox_maps", "virtual_uid_maps"], {
+    const { stdout } = await exec("postconf", ["-n", "virtual_mailbox_domains", "virtual_mailbox_maps", "virtual_mailbox_base", "virtual_transport"], {
       timeout: 8000,
     });
     await ok(
       "postfix config",
-      stdout.includes("qadbak-domains") && stdout.includes("qadbak-vmailbox"),
+      stdout.includes("qadbak-domains") &&
+        stdout.includes("qadbak-vmailbox") &&
+        !stdout.match(/virtual_mailbox_base\s*=\s*$/m),
       stdout.replace(/\n/g, " "),
     );
   } catch {

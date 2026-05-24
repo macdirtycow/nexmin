@@ -1,27 +1,28 @@
 #!/usr/bin/env bash
-# Test whether the postfix user can write to a Maildir (AppArmor / permissions).
+# Test whether the mailbox unix user can write to Maildir (same uid as Postfix virtual delivery).
 set -euo pipefail
 MAILDIR="${1:?/path/to/Maildir}"
-PROBE="$MAILDIR/new/.qadbak-write-probe-$$"
+MAIL_USER="${2:-}"
 
+if [[ -z "$MAIL_USER" ]]; then
+  MAIL_USER="$(basename "$(dirname "$(dirname "$MAILDIR")")")" 2>/dev/null || true"
+fi
+[[ -n "$MAIL_USER" ]] || MAIL_USER="info"
+
+PROBE="$MAILDIR/new/.qadbak-write-probe-$$"
 mkdir -p "$MAILDIR"/{cur,new,tmp}
 
-if ! id postfix &>/dev/null; then
-  echo "FAIL — postfix unix user not found"
+if ! id "$MAIL_USER" &>/dev/null; then
+  echo "FAIL — unix user $MAIL_USER not found"
   exit 1
 fi
 
-if sudo -u postfix touch "$PROBE" 2>/dev/null; then
+if sudo -u "$MAIL_USER" touch "$PROBE" 2>/dev/null; then
   rm -f "$PROBE"
-  echo "OK — postfix can write to $MAILDIR"
+  echo "OK — user $MAIL_USER can write to $MAILDIR"
   exit 0
 fi
 
-echo "FAIL — postfix cannot write to $MAILDIR"
-echo "      Common fix: sudo bash scripts/configure-postfix-apparmor.sh"
-if command -v aa-status &>/dev/null; then
-  echo "==> recent AppArmor DENIED (postfix)"
-  grep -i 'postfix.*DENIED' /var/log/syslog 2>/dev/null | tail -5 || \
-    journalctl -k --no-pager -n 20 2>/dev/null | grep -i denied | tail -5 || true
-fi
+echo "FAIL — user $MAIL_USER cannot write to $MAILDIR (check chown/chmod)"
+ls -ld "$MAILDIR" "$(dirname "$MAILDIR")" 2>/dev/null || true
 exit 1
