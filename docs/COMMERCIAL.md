@@ -18,11 +18,11 @@ Until customers use the public eval build, run a **private Core + Premium** stac
 
 1. Clone **public** qadbak to `/opt/qadbak` (Core updates via `git pull`).
 2. Clone **private** Premium (`git@github.com:macdirtycow/qadbak-premium.git` or deploy key) on the server or CI — build with `npm run build:release`.
-3. Deploy license server or use `license.omiiba.com`.
+3. Deploy license server on **`https://license.omiiba.dev`** — see [LICENSE-SERVER.md](./LICENSE-SERVER.md).
 4. Set in `/opt/qadbak/.env.local`:
 
 ```env
-QADBAK_LICENSE_SERVER=https://license.omiiba.com
+QADBAK_LICENSE_SERVER=https://license.omiiba.dev
 QADBAK_LICENSE_JWT_SECRET=<same as license server LICENSE_JWT_SECRET>
 ```
 

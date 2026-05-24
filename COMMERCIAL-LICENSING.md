@@ -24,7 +24,7 @@ included in the public GitHub repository.
 
 Licensed installations validate against:
 
-`https://license.omiiba.com` (configurable via `QADBAK_LICENSE_SERVER` in
+`https://license.omiiba.dev` (configurable via `QADBAK_LICENSE_SERVER` in
 `.env.local`).
 
 Heartbeats run daily. Expired or revoked licenses disable Premium modules.
