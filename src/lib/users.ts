@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { copyFile, mkdir, readFile, writeFile } from "fs/promises";
+import { copyFile, mkdir, readFile, stat, writeFile } from "fs/promises";
 import path from "path";
 import type { PanelUser } from "./types";
 
@@ -7,6 +7,7 @@ const USERS_PATH = path.join(process.cwd(), "data", "users.json");
 const EXAMPLE_PATH = path.join(process.cwd(), "data", "users.example.json");
 
 let cache: PanelUser[] | null = null;
+let cacheMtimeMs = 0;
 
 async function ensureUsersFile(): Promise<void> {
   try {
@@ -42,6 +43,7 @@ async function ensureUsersFile(): Promise<void> {
 
 export function invalidateUsersCache(): void {
   cache = null;
+  cacheMtimeMs = 0;
 }
 
 export async function saveUsers(users: PanelUser[]): Promise<void> {
@@ -51,10 +53,12 @@ export async function saveUsers(users: PanelUser[]): Promise<void> {
 }
 
 export async function loadUsers(): Promise<PanelUser[]> {
-  if (cache) return cache;
   await ensureUsersFile();
+  const { mtimeMs } = await stat(USERS_PATH);
+  if (cache && mtimeMs === cacheMtimeMs) return cache;
   const raw = await readFile(USERS_PATH, "utf8");
   cache = JSON.parse(raw) as PanelUser[];
+  cacheMtimeMs = mtimeMs;
   return cache;
 }
 
