@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { domainToClientUsername } from "@/lib/domain-username";
 import { repairAvailable, repairDomainWebsite } from "@/lib/domain-repair";
-import { panelVhostHostname } from "@/lib/panel-vhost";
+import { panelVhostHostname, panelVhostAvailable } from "@/lib/panel-vhost";
 import { isPremiumFeatureEnabled, loadPremiumModule } from "@/lib/premium/server";
 import { requireSession } from "@/lib/session";
 import { findUserByUsername } from "@/lib/users";
@@ -26,8 +26,8 @@ type UsersClientModule = {
 };
 
 type PanelVhostModule = {
-  panelVhostAvailable: () => Promise<boolean>;
-  applyClientPanelVhost: (domain: string) => Promise<string>;
+  ensurePanelVhost?: (domain: string) => Promise<string>;
+  applyClientPanelVhost?: (domain: string) => Promise<string>;
 };
 
 export async function GET() {
@@ -172,9 +172,11 @@ export async function POST(request: Request) {
               const vhostMod = await loadPremiumModule<PanelVhostModule>(
                 "panel-client-vhost",
               );
-              if (vhostMod && (await vhostMod.panelVhostAvailable())) {
+              const applyVhost =
+                vhostMod?.ensurePanelVhost ?? vhostMod?.applyClientPanelVhost;
+              if (applyVhost && (await panelVhostAvailable())) {
                 try {
-                  await vhostMod.applyClientPanelVhost(domainName);
+                  await applyVhost(domainName);
                 } catch {
                   clientAccount.panelUrl = `${clientAccount.panelUrl} (vhost script failed — run configure-panel-vhost-sudo.sh)`;
                 }
