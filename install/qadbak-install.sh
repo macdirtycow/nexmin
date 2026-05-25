@@ -21,9 +21,23 @@ echo "  Qadbak install — nginx, Apache, MariaDB, Postfix, Dovecot, BIND"
 echo "  Independent hosting panel (native provisioning on this server)."
 echo "  Guide: docs/QADBAK-NATIVE-INSTALL.md"
 echo ""
-read -rp "Continue? [y/N]: " CONFIRM
-if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-  exit 0
+
+if [[ -f "$QADBAK_DIR/.env.local" ]]; then
+  echo "  An existing Qadbak install was detected at $QADBAK_DIR"
+  echo "    To resume after a partial install:"
+  echo "      sudo bash $QADBAK_DIR/install/qadbak-install-resume.sh"
+  echo "    To remove first:"
+  echo "      sudo bash $QADBAK_DIR/install/qadbak-uninstall.sh"
+  echo ""
+  read -rp "  Continue and OVERWRITE existing config? [y/N]: " CONFIRM
+  if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+    exit 0
+  fi
+else
+  read -rp "Continue? [y/N]: " CONFIRM
+  if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+    exit 0
+  fi
 fi
 
 if [[ -f "$(dirname "$0")/../scripts/check-ubuntu-support.sh" ]]; then
@@ -73,9 +87,10 @@ fi
 apt-get update -qq
 bash "$(dirname "$0")/../scripts/install-native-stack.sh"
 
+apt-get install -y -qq curl git nginx certbot python3-certbot-nginx
 if ! command -v node &>/dev/null || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt "$NODE_MAJOR" ]]; then
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
-  apt-get install -y -qq nodejs curl git nginx certbot python3-certbot-nginx
+  apt-get install -y -qq nodejs
 fi
 command -v pm2 &>/dev/null || npm install -g pm2
 
@@ -212,7 +227,17 @@ sudo -u "$QADBAK_USER" sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" 
 
 bash "$QADBAK_DIR/scripts/ensure-terminal-deps.sh"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"
-env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DIR" | tail -1 | bash || true
+# pm2 startup prints an "env PATH=... sudo..." command to enable systemd integration.
+# Extract only that line (not any error/banner output) before piping to bash.
+PM2_STARTUP_CMD="$(env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DIR" 2>&1 \
+  | grep -E '^(sudo[[:space:]]+)?env[[:space:]]+PATH=' \
+  | tail -1 || true)"
+if [[ -n "$PM2_STARTUP_CMD" ]]; then
+  bash -c "$PM2_STARTUP_CMD" || true
+else
+  echo "  WARN: pm2 startup line not found — start Qadbak manually after reboot with:" >&2
+  echo "    sudo -u $QADBAK_USER pm2 resurrect" >&2
+fi
 
 if [[ -n "${QADBAK_LICENSE_KEY:-}" ]]; then
   sudo -u "$QADBAK_USER" node "$QADBAK_DIR/scripts/qadbak-license-cli.mjs" activate "$QADBAK_LICENSE_KEY" \

@@ -1,0 +1,102 @@
+name: 🐛 Bug report
+description: Something in Qadbak is broken or doesn't behave as documented.
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Before submitting, please
+        run `bash /opt/qadbak/scripts/post-install-verify.sh` on the affected
+        server — it catches most install issues automatically.
+
+  - type: input
+    id: version
+    attributes:
+      label: Qadbak version
+      description: "Run on the server: `cd /opt/qadbak && git rev-parse --short HEAD && git describe --tags --always`"
+      placeholder: "e.g. 617c6ed (main) — 2026-05-25"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-mode
+    attributes:
+      label: Install mode
+      options:
+        - "Native (fresh install via install/qadbak-install.sh)"
+        - "Native (migrated from another panel)"
+        - "Local dev (npm run dev)"
+        - "Other / not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ubuntu
+    attributes:
+      label: Ubuntu version
+      options:
+        - "22.04 LTS"
+        - "24.04 LTS"
+        - "Other (please describe in extra context)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "Creating a domain should provision nginx + Apache + DNS records."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      placeholder: "Got a 500 error in the panel; pm2 logs show ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Log in as admin
+        2. Go to Domains → New
+        3. Submit form with hostname `example.com`
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Paste output from one or more of:
+          - `sudo -u qadbak pm2 logs qadbak --lines 100 --nostream`
+          - `sudo nginx -t && sudo journalctl -u nginx -n 100 --no-pager`
+          - `bash /opt/qadbak/scripts/post-install-verify.sh`
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: license
+    attributes:
+      label: Are you using a Premium license?
+      placeholder: "yes / no — last 4 chars of QAD-… key if yes (so we can look up the order)"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: "I searched [existing issues](https://github.com/macdirtycow/qadbak/issues?q=is%3Aissue) and didn't find a duplicate."
+          required: true
+        - label: "I am NOT reporting a security vulnerability (those go to security@omiiba.dev per [SECURITY.md](https://github.com/macdirtycow/qadbak/security/policy))."
+          required: true

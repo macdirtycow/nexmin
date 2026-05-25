@@ -36,3 +36,25 @@ Installer writes `/opt/qadbak/.env.local` with `QADBAK_PROVISIONER=native` and f
 ## Migrating from another control panel
 
 The installer targets **fresh VPS** setups. If an old GPL panel is still on the box, switch to native mode first (`apply-phase8-independent.sh`), verify the panel, then remove packages manually — see [docs/MIGRATE-FROM-VIRTUALMIN.md](../docs/MIGRATE-FROM-VIRTUALMIN.md).
+
+## Resume a failed install
+
+If `qadbak-install.sh` stops mid-way (typically on a sudoers verify step), fix
+the reported issue, then resume without rebuilding npm dependencies:
+
+```bash
+sudo bash /opt/qadbak/install/qadbak-install-resume.sh
+```
+
+## Uninstall
+
+```bash
+sudo bash /opt/qadbak/install/qadbak-uninstall.sh           # safe default (panel only)
+sudo bash /opt/qadbak/install/qadbak-uninstall.sh --help    # see all flags
+sudo bash /opt/qadbak/install/qadbak-uninstall.sh --dry-run # preview, change nothing
+```
+
+By default the uninstaller **keeps your hosting stack and customer data**
+(nginx, mariadb, postfix, dovecot, bind, /var/www) — only the Qadbak panel
+itself is removed. Use `--remove-stack` and `--remove-customers` for a full
+wipe (test VPS only).

@@ -1,0 +1,67 @@
+name: ✨ Feature request
+description: Suggest a new module, workflow or polish item.
+title: "[feature] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea! Feature requests are scoped through this
+        template before any PR is opened. Please describe **the problem** first,
+        not just the solution you've already designed.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      placeholder: "Today I can't ... so I have to ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: "Add a button on /admin/X that ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      placeholder: "Doing it manually via SSH, but ..."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: affects
+    attributes:
+      label: Which area does this touch?
+      multiple: true
+      options:
+        - Domains
+        - Mail
+        - DNS
+        - SSL
+        - Databases
+        - Files / terminal
+        - PHP
+        - Backups
+        - Cron
+        - Server admin
+        - Resellers / RBAC
+        - Marketing site / docs
+        - Installer / VPS setup
+        - License server
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: "I searched [existing issues](https://github.com/macdirtycow/qadbak/issues?q=is%3Aissue) and didn't find a duplicate."
+          required: true
