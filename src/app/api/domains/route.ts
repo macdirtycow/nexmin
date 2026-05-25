@@ -24,6 +24,7 @@ type UsersClientModule = {
 type PanelVhostModule = {
   ensurePanelVhost?: (domain: string) => Promise<string>;
   applyClientPanelVhost?: (domain: string) => Promise<string>;
+  panelVhostAvailable?: () => Promise<boolean>;
 };
 
 export async function GET() {
@@ -175,7 +176,10 @@ export async function POST(request: Request) {
               );
               const applyVhost =
                 vhostMod?.ensurePanelVhost ?? vhostMod?.applyClientPanelVhost;
-              if (applyVhost && (await panelVhostAvailable())) {
+              const vhostAvailable = vhostMod?.panelVhostAvailable
+                ? await vhostMod.panelVhostAvailable().catch(() => false)
+                : false;
+              if (applyVhost && vhostAvailable) {
                 try {
                   await applyVhost(domainName);
                 } catch {
@@ -184,6 +188,8 @@ export async function POST(request: Request) {
               } else {
                 clientAccount.panelUrl = `${clientAccount.panelUrl} (run: sudo bash scripts/configure-panel-vhost-sudo.sh)`;
               }
+            } else {
+              clientAccount.panelUrl = `${clientAccount.panelUrl} (panel-client-vhost Premium module not active)`;
             }
           }
         }
