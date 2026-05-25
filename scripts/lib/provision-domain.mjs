@@ -49,6 +49,15 @@ async function reloadNginx(domain, user) {
   await exec("bash", [script, domain, user], { timeout: 120_000 });
 }
 
+async function writeLandingPage(home, user, domain) {
+  const script = path.join(QADBAK_DIR, "scripts", "lib", "qadbak-landing-html.sh");
+  await exec(
+    "bash",
+    ["-c", `source "${script}" && write_qadbak_landing "${home}/public_html" "${domain}" "${user}:${user}"`],
+    { timeout: 30_000 },
+  ).catch(() => {});
+}
+
 export async function domainCreate(domain, pass, userOpt, extraJson) {
   const name = String(domain).trim().toLowerCase();
   const opts = parseOpts(extraJson);
@@ -84,6 +93,7 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     await mkdir(path.join(home, "backups"), { recursive: true });
     await writeFile(path.join(home, ".qadbak-domain"), `${name}\n`, "utf8");
     await exec("chown", ["-R", `${user}:${user}`, home]);
+    await writeLandingPage(home, user, name);
   }
 
   if (ownedByQadbak) {

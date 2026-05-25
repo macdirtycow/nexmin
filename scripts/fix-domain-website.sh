@@ -106,16 +106,12 @@ elif [[ -f "$ROOT/scripts/apply-domain-nginx.sh" && -d "$PUB" ]]; then
   ISSUE_SSL=1 bash "$ROOT/scripts/apply-domain-nginx.sh" "$DOMAIN" "$VM_USER" || true
 fi
 
-if [[ -d "$PUB" && ! -f "$PUB/index.html" && ! -f "$PUB/index.php" ]]; then
-  echo "==> Placeholder index.html (upload your site via Qadbak Files)"
-  cat >"$PUB/index.html" <<EOF
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><title>${DOMAIN}</title></head>
-<body><h1>${DOMAIN}</h1><p>Site is live. Replace this file in <code>public_html</code> via the Qadbak file manager.</p></body>
-</html>
-EOF
-  chown "$VM_USER:$VM_USER" "$PUB/index.html"
+if [[ -d "$PUB" ]]; then
+  # shellcheck source=lib/qadbak-landing-html.sh
+  source "$ROOT/scripts/lib/qadbak-landing-html.sh"
+  if write_qadbak_landing "$PUB" "$DOMAIN" "$VM_USER:$VM_USER"; then
+    [[ -f "$PUB/index.html" ]] && echo "==> Wrote Qadbak landing page to $PUB/index.html (replace via file manager)"
+  fi
 fi
 
 if [[ -d "$PUB" ]]; then
