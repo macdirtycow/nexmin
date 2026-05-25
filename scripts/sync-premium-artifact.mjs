@@ -15,6 +15,40 @@ import { fileURLToPath } from "node:url";
 const execFileAsync = promisify(execFile);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/**
+ * Reload the long-running panel process after sync so Premium handlers
+ * (resolved via dynamic file:// imports) get picked up without a manual
+ * pm2 restart. Disable with QADBAK_AUTO_RELOAD=false; configure with
+ * QADBAK_PM2_NAME (default "qadbak") or QADBAK_SYSTEMD_UNIT (fallback).
+ */
+async function reloadPanelProcess() {
+  if (process.env.QADBAK_AUTO_RELOAD === "false") {
+    return { ok: false, skipped: "disabled via QADBAK_AUTO_RELOAD=false" };
+  }
+  const procName = process.env.QADBAK_PM2_NAME?.trim() || "qadbak";
+  try {
+    await execFileAsync("pm2", ["reload", procName], { timeout: 15_000 });
+    return { ok: true, tool: "pm2", target: procName };
+  } catch (pm2Err) {
+    const unit = process.env.QADBAK_SYSTEMD_UNIT?.trim();
+    if (!unit) {
+      return {
+        ok: false,
+        error: `pm2 reload failed: ${pm2Err instanceof Error ? pm2Err.message.slice(0, 200) : String(pm2Err).slice(0, 200)}`,
+      };
+    }
+    try {
+      await execFileAsync("systemctl", ["restart", unit], { timeout: 15_000 });
+      return { ok: true, tool: "systemctl", target: unit };
+    } catch (sysErr) {
+      return {
+        ok: false,
+        error: `pm2 reload + systemctl restart both failed (${sysErr instanceof Error ? sysErr.message.slice(0, 100) : String(sysErr).slice(0, 100)})`,
+      };
+    }
+  }
+}
+
 async function loadEnvLocal() {
   const envPath = path.join(ROOT, ".env.local");
   try {
@@ -141,7 +175,8 @@ async function main() {
   }
   await writeFile(envPath, envRaw.endsWith("\n") ? envRaw : `${envRaw}\n`);
 
-  console.log(JSON.stringify({ ok: true, version, features }));
+  const reload = await reloadPanelProcess();
+  console.log(JSON.stringify({ ok: true, version, features, reload }));
 }
 
 main().catch((e) => {

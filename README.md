@@ -143,6 +143,17 @@ sudo bash /opt/qadbak/install/qadbak-install-resume.sh
 cd /opt/qadbak && sudo bash scripts/update-qadbak.sh
 ```
 
+If a Premium license is active, the updater auto-refreshes the Premium
+artifact and `pm2 reload`s — no manual **Refresh modules** click needed.
+
+### Bought a Premium license on an existing install?
+
+One-shot upgrade + activate + sync + reload:
+
+```bash
+sudo bash /opt/qadbak/scripts/buy-premium.sh QAD-XXXX-YYYY-ZZZZ-WWWW
+```
+
 ### Uninstall
 
 ```bash

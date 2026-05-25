@@ -23,6 +23,18 @@ QADBAK_GIT_BRANCH=main
 
 Then **Activate** your key and **Refresh modules**.
 
+### Existing install — bought Premium later?
+
+If you already have Qadbak Core running and just bought a key, the
+one-liner below does pull + rebuild + activate + sync + reload in a
+single safe pass:
+
+```bash
+sudo bash /opt/qadbak/scripts/buy-premium.sh QAD-XXXX-YYYY-ZZZZ-WWWW
+```
+
+Idempotent — safe to re-run if any step fails.
+
 Daily heartbeat (optional):
 
 ```bash

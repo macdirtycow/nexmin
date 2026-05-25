@@ -58,9 +58,12 @@ echo "==> Restart (load .env.local into pm2)"
 run_as_qadbak "cd '$ROOT' && bash scripts/pm2-restart-qadbak.sh"
 
 if [[ -f "$ROOT/data/license.json" ]]; then
-  echo "==> License heartbeat + premium sync hint"
-  run_as_qadbak "cd '$ROOT' && node scripts/qadbak-license-cli.mjs heartbeat" || true
-  echo "    Refresh Premium modules in Server admin → License if artifact version changed."
+  echo "==> License heartbeat + Premium artifact sync (auto)"
+  if run_as_qadbak "cd '$ROOT' && node scripts/qadbak-license-cli.mjs sync"; then
+    echo "    Premium modules refreshed."
+  else
+    echo "    WARN: Premium sync failed — open Server admin → License → Refresh modules for a diagnostic message." >&2
+  fi
 fi
 
 echo "==> Verify"
