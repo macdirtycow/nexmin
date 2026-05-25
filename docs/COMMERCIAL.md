@@ -13,7 +13,7 @@ Qadbak ships as **open-core**: the Premium feature implementations live
 directly in this public repo alongside Core. A valid license simply
 flips the runtime gate (`isPremiumFeatureEnabled`) and unlocks the
 Premium menu items — no separate download, no signed artifact, no
-"Refresh modules" step. Same pattern Discourse, GitLab, Sentry,
+second activation step. Same pattern Discourse, GitLab, Sentry,
 Mattermost, and Cal.com use.
 
 ## Licensed panel configuration

@@ -147,7 +147,7 @@ That's the whole update flow for both Core and Premium customers. The
 panel is **open-core**: Premium source lives in this repo and is gated
 purely by `isPremiumFeatureEnabled()` against the license server's
 feature list — there is no encrypted artifact to download and no
-"Refresh modules" step. `git pull && npm run build && pm2 restart` is
+second activation step. `git pull && npm run build && pm2 restart` is
 equivalent under the hood.
 
 ### Bought a Premium license on an existing install?

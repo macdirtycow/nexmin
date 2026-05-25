@@ -4,7 +4,7 @@
 #
 # Open-core model: Premium source ships in this repo. Activation flips
 # the gating flag on the running panel — there is no artifact to
-# download, no signing pipeline, no "Refresh modules" step.
+# download, no signing pipeline, and no second activation step.
 #
 # Usage:
 #   sudo bash /opt/qadbak/scripts/buy-premium.sh QAD-XXXX-YYYY-ZZZZ
