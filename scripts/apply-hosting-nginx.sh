@@ -94,7 +94,20 @@ else
 fi
 
 NGX="/etc/nginx/sites-available/qadbak"
-sed -e "s/__PANEL_HOST__/$PANEL_HOST/g" \
+# When the default-deny vhost is enabled, strip the Apache-fallback HTTP
+# block (delimited by __APACHE_FALLBACK_BEGIN__ / __APACHE_FALLBACK_END__
+# in deploy/nginx-qadbak{,-http}.conf). That block has `server_name _;`,
+# and qadbak-default-deny.conf already owns `_` on :80/:443 — leaving
+# both produces `[warn] conflicting server name "_" on 0.0.0.0:80, ignored`
+# at every reload. default-deny returns 444 for unknown Host (stricter
+# than the legacy proxy-to-Apache behaviour), so the block is redundant.
+if default_deny_enabled; then
+  STRIP_FALLBACK='/__APACHE_FALLBACK_BEGIN__/,/__APACHE_FALLBACK_END__/d'
+else
+  STRIP_FALLBACK='/__APACHE_FALLBACK_\(BEGIN\|END\)__/d'
+fi
+sed -e "$STRIP_FALLBACK" \
+  -e "s/__PANEL_HOST__/$PANEL_HOST/g" \
   -e "s/__SERVER_FQDN__/$SERVER_FQDN/g" \
   -e "s/__PANEL_HTTP_NAMES__/$PANEL_HTTP_NAMES/g" \
   -e "s/__PANEL_TLS_NAMES__/$PANEL_TLS_NAMES/g" \
