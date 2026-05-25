@@ -89,6 +89,25 @@ fi
 [[ -z "$VM_USER" ]] && VM_USER="${DOMAIN%%.*}"
 PUB="/home/$VM_USER/public_html"
 
+if ! id "$VM_USER" >/dev/null 2>&1; then
+  echo "    WARN — unix user '$VM_USER' not found — domain not provisioned by Qadbak" >&2
+  echo "    SKIP — cannot repair $DOMAIN without its unix user (re-provision via the panel)" >&2
+  exit 1
+fi
+
+if [[ ! -d "/home/$VM_USER" ]]; then
+  echo "    WARN — /home/$VM_USER does not exist — domain not provisioned by Qadbak" >&2
+  echo "    SKIP — cannot repair $DOMAIN without its home directory" >&2
+  exit 1
+fi
+
+if [[ ! -d "$PUB" ]]; then
+  mkdir -p "$PUB"
+  mkdir -p "/home/$VM_USER/backups"
+  chown -R "$VM_USER:$VM_USER" "/home/$VM_USER"
+  echo "==> Created missing $PUB (backfill for legacy domain)"
+fi
+
 APACHE_BACKEND=""
 if [[ -f "$ROOT/scripts/detect-web-backend.sh" ]]; then
   APACHE_BACKEND="$(DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
