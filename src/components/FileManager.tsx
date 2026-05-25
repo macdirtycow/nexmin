@@ -2,6 +2,7 @@
 
 import { FileArchiveDialog } from "@/components/FileArchiveDialog";
 import { FileMoveDialog } from "@/components/FileMoveDialog";
+import { FileRenameDialog } from "@/components/FileRenameDialog";
 import { FileCodeEditor } from "@/components/FileCodeEditor";
 import { archiveFormatLabel } from "@/lib/domain-files-archives";
 import {
@@ -61,6 +62,7 @@ export function FileManager({
   const [archiveEntry, setArchiveEntry] = useState<DomainFileEntry | null>(null);
 
   const [moveEntry, setMoveEntry] = useState<DomainFileEntry | null>(null);
+  const [renameEntry, setRenameEntry] = useState<DomainFileEntry | null>(null);
 
   const refresh = useCallback(
     async (dir?: string) => {
@@ -492,6 +494,15 @@ export function FileManager({
                           <Button
                             variant="ghost"
                             className="!px-2 !py-1 text-xs"
+                            onClick={() => setRenameEntry(entry)}
+                          >
+                            Rename
+                          </Button>
+                        )}
+                        {entry.movable !== false && writable && (
+                          <Button
+                            variant="ghost"
+                            className="!px-2 !py-1 text-xs"
                             onClick={() => setMoveEntry(entry)}
                           >
                             Move
@@ -630,6 +641,18 @@ export function FileManager({
           } else {
             await refresh();
           }
+        }}
+      />
+
+      <FileRenameDialog
+        open={!!renameEntry}
+        domain={domain}
+        entry={renameEntry}
+        onClose={() => setRenameEntry(null)}
+        onSuccess={async (_destPath, msg) => {
+          setSuccess(msg);
+          setRenameEntry(null);
+          await refresh();
         }}
       />
 
