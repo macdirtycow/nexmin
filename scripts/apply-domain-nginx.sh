@@ -15,8 +15,11 @@ PROXY_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/proxies.json"
 source "$QADBAK_DIR/scripts/lib/php-fpm-pool.sh"
 # shellcheck source=lib/nginx-customer-vhost.sh
 source "$QADBAK_DIR/scripts/lib/nginx-customer-vhost.sh"
+# shellcheck source=lib/ensure-home-web-access.sh
+source "$QADBAK_DIR/scripts/lib/ensure-home-web-access.sh"
 
 [[ -d "$PUB" ]] || mkdir -p "$PUB" && chown -R "${USER}:${USER}" "/home/${USER}"
+ensure_home_web_access "$USER"
 
 PHP_VER="$(php_fpm_domain_version "$DOMAIN" "$QADBAK_DIR")"
 PHP_VER="$(php_fpm_detect_version "$PHP_VER")"
@@ -103,7 +106,14 @@ ENABLED_LINK="$(nginx_customer_conf_enabled "$DOMAIN")"
     echo "    listen 80;"
     echo "    listen [::]:80;"
     echo "    server_name ${DOMAIN} www.${DOMAIN};"
-    echo "    return 301 https://\$host\$request_uri;"
+    echo "    root ${PUB};"
+    echo "    location ^~ /.well-known/acme-challenge/ {"
+    echo "        allow all;"
+    echo "        try_files \$uri =404;"
+    echo "    }"
+    echo "    location / {"
+    echo "        return 301 https://\$host\$request_uri;"
+    echo "    }"
     echo "}"
   else
     write_site_server 0 ""

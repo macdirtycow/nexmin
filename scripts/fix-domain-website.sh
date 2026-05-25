@@ -119,9 +119,9 @@ EOF
 fi
 
 if [[ -d "$PUB" ]]; then
-  chown -R "$VM_USER:$VM_USER" "$PUB"
-  find "$PUB" -type d -exec chmod 755 {} \;
-  find "$PUB" -type f -exec chmod 644 {} \;
+  # shellcheck source=lib/ensure-home-web-access.sh
+  source "$ROOT/scripts/lib/ensure-home-web-access.sh"
+  ensure_home_web_access "$VM_USER"
 else
   echo "    WARN — missing $PUB" >&2
 fi
