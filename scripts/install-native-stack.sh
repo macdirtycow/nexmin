@@ -35,6 +35,7 @@ apt-get install -y -qq \
   $PHP_EXTRA \
   certbot python3-certbot-nginx \
   ufw \
+  fail2ban \
   rsync \
   unzip zip \
   proftpd-basic \
@@ -52,6 +53,11 @@ systemctl unmask proftpd 2>/dev/null || true
 systemctl enable proftpd 2>/dev/null || true
 
 systemctl enable nginx apache2 mariadb postfix dovecot bind9 2>/dev/null || true
+
+# fail2ban: brute-force protection on SSH + the panel — drop into a
+# separate helper so existing installs can pick it up via vps-after-pull.sh
+# without re-running the full native-stack install.
+bash "$QADBAK_DIR/scripts/ensure-fail2ban.sh"
 
 if [[ -f "$QADBAK_DIR/scripts/configure-bind-native.sh" ]]; then
   echo "==> BIND9 (native DNS zones)"

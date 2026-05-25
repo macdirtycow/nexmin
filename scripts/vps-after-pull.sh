@@ -25,6 +25,7 @@ bash "$ROOT/scripts/configure-updates-sudo.sh" 2>/dev/null || true
 bash "$ROOT/scripts/configure-php-fpm-sudo.sh" 2>/dev/null || true
 bash "$ROOT/scripts/configure-panel-pm2-sudo.sh" 2>/dev/null || true
 bash "$ROOT/scripts/apply-all-php-fpm-pools.sh" 2>/dev/null || true
+bash "$ROOT/scripts/ensure-fail2ban.sh" 2>/dev/null || true
 bash "$ROOT/scripts/pm2-restart-qadbak.sh"
 
 echo "Done — panel, terminal WS, and PHP-FPM pools refreshed."
