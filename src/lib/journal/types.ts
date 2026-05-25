@@ -48,6 +48,25 @@ export interface JournalStep {
   startedAt: string;
 }
 
+/**
+ * Identifies a registered server-side undo handler plus the payload it needs.
+ *
+ * Each kind maps to exactly one handler in src/lib/journal/undo.ts; the
+ * payload is opaque to the journal but typed inside the handler.
+ *
+ * Time-bounded safety: if ttlMinutes is set, undo is rejected after that
+ * many minutes since startedAt. Use this for "undo within 1 hour" cases
+ * where the action becomes too risky later (because the customer might
+ * already be using the new resource).
+ */
+export interface UndoSpec {
+  kind: string;
+  payload: Record<string, unknown>;
+  /** Optional human warning shown in the confirm dialog before undo runs. */
+  warning?: string;
+  ttlMinutes?: number;
+}
+
 /** A complete record of a single panel action. */
 export interface JournalEntry {
   /** ULID-style identifier. Stable for linking. */
@@ -73,8 +92,16 @@ export interface JournalEntry {
   ok: boolean;
   /** Sanitized top-level error message when ok=false. */
   errorMessage?: string;
-  /** Whether this action can be undone via a future Fase-2 endpoint. */
+  /** True when undoSpec is present AND undoneAt is not set AND TTL hasn't lapsed. */
   undoable: boolean;
+  /** Server-side recipe for reversing this action. Absent => undoable=false. */
+  undoSpec?: UndoSpec;
+  /** ISO timestamp of when this entry was undone. Absent => still live. */
+  undoneAt?: string;
+  /** Acting username who triggered the undo. */
+  undoneBy?: string;
+  /** ID of the new journal entry created for the undo itself (action=journal.undo). */
+  undoneByEntryId?: string;
   /** Free-form metadata (sanitized). E.g. { plan: "starter", ip: "1.2.3.4" }. */
   metadata?: Record<string, unknown>;
   startedAt: string;

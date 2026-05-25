@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { JournalEntry, JournalStep } from "@/lib/journal/types";
 import { Alert, Badge, Button, Card, Input, Label } from "@/components/ui";
 
@@ -206,7 +206,13 @@ export function JournalBrowser() {
             <p className="text-sm text-panel-muted">Loading entry…</p>
           </Card>
         ) : selected ? (
-          <JournalEntryDetail entry={selected} />
+          <JournalEntryDetail
+            entry={selected}
+            onUndone={async (updated) => {
+              setSelected(updated);
+              await refresh();
+            }}
+          />
         ) : (
           <Card className="border-dashed border-panel-border/80 bg-panel-card/30">
             <p className="text-sm text-panel-muted">
@@ -220,19 +226,83 @@ export function JournalBrowser() {
   );
 }
 
-function JournalEntryDetail({ entry }: { entry: JournalEntry }) {
+function JournalEntryDetail({
+  entry,
+  onUndone,
+}: {
+  entry: JournalEntry;
+  onUndone: (updated: JournalEntry) => void | Promise<void>;
+}) {
   const stepCount = entry.steps.length;
   const failures = entry.steps.filter((s) => !s.ok).length;
+  const [undoing, setUndoing] = useState(false);
+  const [undoConfirm, setUndoConfirm] = useState(false);
+  const [undoMsg, setUndoMsg] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const canUndo =
+    entry.undoable &&
+    !entry.undoneAt &&
+    !!entry.undoSpec &&
+    withinTtl(entry);
+
+  async function runUndo() {
+    setUndoing(true);
+    setUndoMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/journal/${encodeURIComponent(entry.id)}/undo`,
+        { method: "POST" },
+      );
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        summary?: string;
+        originalEntry?: JournalEntry;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      setUndoMsg({ tone: "success", text: data.summary ?? "Undone." });
+      setUndoConfirm(false);
+      if (data.originalEntry) {
+        await onUndone(data.originalEntry);
+      }
+    } catch (e) {
+      setUndoMsg({
+        tone: "error",
+        text: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setUndoing(false);
+    }
+  }
+
   return (
     <Card className="space-y-5">
       <header className="space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-white">{entry.summary}</h2>
-          {entry.ok ? (
-            <Badge tone="success">Succeeded</Badge>
-          ) : (
-            <Badge tone="danger">Failed</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {entry.undoneAt ? (
+              <Badge tone="warning">Undone</Badge>
+            ) : entry.ok ? (
+              <Badge tone="success">Succeeded</Badge>
+            ) : (
+              <Badge tone="danger">Failed</Badge>
+            )}
+            {canUndo && !undoConfirm ? (
+              <Button
+                variant="secondary"
+                onClick={() => setUndoConfirm(true)}
+                disabled={undoing}
+              >
+                Undo
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="flex flex-wrap gap-x-3 text-xs text-panel-muted">
           <span>action: {entry.action}</span>
@@ -260,6 +330,69 @@ function JournalEntryDetail({ entry }: { entry: JournalEntry }) {
 
       {entry.errorMessage ? (
         <Alert variant="error">{entry.errorMessage}</Alert>
+      ) : null}
+
+      {entry.undoneAt ? (
+        <Alert variant="info">
+          Undone by <strong>{entry.undoneBy ?? "?"}</strong> on{" "}
+          {new Date(entry.undoneAt).toLocaleString()}
+          {entry.undoneByEntryId ? (
+            <>
+              {" "}·{" "}
+              <button
+                type="button"
+                className="underline hover:text-white"
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("focus", entry.undoneByEntryId!);
+                  window.location.assign(url.toString());
+                }}
+              >
+                view undo entry
+              </button>
+            </>
+          ) : null}
+        </Alert>
+      ) : null}
+
+      {undoConfirm && canUndo ? (
+        <Alert variant="info">
+          <p className="text-sm">
+            <strong className="text-white">Reverse this action?</strong>
+            {entry.undoSpec?.warning ? (
+              <>
+                <br />
+                {entry.undoSpec.warning}
+              </>
+            ) : null}
+            {entry.undoSpec?.ttlMinutes ? (
+              <>
+                <br />
+                <span className="text-xs text-panel-muted">
+                  Undo window: {entry.undoSpec.ttlMinutes} min from action time.
+                </span>
+              </>
+            ) : null}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="danger" onClick={runUndo} disabled={undoing}>
+              {undoing ? "Undoing…" : "Yes, undo it"}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setUndoConfirm(false)}
+              disabled={undoing}
+            >
+              Cancel
+            </Button>
+          </div>
+        </Alert>
+      ) : null}
+
+      {undoMsg ? (
+        <Alert variant={undoMsg.tone === "success" ? "success" : "error"}>
+          {undoMsg.text}
+        </Alert>
       ) : null}
 
       <ol className="space-y-3 border-l border-panel-border pl-4">
@@ -387,6 +520,13 @@ function kindGlyph(kind: JournalStep["kind"]): string {
     case "error":
       return "!";
   }
+}
+
+function withinTtl(entry: JournalEntry): boolean {
+  const ttl = entry.undoSpec?.ttlMinutes;
+  if (!ttl) return true;
+  const ageMs = Date.now() - new Date(entry.startedAt).getTime();
+  return ageMs <= ttl * 60_000;
 }
 
 function relativeTime(iso: string): string {

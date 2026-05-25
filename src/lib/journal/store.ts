@@ -9,7 +9,16 @@
  * pruneJournalsOlderThan().
  */
 
-import { appendFile, mkdir, readdir, readFile, stat, unlink } from "fs/promises";
+import {
+  appendFile,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  stat,
+  unlink,
+  writeFile,
+} from "fs/promises";
 import path from "path";
 import type { JournalEntry, JournalListFilter } from "./types";
 
@@ -122,6 +131,63 @@ export async function getEntry(
     const entries = await readDay(dateKey(d));
     const hit = entries.find((e) => e.id === id);
     if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * Mark a single entry as undone — rewrites the per-day JSONL file in place
+ * with the entry's undoneAt / undoneBy / undoneByEntryId fields set.
+ *
+ * The journal is normally append-only, but Undo is a low-frequency action
+ * (~once per minute at most across the whole panel) and we'd rather have
+ * the source of truth in one place than maintain a sidecar undo-events
+ * file that the reader has to cross-reference. Writes go via rename for
+ * atomicity on the same filesystem.
+ */
+export async function markEntryUndone(
+  id: string,
+  by: string,
+  undoEntryId: string,
+  daysBack = 30,
+): Promise<JournalEntry | null> {
+  const now = new Date();
+  for (let i = 0; i < daysBack; i += 1) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = dateKey(d);
+    const file = dateFilePath(key);
+    let raw: string;
+    try {
+      raw = await readFile(file, "utf8");
+    } catch {
+      continue;
+    }
+    const lines = raw.split("\n");
+    let found: JournalEntry | null = null;
+    const updated = lines.map((line) => {
+      const t = line.trim();
+      if (!t.startsWith("{")) return line;
+      try {
+        const e = JSON.parse(t) as JournalEntry;
+        if (e.id === id) {
+          e.undoneAt = new Date().toISOString();
+          e.undoneBy = by;
+          e.undoneByEntryId = undoEntryId;
+          e.undoable = false;
+          found = e;
+          return JSON.stringify(e);
+        }
+      } catch {
+        /* leave line as-is */
+      }
+      return line;
+    });
+    if (!found) continue;
+    const tmp = `${file}.tmp-${process.pid}-${Date.now()}`;
+    await writeFile(tmp, updated.join("\n"), "utf8");
+    await rename(tmp, file);
+    return found;
   }
   return null;
 }

@@ -24,7 +24,12 @@ import { randomBytes } from "crypto";
 import { performance } from "perf_hooks";
 import { persistEntry } from "./store";
 import { sanitize, sanitizeMetadata, sanitizeOutput } from "./sanitize";
-import type { JournalEntry, JournalStep, JournalStepKind } from "./types";
+import type {
+  JournalEntry,
+  JournalStep,
+  JournalStepKind,
+  UndoSpec,
+} from "./types";
 
 export interface BeginJournalOpts {
   action: string;
@@ -78,6 +83,24 @@ export class JournalBuilder {
   /** Get a stable ID before the action completes (for client correlation). */
   get id(): string {
     return this.entry.id;
+  }
+
+  /**
+   * Declare this action as undoable. Stores a sanitized payload + the kind
+   * that the server-side dispatcher (src/lib/journal/undo.ts) will use to
+   * find the matching handler.
+   */
+  setUndoSpec(spec: UndoSpec): void {
+    this.entry.undoable = true;
+    this.entry.undoSpec = {
+      kind: String(spec.kind),
+      payload: sanitizeMetadata(spec.payload) ?? {},
+      warning: spec.warning ? sanitize(spec.warning) : undefined,
+      ttlMinutes:
+        typeof spec.ttlMinutes === "number" && spec.ttlMinutes > 0
+          ? Math.floor(spec.ttlMinutes)
+          : undefined,
+    };
   }
 
   /** Record an arbitrary step. */

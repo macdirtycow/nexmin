@@ -128,20 +128,74 @@ after install.
   unix user creation, public_html mkdir, .qadbak-domain marker file,
   ownership chown, PHP-FPM pool apply, nginx vhost apply, registry update,
   BIND zone, PHP config, Postfix/Dovecot mail setup, and the Repair step.
+  Not undoable — there are too many cascading side effects to safely
+  reverse in one click.
+- `mailbox.add` — journaled AND **undoable within 60 minutes**. The
+  payload is `{ domain, user }`; the undo handler calls
+  `provisioner.deleteMailbox(domain, user)`. See "Reversible
+  infrastructure" below.
 - Every other API route still writes the original one-line `auditLog`
   entry. Adding journaling is opt-in per route — follow the pattern above.
 
+## Reversible infrastructure (Fase 2 — Undo)
+
+Each undoable action sets `JournalEntry.undoSpec = { kind, payload, warning?, ttlMinutes? }`
+at write-time. Admins can POST to `/api/admin/journal/:id/undo` to
+reverse it; the dispatcher in `src/lib/journal/undo.ts` switches on
+`spec.kind` and runs the matching handler. The undo itself is
+recorded as a NEW journal entry with `action: "journal.undo"` so the
+audit trail is complete, and the original entry is rewritten in place
+with `undoneAt / undoneBy / undoneByEntryId` set.
+
+To make an action undoable from your route:
+
+```ts
+journal.setUndoSpec({
+  kind: "mailbox.add",
+  payload: { domain, user: body.user },
+  warning: `This will delete ${body.user}@${domain} and its Maildir.`,
+  ttlMinutes: 60,
+});
+```
+
+Then add a case to the switch in `src/lib/journal/undo.ts`:
+
+```ts
+case "mailbox.add":
+  return undoMailboxAdd(ctx, spec.payload);
+```
+
+Safety rules built into the dispatcher:
+
+- The TTL is enforced server-side via `isStillUndoable()` BEFORE the
+  handler runs. The UI also hides the button when the window has
+  passed (so the button doesn't taunt the user uselessly).
+- Re-clicking Undo on an already-undone entry returns 409.
+- The handler is expected to cross-check the entry's `target` against
+  the payload (defense in depth — see `undoMailboxAdd` for the pattern).
+- All payloads run through `sanitizeMetadata()` before persistence so
+  no passwords or tokens end up in the on-disk undoSpec.
+
+In the admin UI, undoable entries show a secondary `Undo` button next
+to the success/failure badge. Clicking it opens a confirmation
+warning (with the spec's `warning` text + TTL reminder). After undo
+the entry shows an "Undone" badge with a link to the undo entry.
+
 ## What's next
 
-- **Fase 2** — `JournalEntry.undoable` + `undoSpec` are already in the schema.
-  The next iteration adds an Undo button on entries where a reverse action
-  is safe (e.g. domain delete restoring the registry row + vhost).
-- **Fase 3** — A scheduled job inspects the last 24h of journal entries
-  together with system metrics (disk, RAM, mail queue, SSL expiry) and
-  produces self-healing suggestions in `/admin/status`.
-- **Fase 4 / Premium** — Optional "AI assist" button per entry that sends a
-  redacted entry to the user's own OpenAI/Anthropic key for a plain-English
-  explanation. Disabled by default, key never stored on Qadbak servers.
+- **Fase 2 — extend coverage**: roll the same `setUndoSpec` pattern out
+  across DNS upserts, file deletes (via a trash directory), database
+  creation, and panel-vhost adds. Each is a 10-line change in its
+  route + one case in `undo.ts`.
+- **Fase 3 — Self-healing**: A scheduled job inspects the last 24h of
+  journal entries together with system metrics (disk, RAM, mail queue,
+  SSL expiry) and produces plain-English suggestions in `/admin/status`.
+  The journal becomes the "what changed recently?" backbone for these
+  diagnostics.
+- **Fase 4 / Premium — AI assist**: Optional "Explain in plain English"
+  button per entry that sends a redacted entry to the user's own
+  OpenAI/Anthropic key for a natural-language explanation. Disabled by
+  default, key never stored on Qadbak servers.
 
 ## Rotation
 
