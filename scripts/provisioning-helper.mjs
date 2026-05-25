@@ -89,6 +89,7 @@ import {
   scriptInstall,
   scriptDelete,
 } from "./lib/provision-scripts.mjs";
+import { appInstallWordpress } from "./lib/provision-app-wordpress.mjs";
 import {
   securityGet,
   securitySetSpam,
@@ -392,6 +393,9 @@ async function main() {
       break;
     case "script-install":
       await scriptInstall(args[0], args[1], args[2]);
+      break;
+    case "app-install-wordpress":
+      await appInstallWordpress(args[0], args[1], args[2], args[3], args[4]);
       break;
     case "script-delete":
       await scriptDelete(args[0], args[1]);
