@@ -52,9 +52,8 @@ write_site_server() {
 
   echo "server {"
   if [[ "$listen_ssl" == "1" ]]; then
-    echo "    listen 443 ssl;"
-    echo "    listen [::]:443 ssl;"
-    echo "    http2 on;"
+    echo "    listen 443 ssl http2;"
+    echo "    listen [::]:443 ssl http2;"
     echo "    server_name ${DOMAIN} www.${DOMAIN};"
     echo "    ssl_certificate     /etc/letsencrypt/live/${cert_host}/fullchain.pem;"
     echo "    ssl_certificate_key /etc/letsencrypt/live/${cert_host}/privkey.pem;"
