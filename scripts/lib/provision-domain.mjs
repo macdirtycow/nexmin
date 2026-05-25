@@ -173,6 +173,34 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     });
   }
 
+  if (ownedByQadbak) {
+    const ensureScript = path.join(QADBAK_DIR, "scripts", "ensure-domain-website.sh");
+    const ensureUser = type === "alias" && parentUser ? parentUser : user;
+    try {
+      const t0 = Date.now();
+      const { stdout, stderr } = await exec("bash", [ensureScript, name, ensureUser], {
+        timeout: 180_000,
+        maxBuffer: 4 * 1024 * 1024,
+      });
+      jstep("shell", `Ensured website end-to-end for ${name}`, {
+        command: `ensure-domain-website.sh ${name} ${ensureUser}`,
+        durationMs: Date.now() - t0,
+        output: [stdout, stderr].filter(Boolean).join("\n"),
+      });
+    } catch (err) {
+      const message = err?.stderr || err?.stdout || err?.message || String(err);
+      jstep("shell", `ensure-domain-website.sh non-fatal failure for ${name}`, {
+        command: `ensure-domain-website.sh ${name} ${ensureUser}`,
+        ok: false,
+        output: message,
+        errorMessage:
+          "End-to-end website ensure failed (probably certbot or nginx -t). " +
+          "Unix user + public_html + landing are in place; re-run later with: " +
+          `sudo bash ${ensureScript} ${name} ${ensureUser}`,
+      });
+    }
+  }
+
   emit({ ok: true, domain: name, user, home, type, parent: parent || null, plan });
 }
 

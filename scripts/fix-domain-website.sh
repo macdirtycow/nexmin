@@ -1,5 +1,13 @@
 #!/bin/bash
-# Fix website unreachable (502 / Cloudflare 523) for one VirtualMin domain.
+# Fix website unreachable (502 / Cloudflare 523) for one Qadbak domain.
+#
+# Thin wrapper around scripts/ensure-domain-website.sh — keeps the
+# firewall opening, Apache backend bring-up, hosting-nginx refresh,
+# VirtualMin sync, and diagnostic probes (with Cloudflare hints) that
+# operators rely on at repair time, but delegates the actual public_html
+# / vhost / landing / SSL / PHP-FPM work to the new idempotent script
+# so future maintenance only touches one place.
+#
 # Run on VPS: sudo bash scripts/fix-domain-website.sh YOUR_DOMAIN
 set -euo pipefail
 
@@ -20,8 +28,6 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# shellcheck source=lib/fix-apache-vhost.sh
-source "$ROOT/scripts/lib/fix-apache-vhost.sh"
 
 echo "==> Firewall: allow HTTP/HTTPS on host"
 bash "$ROOT/scripts/open-host-firewall-port.sh" 80
@@ -101,49 +107,28 @@ if [[ ! -d "/home/$VM_USER" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$PUB" ]]; then
-  mkdir -p "$PUB"
-  mkdir -p "/home/$VM_USER/backups"
-  chown -R "$VM_USER:$VM_USER" "/home/$VM_USER"
-  echo "==> Created missing $PUB (backfill for legacy domain)"
-fi
-
-APACHE_BACKEND=""
-if [[ -f "$ROOT/scripts/detect-web-backend.sh" ]]; then
-  APACHE_BACKEND="$(DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
-fi
-export APACHE_BACKEND
-
-fix_apache_vhost_for_domain "$DOMAIN" "$VM_USER" "$PUB" "$ROOT"
-
-if [[ -f "$ROOT/scripts/apply-customer-nginx-vhosts.sh" ]]; then
+# Delegate public_html / Apache vhost / nginx vhost / SSL / PHP-FPM /
+# landing-page-refresh-when-safe to the single source of truth.
+ENSURE="$ROOT/scripts/ensure-domain-website.sh"
+if [[ -x "$ENSURE" ]]; then
   echo ""
-  APACHE_BACKEND="${APACHE_BACKEND:-127.0.0.1:8080}" bash "$ROOT/scripts/apply-customer-nginx-vhosts.sh" || true
-elif [[ -f "$ROOT/scripts/apply-domain-nginx.sh" && -d "$PUB" ]]; then
-  echo ""
-  echo "==> Nginx vhost for $DOMAIN → $PUB"
-  ISSUE_SSL=1 bash "$ROOT/scripts/apply-domain-nginx.sh" "$DOMAIN" "$VM_USER" || true
-fi
-
-if [[ -d "$PUB" ]]; then
-  # shellcheck source=lib/qadbak-landing-html.sh
-  source "$ROOT/scripts/lib/qadbak-landing-html.sh"
-  if write_qadbak_landing "$PUB" "$DOMAIN" "$VM_USER:$VM_USER"; then
-    [[ -f "$PUB/index.html" ]] && echo "==> Wrote Qadbak landing page to $PUB/index.html (replace via file manager)"
-  fi
-fi
-
-if [[ -d "$PUB" ]]; then
-  # shellcheck source=lib/ensure-home-web-access.sh
-  source "$ROOT/scripts/lib/ensure-home-web-access.sh"
-  ensure_home_web_access "$VM_USER"
+  bash "$ENSURE" "$DOMAIN" "$VM_USER" || true
 else
-  echo "    WARN — missing $PUB" >&2
+  echo "WARN: $ENSURE missing — falling back to inline repair (git pull recommended)" >&2
 fi
 
 for svc in apache2 httpd nginx; do
   systemctl reload "$svc" 2>/dev/null || systemctl restart "$svc" 2>/dev/null || true
 done
+
+# -------- diagnostic probes (Cloudflare-aware hints) --------
+# shellcheck source=lib/fix-apache-vhost.sh
+source "$ROOT/scripts/lib/fix-apache-vhost.sh"
+
+APACHE_BACKEND=""
+if [[ -f "$ROOT/scripts/detect-web-backend.sh" ]]; then
+  APACHE_BACKEND="$(DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/detect-web-backend.sh" 2>/dev/null | tail -1)"
+fi
 
 ORIGIN_IP="${QADBAK_ORIGIN_IP:-}"
 if [[ -z "$ORIGIN_IP" ]]; then

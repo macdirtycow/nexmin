@@ -15,6 +15,36 @@ If nginx uses `default_server` on port 80 and proxies **everything** to Qadbak (
 
 Panel login without a customer domain name: use **https://panel-host/login** or **http://SERVER_IP:11000/login** (`enable-panel-port.sh`).
 
+## End-to-end domain creation
+
+Creating a domain from the panel (**Domains → New domain**, which hits
+`POST /api/domains`) now wires up the full hosting stack
+automatically: unix user + `public_html`, Qadbak landing page, Apache
+backend vhost, nginx customer vhost on port 80 *and* 443, a Let's
+Encrypt certificate when DNS is ready, and a per-tenant PHP-FPM pool
+when the licence allows it. No follow-up `apply-*.sh` / `ISSUE_SSL=1`
+commands are required — fresh domains serve over HTTP and HTTPS the
+moment the API returns success.
+
+If something does need to be re-applied (for example a domain that
+existed before this change, or a certbot run that was rate-limited at
+create time), the **single operator entry point** is:
+
+```bash
+sudo bash /opt/qadbak/scripts/ensure-domain-website.sh DOMAIN UNIX_USER
+```
+
+The script is idempotent: it is safe to run repeatedly. It never
+overwrites real customer content — it only refreshes its own Qadbak
+landing page when the current `public_html/index.html` is empty, a
+known placeholder (`Hello` / `OK`), or a landing it wrote itself.
+
+`scripts/fix-domain-website.sh` and `scripts/repair-all-websites.sh`
+both delegate to `ensure-domain-website.sh` for the actual website
+work; they add firewall opening, Apache backend bring-up,
+hosting-nginx refresh, VirtualMin sync, and Cloudflare-aware probes
+on top.
+
 ## Apply on an existing VPS
 
 ```bash
