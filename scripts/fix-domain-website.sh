@@ -65,6 +65,27 @@ VM_USER=""
 if command -v virtualmin &>/dev/null; then
   VM_USER="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
 fi
+if [[ -z "$VM_USER" && -f "$ROOT/data/native-domains.json" ]]; then
+  if command -v jq &>/dev/null; then
+    VM_USER="$(jq -r --arg d "$DOMAIN" '.[] | select(.name==$d) | .user' "$ROOT/data/native-domains.json" 2>/dev/null | head -1)"
+  else
+    VM_USER="$(node -e "
+      const fs=require('fs');
+      const rows=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
+      const r=rows.find(x=>x&&x.name===process.argv[2]);
+      process.stdout.write(r&&r.user?String(r.user):'');
+    " "$ROOT/data/native-domains.json" "$DOMAIN" 2>/dev/null || true)"
+  fi
+fi
+if [[ -z "$VM_USER" ]]; then
+  for hint in /home/*/.qadbak-domain; do
+    [[ -f "$hint" ]] || continue
+    if [[ "$(tr -d '\r\n' <"$hint" | head -1)" == "$DOMAIN" ]]; then
+      VM_USER="$(basename "$(dirname "$hint")")"
+      break
+    fi
+  done
+fi
 [[ -z "$VM_USER" ]] && VM_USER="${DOMAIN%%.*}"
 PUB="/home/$VM_USER/public_html"
 
@@ -78,7 +99,23 @@ fix_apache_vhost_for_domain "$DOMAIN" "$VM_USER" "$PUB" "$ROOT"
 
 if [[ -f "$ROOT/scripts/apply-customer-nginx-vhosts.sh" ]]; then
   echo ""
-  APACHE_BACKEND="${APACHE_BACKEND:-127.0.0.1:8080}" bash "$ROOT/scripts/apply-customer-nginx-vhosts.sh"
+  APACHE_BACKEND="${APACHE_BACKEND:-127.0.0.1:8080}" bash "$ROOT/scripts/apply-customer-nginx-vhosts.sh" || true
+elif [[ -f "$ROOT/scripts/apply-domain-nginx.sh" && -d "$PUB" ]]; then
+  echo ""
+  echo "==> Nginx vhost for $DOMAIN → $PUB"
+  ISSUE_SSL=1 bash "$ROOT/scripts/apply-domain-nginx.sh" "$DOMAIN" "$VM_USER" || true
+fi
+
+if [[ -d "$PUB" && ! -f "$PUB/index.html" && ! -f "$PUB/index.php" ]]; then
+  echo "==> Placeholder index.html (upload your site via Qadbak Files)"
+  cat >"$PUB/index.html" <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>${DOMAIN}</title></head>
+<body><h1>${DOMAIN}</h1><p>Site is live. Replace this file in <code>public_html</code> via the Qadbak file manager.</p></body>
+</html>
+EOF
+  chown "$VM_USER:$VM_USER" "$PUB/index.html"
 fi
 
 if [[ -d "$PUB" ]]; then
@@ -110,10 +147,13 @@ case "$BACKEND_RESULT" in
 esac
 
 echo ""
-echo "==> Local probe (nginx :80 → Apache for Host: $DOMAIN)"
+echo "==> Local probe (nginx :80 → site for Host: $DOMAIN)"
 PROBE_BODY="$(mktemp)"
-trap 'rm -f "$PROBE_BODY"' EXIT
+HTTPS_BODY="$(mktemp)"
+trap 'rm -f "$PROBE_BODY" "$HTTPS_BODY"' EXIT
 HTTP_CODE="$(curl -sS --max-time 8 -o "$PROBE_BODY" -w '%{http_code}' -H "Host: $DOMAIN" http://127.0.0.1/ || echo 000)"
+
+HTTPS_CODE="$(curl -sS --max-time 8 -o "$HTTPS_BODY" -w '%{http_code}' -k -H "Host: $DOMAIN" https://127.0.0.1/ 2>/dev/null || echo 000)"
 
 if [[ "$HTTP_CODE" == "502" && "$APACHE_OK" -eq 0 ]]; then
   echo "    FAIL — HTTP 502: Apache is not running (nginx has nothing to proxy to)."
@@ -136,8 +176,26 @@ elif [[ "$HTTP_CODE" =~ ^[0-9]+$ ]] && (( HTTP_CODE > 0 && HTTP_CODE < 500 )); t
   fi
 else
   echo "    FAIL — no good response on 127.0.0.1 for Host: $DOMAIN (code: $HTTP_CODE)"
-  echo "    Check: virtualmin list-domains | grep -i $DOMAIN"
-  echo "    Logs: tail -50 /var/log/apache2/error.log /var/log/nginx/error.log"
+  echo "    Run:  sudo bash $ROOT/scripts/fix-domain-website.sh $DOMAIN"
+  echo "    Logs: tail -50 /var/log/nginx/error.log"
+fi
+
+echo ""
+echo "==> Local probe HTTPS (Host: $DOMAIN on :443)"
+if [[ "$HTTPS_CODE" =~ ^[0-9]+$ ]] && (( HTTPS_CODE > 0 && HTTPS_CODE < 500 )); then
+  if grep -q '"error":"Not found"' "$HTTPS_BODY" 2>/dev/null; then
+    echo "    FAIL — HTTPS still hits the license/API backend (JSON Not found), not your site"
+    echo "    Fix: sudo ISSUE_SSL=1 bash $ROOT/scripts/apply-domain-nginx.sh $DOMAIN $VM_USER"
+    echo "    Then: sudo bash $ROOT/scripts/apply-hosting-nginx.sh"
+  elif grep -qiE 'qadbak.*virtualmin|sign in at qadbak' "$HTTPS_BODY" 2>/dev/null; then
+    echo "    WARN — HTTPS serves Qadbak panel, not public_html"
+  else
+    echo "    OK — HTTPS $HTTPS_CODE for Host: $DOMAIN"
+  fi
+elif [[ "$HTTPS_CODE" == "000" ]]; then
+  echo "    NOTE — no HTTPS listener for $DOMAIN yet (certbot or Cloudflare Flexible SSL)"
+else
+  echo "    WARN — HTTPS probe code: $HTTPS_CODE"
 fi
 
 echo ""

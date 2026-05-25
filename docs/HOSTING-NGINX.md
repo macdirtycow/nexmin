@@ -46,7 +46,19 @@ sudo bash scripts/fix-domain-website.sh example.com
 
 Your edited file must be `/home/USER/public_html/index.html`, not `/var/www/html/index.html`.
 
-**Repair** also runs `apply-customer-nginx-vhosts.sh`: nginx `server_name` per domain points **directly** at `public_html` (wins over `default_server` → Apache). PHP still goes to Apache on the backend port.
+**Repair** also runs `apply-customer-nginx-vhosts.sh`: nginx `server_name` per domain points **directly** at `public_html` (wins over `default_server` → Apache). PHP still goes to Apache on the backend port when no PHP-FPM pool exists.
+
+### HTTPS shows `{"error":"Not found"}`
+
+That JSON comes from the **license API** (or another Qadbak service on port 443), not from your website. Nginx had no TLS vhost for your domain, so the wrong `default_server` on 443 answered.
+
+Fix on the VPS:
+
+```bash
+sudo bash scripts/fix-domain-website.sh YOUR_DOMAIN
+```
+
+This rebuilds the customer vhost (HTTP + HTTPS when a Let's Encrypt cert exists), optionally runs certbot, and adds a placeholder `public_html/index.html` if the folder is empty.
 
 ## Cloudflare
 
