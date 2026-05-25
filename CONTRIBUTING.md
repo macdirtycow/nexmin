@@ -1,30 +1,34 @@
 # Contributing to Qadbak
 
-Thank you for your interest. Qadbak is **proprietary software** (see [LICENSE](LICENSE)).
+Thank you for your interest. Qadbak Core is **open source** under the
+[Apache 2.0 License](LICENSE).
 
-## No implied license
+## License of contributions
 
-Opening issues, viewing the repository, or discussing the project does **not**
-grant permission to use, copy, or deploy the code.
+By submitting a contribution (pull request, patch, or otherwise), you agree
+that your contribution is licensed under the Apache 2.0 License — the same
+license as the rest of the project. See section 5 of the [LICENSE](LICENSE).
 
 ## Pull requests
 
-We do not accept unsolicited pull requests unless you have a **signed contributor
-license agreement (CLA)** or prior written approval from MacDirtyCow / Qadbak and
-Omiiba.
+External pull requests are accepted for bug fixes and documentation. New
+features should be scoped through a GitHub issue first so we can align on
+direction before you spend time on an implementation.
 
 ## Security reports
 
-Responsible disclosure of security issues is welcome at **info@mareades.com**.
-Do not publish exploit details before a fix window is agreed.
+Responsible disclosure of security issues is welcome at **security@omiiba.dev**
+(or **info@mareades.com**). Do not publish exploit details before a fix
+window is agreed. See also [.github/SECURITY.md](.github/SECURITY.md).
 
-## Commercial development
+## Premium development
 
-Premium features are developed in the private repository
-[`macdirtycow/qadbak-premium`](https://github.com/macdirtycow/qadbak-premium).
-Commercial partners should contact us via [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md).
+Premium modules ship in this same repo but are gated at runtime by a paid
+license key (see [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md)).
+Bug fixes against Premium code are welcome under the same Apache 2.0 terms.
 
 ## Git branches
 
-Use `macdirtycow/<topic>` for feature branches (for example `macdirtycow/proprietary-premium-commercialization`).
-Legacy `cursor/*` branch names were renamed; open new work under `macdirtycow/*` only.
+Use `macdirtycow/<topic>` for feature branches (for example
+`macdirtycow/premium-rbac-fix`). Legacy `cursor/*` branch names were renamed;
+open new work under `macdirtycow/*` only.

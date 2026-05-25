@@ -6,7 +6,7 @@
 
 Modern admin + client UI for nginx, mail, DNS, SSL, files and databases — running on **your** VPS.
 
-[![License](https://img.shields.io/badge/license-Proprietary-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%20%7C%2024.04-E95420?logo=ubuntu&logoColor=white)](docs/UBUNTU-24-LTS.md)
 [![Node](https://img.shields.io/badge/Node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=next.js)](https://nextjs.org)
@@ -83,7 +83,7 @@ provisioning, per-user PHP-FPM isolation and live admin updates.
 | One-time lifetime option        | **€220**   |   ✗    |   ✗   | Free     |
 | Modern web UI                   | ✅         | Legacy | Mixed | Functional |
 | Admin / client role split       | ✅ Native  | WHM    | ✅    | ✅       |
-| Open source                     | ✅ MIT core|   ✗    |   ✗   | GPL      |
+| Open source                     | ✅ Apache 2.0 core |   ✗    |   ✗   | GPL      |
 | EU-based vendor (GDPR)          | 🇳🇱 NL   |  🇺🇸  | EU+US | EU       |
 | Activation in <1 minute         | Email key  | License srv | License key | Install only |
 
@@ -259,11 +259,13 @@ code on **your** server (not affiliated with that entity). Full story:
 
 ## License
 
-**Proprietary — All Rights Reserved.** Copyright © 2026 MacDirtyCow / Qadbak and Omiiba.
+**Apache License 2.0.** Copyright © 2026 MacDirtyCow / Qadbak and Omiiba.
 
-The source is public on GitHub for auditing and **evaluation on a VPS you own**.
-Forking, redistribution, commercial hosting and Premium features without a
-written license are **not permitted**.
+The Qadbak core panel is open source under the Apache 2.0 License. You can
+install, self-host, modify, and use it commercially without paying anything.
+Premium modules (multi-tenant clients, per-user PHP-FPM isolation, live admin
+updates, RBAC, reseller plans) remain a paid add-on gated by a runtime
+license-key heartbeat — see [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md).
 
 See [LICENSE](LICENSE), [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md) and
 [NOTICE](NOTICE).

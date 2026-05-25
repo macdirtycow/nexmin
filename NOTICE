@@ -1,9 +1,19 @@
-Qadbak — Third-Party Notices
-Copyright (c) 2026 MacDirtyCow / Qadbak and Omiiba. See LICENSE.
+Qadbak
+Copyright 2026 MacDirtyCow / Qadbak and Omiiba
 
-This proprietary application includes the following open-source components.
-Each component is used under its own license. This file satisfies attribution
-requirements for permissive licenses.
+This product includes software developed by MacDirtyCow / Qadbak
+(https://qadbak.com) and Omiiba (https://omiiba.com, https://omiiba.dev).
+
+Licensed under the Apache License, Version 2.0 (the "License").
+See LICENSE for full terms.
+
+--------------------------------------------------------------------------------
+Third-Party Notices
+--------------------------------------------------------------------------------
+
+Qadbak includes the following open-source components. Each component is used
+under its own license. This file satisfies attribution requirements for
+permissive licenses.
 
 Direct runtime dependencies (see package.json for versions):
 
@@ -19,5 +29,3 @@ Development dependencies include ESLint, TypeScript, Tailwind CSS, Playwright,
 and related tools under MIT, Apache-2.0, or ISC licenses as applicable.
 
 Full dependency trees and exact versions: package-lock.json
-
-The Qadbak application as a whole is NOT open source. See LICENSE.

@@ -1,52 +1,28 @@
-# Qadbak commercial licensing
+# Qadbak Commercial — Premium Features
 
-Qadbak Core is published for **transparency and evaluation only**. Running it on
-your own VPS for personal testing is permitted under the limited exception in
-[LICENSE](LICENSE). **Commercial use requires a paid license.**
+The Qadbak core panel is open source under the Apache 2.0 License (see
+[LICENSE](LICENSE)). You can install, self-host, modify, and use it commercially
+without paying anything.
 
-## Products
+## Premium add-on (paid)
 
-| Product | What you get |
-|---------|----------------|
-| **Qadbak Core** | Domain, mail, DNS, files, backups, native provisioning, basic admin |
-| **Qadbak Premium** | Multi-tenant client panels, admin updates, PHP-FPM isolation, panel vhost automation, dashboard server controls |
+Some advanced modules are gated by a paid license key issued by
+`license.omiiba.dev`. These include:
 
-Qadbak is **open-core**: Premium source ships in this public repo
-alongside Core. A valid license simply unlocks Premium menu items at
-runtime — there is no encrypted bundle, no separate download, no
-private GitHub repository.
+- Multi-tenant client management (clients table, panel-vhost provisioning)
+- Per-user PHP-FPM isolation
+- Live admin updates (Qadbak version upgrades from the panel)
+- Advanced RBAC
+- Reseller plans
 
-## How to buy
+Buy a license at https://qadbak.com#premium. The key is verified at
+runtime via a periodic heartbeat to `license.omiiba.dev`.
 
-1. Contact **info@mareades.com** or visit **https://omiiba.com** (commercial pages).
-2. You receive a **license key** (and the license server URL, usually `https://license.omiiba.dev`).
-3. Install Qadbak on your VPS (`git clone` **macdirtycow/qadbak**).
-4. In the panel: **Server admin → License** → enter key → **Activate**.
+Without a key, Premium features are visible in the UI but disabled.
+You can fork the code under the Apache 2.0 License and remove the gate
+yourself, but you'd be giving up automatic security updates, premium
+support, and the goodwill of the project.
 
-Premium menu items unlock immediately on the running panel. The update
-flow stays the same for Core and Premium customers:
-`git pull && npm run build && pm2 restart`.
+## Support
 
-## License server
-
-Licensed installations validate against:
-
-`https://license.omiiba.dev` (configurable via `QADBAK_LICENSE_SERVER` in
-`.env.local`).
-
-Heartbeats run daily. Expired or revoked licenses disable Premium modules.
-
-## What is not allowed without a license
-
-- Hosting paying customers on Qadbak
-- Reselling or white-labeling the panel
-- Removing or weakening the license check in a fork distributed to others
-- Forking and operating a competing hosted panel based on this code
-
-## Legal
-
-This document is not legal advice. For EU/NL commercial sales, consult a
-qualified attorney regarding VAT, terms of service, and data processing agreements.
-
-Copyright holders: **MacDirtyCow / Qadbak (qadbak.com)** and **Omiiba (omiiba.com,
-omiiba.dev)**.
+Questions: info@mareades.com

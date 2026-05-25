@@ -1,8 +1,9 @@
 <!--
 Thanks for the PR! A few quick notes:
 
-1. Qadbak is proprietary source — only bug fixes and documentation PRs from
-   external contributors are accepted. See CONTRIBUTING.md for the scope.
+1. Qadbak Core is Apache 2.0-licensed open source. External PRs for bug
+   fixes and documentation are welcome; new features should be scoped via
+   a GitHub issue first. See CONTRIBUTING.md for the full guidelines.
 2. Run `npm run lint && npm run test-api` before pushing.
 3. Tick the checkboxes below so a maintainer can review faster.
 -->

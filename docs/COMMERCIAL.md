@@ -1,13 +1,14 @@
 # Qadbak commercial tiers
 
-Copyright (c) 2026 MacDirtyCow / Qadbak and Omiiba. See [LICENSE](../LICENSE).
+Copyright 2026 MacDirtyCow / Qadbak and Omiiba. Core is licensed under
+[Apache 2.0](../LICENSE); Premium modules are a paid add-on (see below).
 
 ## Tiers
 
 | Tier | What you install |
 |------|------------------|
-| **Core** | Public [`macdirtycow/qadbak`](https://github.com/macdirtycow/qadbak) — evaluation on your own VPS |
-| **Premium** | Same repo, activated in **Server admin → License** |
+| **Core** | Public [`macdirtycow/qadbak`](https://github.com/macdirtycow/qadbak) — Apache 2.0 open source, free to self-host (including commercially) |
+| **Premium** | Same repo, paid runtime add-on, activated in **Server admin → License** |
 
 Qadbak ships as **open-core**: the Premium feature implementations live
 directly in this public repo alongside Core. A valid license simply
@@ -139,9 +140,16 @@ The License page surfaces which trust path is in effect under
 | `QADBAK_DEBUG_HEARTBEAT` | unset | Set `true` to log each successful heartbeat |
 | `QADBAK_PREMIUM_FEATURES` | unset | Comma-separated dev/CI override; bypasses the license check for the listed features only |
 
-## What eval users may not do
+## What about forks?
 
-- Host paying customers without a commercial license
-- Remove or weaken the license check in a fork distributed to others
+The Apache 2.0 License lets anyone fork Qadbak Core and use it commercially
+— including hosting paying customers — without paying us anything. That's
+intentional: the core panel is genuinely open source.
+
+Premium modules ship in the same repo but are gated at runtime by a paid
+license key. You can fork the code and remove the gate yourself, but you'd
+be giving up automatic security updates, premium support, and the goodwill
+of the project. The gate is a fair social contract on top of open-source
+code, not a license-protected restriction.
 
 See [COMMERCIAL-LICENSING.md](../COMMERCIAL-LICENSING.md).
