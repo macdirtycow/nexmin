@@ -78,15 +78,46 @@ function licenseServerFetchBase(): string {
   return licenseServer();
 }
 
-function getJwtSecret(): Uint8Array {
-  const secret =
-    process.env.QADBAK_LICENSE_JWT_SECRET?.trim() ||
-    process.env.SESSION_SECRET;
+/**
+ * License signing secret — only meaningful for *issuing* tokens (dev mode
+ * helper {@link issueDevPremiumToken}). Production panels never sign
+ * tokens; they receive a token from the license server during activate
+ * and refresh it during heartbeat.
+ *
+ * Throws so dev-mode token issuance fails loudly without configuration.
+ */
+function requireJwtSecret(): Uint8Array {
+  const secret = process.env.QADBAK_LICENSE_JWT_SECRET?.trim();
   if (!secret || secret.length < 16) {
     throw new Error(
-      "QADBAK_LICENSE_JWT_SECRET or SESSION_SECRET required for license storage.",
+      "QADBAK_LICENSE_JWT_SECRET (>=16 chars) is required to issue dev license tokens.",
     );
   }
+  return new TextEncoder().encode(secret);
+}
+
+/**
+ * License *verification* secret. Optional in production.
+ *
+ * The license server signs tokens with its own HS256 secret. Panels do
+ * not (and should not) share that secret — handing it to every customer
+ * would defeat the entire signing model. So when the customer panel has
+ * no QADBAK_LICENSE_JWT_SECRET configured, we deliberately skip local
+ * JWT verification and trust the cached license status, which:
+ *
+ *   - was validated by the license server at /v1/activate time,
+ *   - is re-validated by the license server on every /v1/heartbeat,
+ *   - gets cleared locally as soon as a heartbeat reports "revoked".
+ *
+ * If a shared secret IS configured (development setups where panel and
+ * license server live in the same env), we still verify locally as
+ * defence in depth. This avoids the historical "SESSION_SECRET fallback"
+ * trap where the panel tried to verify with a totally unrelated random
+ * string and silently treated every license as invalid.
+ */
+function tryGetVerifySecret(): Uint8Array | null {
+  const secret = process.env.QADBAK_LICENSE_JWT_SECRET?.trim();
+  if (!secret || secret.length < 16) return null;
   return new TextEncoder().encode(secret);
 }
 
@@ -142,9 +173,15 @@ function keyHint(key: string): string {
 export async function verifyLicenseToken(token: string): Promise<{
   valid: boolean;
   payload?: Record<string, unknown>;
+  /** True when local secret was unset and we returned valid:true on trust. */
+  trustedWithoutVerify?: boolean;
 }> {
+  const secret = tryGetVerifySecret();
+  if (!secret) {
+    return { valid: true, trustedWithoutVerify: true };
+  }
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret(), {
+    const { payload } = await jwtVerify(token, secret, {
       algorithms: ["HS256"],
     });
     return { valid: true, payload: payload as Record<string, unknown> };
@@ -301,7 +338,7 @@ export async function issueDevPremiumToken(
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("365d")
-    .sign(getJwtSecret());
+    .sign(requireJwtSecret());
   const stored: StoredLicense = {
     keyHint: "DEV",
     plan: "pro",
