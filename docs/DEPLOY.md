@@ -74,7 +74,7 @@ pm2 startup
 ## 5. nginx + TLS (IP → Qadbak, not VirtualMin)
 
 ```bash
-PANEL=qadbak.com          # or your server FQDN, e.g. mareades.com
+PANEL=qadbak.com          # or your server FQDN, e.g. your-server.com
 FQDN=$(hostname -f)
 sed -e "s/__PANEL_HOST__/$PANEL/g" -e "s/__SERVER_FQDN__/$FQDN/g" \
   deploy/nginx-qadbak.conf | sudo tee /etc/nginx/sites-available/qadbak

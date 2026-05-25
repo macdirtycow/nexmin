@@ -25,4 +25,4 @@ support, and the goodwill of the project.
 
 ## Support
 
-Questions: info@mareades.com
+Questions: info@omiiba.dev

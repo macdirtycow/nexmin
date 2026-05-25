@@ -1,6 +1,6 @@
 # Testing on a separate VPS
 
-Use a **dedicated test server** (e.g. rent one for a month). **Never** use mareades or any host with live client sites.
+Use a **dedicated test server** (e.g. rent one for a month). **Never** use your live production server or any host with live client sites.
 
 **Start here:** [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) (full step-by-step).  
 **Status:** [STATUS.md](./STATUS.md).

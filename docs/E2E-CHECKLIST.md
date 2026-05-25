@@ -1,6 +1,6 @@
 # E2E checklist (v1 exit)
 
-Run on a **dedicated test VPS** only (`VIRTUALMIN_MOCK=false`). Not on mareades or other production.
+Run on a **dedicated test VPS** only (`VIRTUALMIN_MOCK=false`). Not on your live production server or any other production host.
 
 Setup: [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) · Preflight: `npm run preflight`  
 Automated on **install** (real panel): `post-install-verify.sh` — [E2E-PLAYWRIGHT.md](./E2E-PLAYWRIGHT.md)  

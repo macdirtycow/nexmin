@@ -18,7 +18,7 @@ direction before you spend time on an implementation.
 ## Security reports
 
 Responsible disclosure of security issues is welcome at **security@omiiba.dev**
-(or **info@mareades.com**). Do not publish exploit details before a fix
+(or **info@omiiba.dev**). Do not publish exploit details before a fix
 window is agreed. See also [.github/SECURITY.md](.github/SECURITY.md).
 
 ## Premium development

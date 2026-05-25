@@ -1,6 +1,6 @@
 # Parity audit — Webmin / Virtualmin vs Qadbak
 
-Reference screenshots: **mareades.com** (read-only audit source — **do not install Qadbak there**). Validate on an isolated test VPS per [V1-TEST-SERVER.md](./V1-TEST-SERVER.md).
+Reference screenshots: **your live production server** (read-only audit source — **do not install Qadbak there**). Validate on an isolated test VPS per [V1-TEST-SERVER.md](./V1-TEST-SERVER.md).
 
 **Status legend**
 

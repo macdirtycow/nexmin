@@ -6,7 +6,7 @@
 #   sudo bash scripts/create-bind-zone.sh example.com
 set -euo pipefail
 
-DOMAIN="${1:?domain (e.g. mareades.com)}"
+DOMAIN="${1:?domain (e.g. example.com)}"
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
 ZONE_FILE="/var/lib/bind/${DOMAIN}.hosts"
 LOCAL="/etc/bind/named.conf.local"

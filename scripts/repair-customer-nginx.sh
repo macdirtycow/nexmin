@@ -25,4 +25,4 @@ shopt -u nullglob
 bash "$QADBAK_DIR/scripts/apply-customer-nginx-vhosts.sh"
 
 echo ""
-echo "Repair done. Test: curl -sI -H 'Host: mareades.com' http://127.0.0.1/ | head -5"
+echo "Repair done. Test: curl -sI -H 'Host: example.com' http://127.0.0.1/ | head -5"

@@ -36,7 +36,7 @@ What is **done** in the repo vs what you still do on a **test VPS**.
 |------|--------|
 | Native UI for every Webmin module | Embed strategy until rebuilt |
 | Lock Webmin to localhost only | Optional hardening doc in FRONT-DOOR.md |
-| Production on mareades | Use isolated test VPS first |
+| Production on a host with live client sites | Use isolated test VPS first |
 | Automated CI on GitHub | Future |
 | Multi-server VirtualMin cluster | Gap in parity audit |
 

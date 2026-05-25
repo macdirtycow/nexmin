@@ -18,7 +18,3 @@ export const ORG_NAME = "Omiiba";
 export const ORG_SITE = "omiiba.dev";
 
 export const ORG_URL = `https://${ORG_SITE}`;
-
-export const ORG_SITE_ALT = "omiiba.com";
-
-export const ORG_URL_ALT = `https://${ORG_SITE_ALT}`;

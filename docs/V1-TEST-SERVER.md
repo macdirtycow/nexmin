@@ -1,6 +1,6 @@
 # v1 test server — step by step
 
-Use a **dedicated** VPS. Do **not** install Qadbak on mareades or any server with live customer sites.
+Use a **dedicated** VPS. Do **not** install Qadbak on your live production server or any host with live customer sites.
 
 **Goal:** prove v1 on Ubuntu 22.04 + VirtualMin 8 with `VIRTUALMIN_MOCK=false`, then sign off [E2E-CHECKLIST.md](./E2E-CHECKLIST.md).
 
@@ -198,7 +198,7 @@ Mark [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) complete in git or project wiki when
 When Steps 7–10 pass:
 
 - **v1 code** is validated for real VirtualMin.
-- Safe to plan production panel host (still **not** mareades unless you migrate deliberately).
+- Safe to plan production panel host (still **not** your live production server unless you migrate deliberately).
 - v2+ (native System/Servers UI) can continue in repo; not required for v1 exit.
 
 ---

@@ -8,7 +8,7 @@
 
 | Host | Use |
 |------|-----|
-| **mareades.com** (or any server with live client sites) | **No** — production; parity screenshots only |
+| **Your live production server** (any host with live client sites) | **No** — production; parity screenshots only |
 | **Dedicated Ubuntu 22.04 test VPS** | **Yes** — all v1 validation |
 
 ## Where we are
@@ -44,7 +44,7 @@ v1 is “ready to test” when:
 2. You follow **[V1-TEST-SERVER.md](./V1-TEST-SERVER.md)** steps 1–12 in order.
 3. Every box in **[E2E-CHECKLIST.md](./E2E-CHECKLIST.md)** is checked on that VPS.
 
-After that, you may point **qadbak.com** (or a production panel host) at a new deploy — still not on mareades unless you accept risk.
+After that, you may point **qadbak.com** (or a production panel host) at a new deploy — still not on a server with live client sites unless you accept the risk.
 
 ## Quick links
 

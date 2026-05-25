@@ -24,12 +24,12 @@ export function PremiumUpgradeCard({
         </Link>
         . Commercial licensing:{" "}
         <a
-          href="https://omiiba.com"
+          href="https://omiiba.dev"
           className="text-panel-accent hover:underline"
           target="_blank"
           rel="noreferrer"
         >
-          omiiba.com
+          omiiba.dev
         </a>
         .
       </p>
