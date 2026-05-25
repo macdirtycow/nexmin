@@ -103,4 +103,5 @@ export {
   deleteDomainFileLive,
   uploadDomainFileLive,
   uploadDomainFileFromTempLive,
+  moveDomainPathLive,
 } from "./domain-files-live";

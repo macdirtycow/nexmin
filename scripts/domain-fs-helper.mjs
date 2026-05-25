@@ -295,11 +295,55 @@ async function removePath(absPath) {
   const resolved = await assertHomePath(absPath);
   const st = await fs.lstat(resolved);
   if (st.isDirectory()) {
-    await fs.rmdir(resolved);
+    await fs.rm(resolved, { recursive: true, force: true });
   } else {
     await fs.unlink(resolved);
   }
   emit({ ok: true });
+}
+
+function isPathInside(parent, child) {
+  return child === parent || child.startsWith(`${parent}${path.sep}`);
+}
+
+async function movePath(srcAbs, payload) {
+  const destAbs = String(payload.destAbs ?? "");
+  if (!destAbs) fail("destAbs required.");
+
+  const src = await assertHomePath(srcAbs);
+  const dest = await assertHomePath(destAbs);
+  if (src === dest) fail("Source and destination are the same.");
+
+  const srcSt = await fs.stat(src);
+  if (srcSt.isDirectory() && isPathInside(src, dest)) {
+    fail("Cannot move a folder into itself or a subfolder.");
+  }
+
+  try {
+    await fs.stat(dest);
+    fail("Destination already exists.");
+  } catch (e) {
+    if (e && typeof e === "object" && "code" in e && e.code !== "ENOENT") {
+      throw e;
+    }
+  }
+
+  const destParent = path.dirname(dest);
+  await assertHomePath(destParent);
+  try {
+    await fs.access(destParent);
+  } catch {
+    fail("Destination folder does not exist.");
+  }
+
+  await fs.rename(src, dest);
+  const destSt = await fs.stat(dest);
+  if (destSt.isDirectory()) {
+    await chownTree(dest);
+  } else {
+    await chownToHomeUser(dest);
+  }
+  emit({ ok: true, destAbs: dest });
 }
 
 async function installUpload(absDest, payload) {
@@ -359,6 +403,11 @@ async function main() {
     case "unlink":
       await removePath(target);
       break;
+    case "move": {
+      const payload = payloadRaw ? JSON.parse(payloadRaw) : {};
+      await movePath(target, payload);
+      break;
+    }
     case "crontab-list": {
       const user = target;
       if (!/^[a-z0-9_-]+$/.test(user)) fail("Invalid unix user.");

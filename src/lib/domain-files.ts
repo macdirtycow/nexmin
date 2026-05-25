@@ -16,6 +16,8 @@ export interface DomainFileEntry {
   downloadable?: boolean;
   /** False only for read-only dirs (logs, Maildir). */
   deletable?: boolean;
+  /** Move/rename within the account home. */
+  movable?: boolean;
   /** ZIP / TAR archive — extract via panel. */
   archive?: boolean;
   archiveFormat?: ReturnType<typeof detectArchiveFormat>;
@@ -332,6 +334,7 @@ export function enrichEntry(entry: DomainFileEntry): DomainFileEntry {
     deletable:
       entry.deletable ??
       (entry.type === "file" && isDirWritable(parentDir)),
+    movable: entry.movable ?? isDirWritable(parentDir),
   };
 }
 
@@ -503,6 +506,109 @@ export function getDomainFileDownload(
     mime: mimeForFile(name),
     filename: name,
   };
+}
+
+function assertMoveAllowed(sourcePath: string, destPath: string): void {
+  if (sourcePath === destPath) {
+    throw new VirtualMinError("Source and destination are the same.");
+  }
+  if (destPath.startsWith(`${sourcePath}/`)) {
+    throw new VirtualMinError("Cannot move a folder into itself or a subfolder.");
+  }
+}
+
+function rekeyMockPathPrefix(oldPrefix: string, newPrefix: string): void {
+  const remap = (p: string) =>
+    p === oldPrefix ? newPrefix : p.startsWith(`${oldPrefix}/`) ? newPrefix + p.slice(oldPrefix.length) : p;
+
+  for (const key of [...Object.keys(MOCK_TREE)]) {
+    if (key !== oldPrefix && !key.startsWith(`${oldPrefix}/`)) continue;
+    const newKey = remap(key);
+    MOCK_TREE[newKey] = (MOCK_TREE[key] ?? []).map((e) =>
+      enrichEntry({ ...e, path: remap(e.path) }),
+    );
+    if (newKey !== key) delete MOCK_TREE[key];
+  }
+
+  for (const key of Object.keys(MOCK_TEXT)) {
+    if (key === oldPrefix || key.startsWith(`${oldPrefix}/`)) {
+      const nk = remap(key);
+      MOCK_TEXT[nk] = MOCK_TEXT[key];
+      delete MOCK_TEXT[key];
+    }
+  }
+  for (const key of Object.keys(MOCK_BINARY)) {
+    if (key === oldPrefix || key.startsWith(`${oldPrefix}/`)) {
+      const nk = remap(key);
+      MOCK_BINARY[nk] = MOCK_BINARY[key];
+      delete MOCK_BINARY[key];
+    }
+  }
+}
+
+export function resolveMoveDestination(
+  sourcePath: string,
+  destDir: string,
+  newName?: string,
+): string {
+  const safeName = (newName ?? sourcePath.split("/").pop() ?? "")
+    .replace(/[/\\]/g, "")
+    .trim();
+  if (!safeName || safeName === "." || safeName === "..") {
+    throw new VirtualMinError("Invalid name.");
+  }
+  const destNorm = normalizeDir(destDir);
+  return destNorm ? `${destNorm}/${safeName}` : safeName;
+}
+
+export function moveDomainPath(
+  sourcePath: string,
+  destDir: string,
+  newName?: string,
+): string {
+  if (!isPanelFilesMode()) {
+    throw new VirtualMinError("Move is not available on the live server.");
+  }
+  const srcNorm = sourcePath.replace(/^\/+/, "");
+  const destPath = resolveMoveDestination(srcNorm, destDir, newName);
+  const srcParent = srcNorm.includes("/") ? srcNorm.replace(/\/[^/]+$/, "") : "";
+  const destParent = normalizeDir(destDir);
+  assertWritableDir(srcParent);
+  assertWritableDir(destParent);
+  assertMoveAllowed(srcNorm, destPath);
+
+  const list = MOCK_TREE[srcParent];
+  const idx = list?.findIndex((e) => e.path === srcNorm) ?? -1;
+  if (!list || idx < 0) throw new VirtualMinError("File or folder not found.");
+  const entry = list[idx]!;
+  if (entry.editable === false) {
+    throw new VirtualMinError("This item is read-only and cannot be moved.");
+  }
+  const finalName = destPath.split("/").pop() ?? entry.name;
+  if (MOCK_TREE[destParent]?.some((e) => e.name === finalName)) {
+    throw new VirtualMinError("An item with that name already exists in the destination folder.");
+  }
+
+  list.splice(idx, 1);
+  const moved: DomainFileEntry = enrichEntry({
+    ...entry,
+    name: finalName,
+    path: destPath,
+  });
+  if (!MOCK_TREE[destParent]) MOCK_TREE[destParent] = [];
+  MOCK_TREE[destParent].push(moved);
+
+  if (entry.type === "dir") {
+    rekeyMockPathPrefix(srcNorm, destPath);
+  } else if (MOCK_TEXT[srcNorm] !== undefined) {
+    MOCK_TEXT[destPath] = MOCK_TEXT[srcNorm];
+    delete MOCK_TEXT[srcNorm];
+  } else if (MOCK_BINARY[srcNorm]) {
+    MOCK_BINARY[destPath] = MOCK_BINARY[srcNorm];
+    delete MOCK_BINARY[srcNorm];
+  }
+
+  return destPath;
 }
 
 export function deleteDomainFilePath(path: string): void {

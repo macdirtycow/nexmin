@@ -1,6 +1,7 @@
 "use client";
 
 import { FileArchiveDialog } from "@/components/FileArchiveDialog";
+import { FileMoveDialog } from "@/components/FileMoveDialog";
 import { FileCodeEditor } from "@/components/FileCodeEditor";
 import { archiveFormatLabel } from "@/lib/domain-files-archives";
 import {
@@ -58,6 +59,8 @@ export function FileManager({
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveMode, setArchiveMode] = useState<"extract" | "compress">("extract");
   const [archiveEntry, setArchiveEntry] = useState<DomainFileEntry | null>(null);
+
+  const [moveEntry, setMoveEntry] = useState<DomainFileEntry | null>(null);
 
   const refresh = useCallback(
     async (dir?: string) => {
@@ -485,6 +488,15 @@ export function FileManager({
                             Extract
                           </Button>
                         )}
+                        {entry.movable !== false && writable && (
+                          <Button
+                            variant="ghost"
+                            className="!px-2 !py-1 text-xs"
+                            onClick={() => setMoveEntry(entry)}
+                          >
+                            Move
+                          </Button>
+                        )}
                         {entry.type === "file" && !entry.archive && (
                           <Button
                             variant="ghost"
@@ -593,6 +605,31 @@ export function FileManager({
           setArchiveOpen(false);
           setArchiveEntry(null);
           await refresh();
+        }}
+      />
+
+      <FileMoveDialog
+        open={!!moveEntry}
+        domain={domain}
+        cwd={listing.cwd}
+        entry={moveEntry}
+        onClose={() => setMoveEntry(null)}
+        onSuccess={async (destPath, msg) => {
+          setSuccess(msg);
+          const moved = moveEntry;
+          setMoveEntry(null);
+          const cwd = listing.cwd;
+          if (
+            moved &&
+            (cwd === moved.path || cwd.startsWith(`${moved.path}/`))
+          ) {
+            const destDir = destPath.includes("/")
+              ? destPath.replace(/\/[^/]+$/, "")
+              : "";
+            await navigate(destDir);
+          } else {
+            await refresh();
+          }
         }}
       />
 

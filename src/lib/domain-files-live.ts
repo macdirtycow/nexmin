@@ -8,6 +8,7 @@ import {
   languageForFile,
   mimeForFile,
   normalizeDir,
+  resolveMoveDestination,
 } from "./domain-files";
 import { VirtualMinError } from "./errors";
 import type { VirtualMinDomain } from "./types";
@@ -221,6 +222,35 @@ export async function uploadDomainFileLive(
   const abs = absFileFromPanel(unixUser, panelPath);
   const base64 = Buffer.from(data).toString("base64");
   await runHelper("write-bytes", abs, { base64, maxBytes: cap });
+}
+
+export async function moveDomainPathLive(
+  domain: VirtualMinDomain | string,
+  sourcePath: string,
+  destDir: string,
+  newName: string | undefined,
+  actor: { role: Role; domains: string[] },
+): Promise<string> {
+  const srcNorm = sourcePath.replace(/^\/+/, "");
+  const destPanelPath = resolveMoveDestination(srcNorm, destDir, newName);
+  const srcParent = srcNorm.includes("/") ? srcNorm.replace(/\/[^/]+$/, "") : "";
+  const destParent = normalizeDir(destDir);
+
+  if (!isDirWritable(srcParent)) {
+    throw new VirtualMinError("This directory is read-only.");
+  }
+  if (!isDirWritable(destParent)) {
+    throw new VirtualMinError("Destination folder is read-only.");
+  }
+  if (destPanelPath.startsWith(`${srcNorm}/`)) {
+    throw new VirtualMinError("Cannot move a folder into itself or a subfolder.");
+  }
+
+  const unixUser = await resolveUnixUser(domain, actor);
+  const absSrc = absFileFromPanel(unixUser, srcNorm);
+  const absDest = absFileFromPanel(unixUser, destPanelPath);
+  await runHelper("move", absSrc, { destAbs: absDest });
+  return destPanelPath;
 }
 
 export async function deleteDomainFileLive(

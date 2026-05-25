@@ -5,6 +5,7 @@ import {
   createDomainFile,
   deleteDomainFilePath,
   isPanelFilesMode,
+  moveDomainPath,
   normalizeDir,
   saveDomainFileContent,
 } from "@/lib/domain-files";
@@ -14,6 +15,7 @@ import {
   extractArchiveLive,
   liveFilesEnabled,
   mkdirDomainLive,
+  moveDomainPathLive,
   resolveDomainFilesListing,
   writeDomainFileLive,
 } from "@/lib/domain-files-service";
@@ -52,6 +54,7 @@ export async function POST(request: Request, { params }: Params) {
       destDir?: string;
       format?: "zip" | "tar.gz";
       items?: string[];
+      newName?: string;
     };
 
     if (body.action === "mkdir") {
@@ -129,6 +132,25 @@ export async function POST(request: Request, { params }: Params) {
       );
       await auditLog(session.username, "create-archive", domain, result.path);
       return jsonOk(result);
+    }
+
+    if (body.action === "move") {
+      if (!body.path) return jsonError("Source path is required.");
+      const destDir = body.destDir ?? "";
+      let destPath: string;
+      if (live) {
+        destPath = await moveDomainPathLive(
+          domain,
+          body.path,
+          destDir,
+          body.newName,
+          session,
+        );
+      } else {
+        destPath = moveDomainPath(body.path, destDir, body.newName);
+      }
+      await auditLog(session.username, "move-file", domain, `${body.path} → ${destPath}`);
+      return jsonOk({ path: destPath });
     }
 
     return jsonError("Unknown action.");
