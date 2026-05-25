@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 # Rebuild customer nginx vhost (redirects + reverse proxies from domain-config).
 # PHP: per-user PHP-FPM socket when pool exists, else Apache backend proxy.
-# HTTPS: enabled when /etc/letsencrypt/live/DOMAIN exists (or after ISSUE_SSL=1 certbot).
+# HTTPS: enabled when /etc/letsencrypt/live/DOMAIN exists, or auto-issued via
+# certbot when --ssl is passed, ISSUE_SSL=1 is set, or QADBAK_AUTO_SSL=1.
+#
+# Usage:  sudo bash apply-domain-nginx.sh DOMAIN USER [--ssl|--no-ssl]
 set -euo pipefail
 DOMAIN="${1:?domain}"
 USER="${2:?unix-user}"
+SSL_FLAG="${3:-}"
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
 APACHE_BACKEND="${APACHE_BACKEND:-127.0.0.1:8080}"
 PUB="/home/${USER}/public_html"
 REDIR_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/redirects.json"
 PROXY_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/proxies.json"
+
+ISSUE_SSL_RESOLVED="${ISSUE_SSL:-${QADBAK_AUTO_SSL:-}}"
+case "$SSL_FLAG" in
+  --ssl)    ISSUE_SSL_RESOLVED=1 ;;
+  --no-ssl) ISSUE_SSL_RESOLVED=0 ;;
+esac
 
 # shellcheck source=lib/php-fpm-pool.sh
 source "$QADBAK_DIR/scripts/lib/php-fpm-pool.sh"
@@ -27,14 +37,23 @@ if [[ -f "$QADBAK_DIR/scripts/apply-php-fpm-pool.sh" ]]; then
   bash "$QADBAK_DIR/scripts/apply-php-fpm-pool.sh" "$USER" "$PHP_VER" "/home/${USER}" 2>/dev/null || true
 fi
 
-if [[ "${ISSUE_SSL:-}" == "1" ]] && command -v certbot &>/dev/null; then
+if [[ "$ISSUE_SSL_RESOLVED" == "1" ]] && command -v certbot &>/dev/null; then
   if [[ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
     LE_EMAIL="${QADBAK_LE_EMAIL:-${LE_EMAIL:-admin@${DOMAIN}}}"
-    echo "==> TLS: certbot webroot for $DOMAIN"
-    certbot certonly --webroot -w "$PUB" -d "$DOMAIN" -d "www.${DOMAIN}" \
-      --non-interactive --agree-tos -m "$LE_EMAIL" --keep-until-expiring \
-      2>/dev/null || certbot certonly --nginx -d "$DOMAIN" -d "www.${DOMAIN}" \
-      --non-interactive --agree-tos -m "$LE_EMAIL" --keep-until-expiring 2>/dev/null || true
+    echo "==> TLS: certbot webroot for $DOMAIN (email: $LE_EMAIL)"
+    if certbot certonly --webroot -w "$PUB" -d "$DOMAIN" -d "www.${DOMAIN}" \
+         --non-interactive --agree-tos -m "$LE_EMAIL" --keep-until-expiring; then
+      echo "    OK — Let's Encrypt cert issued via webroot"
+    elif certbot certonly --webroot -w "$PUB" -d "$DOMAIN" \
+         --non-interactive --agree-tos -m "$LE_EMAIL" --keep-until-expiring; then
+      echo "    OK — Let's Encrypt cert issued for $DOMAIN only (www variant skipped)"
+    else
+      echo "    WARN — certbot failed for $DOMAIN. Common causes:" >&2
+      echo "           - Cloudflare 'Always Use HTTPS' redirects the HTTP challenge → turn off, retry" >&2
+      echo "           - DNS not pointing to this server yet (dig +short $DOMAIN)" >&2
+      echo "           - Cloudflare proxy hides origin firewall errors → set domain to DNS-only briefly" >&2
+      echo "    HTTP vhost still applied; rerun with --ssl after fixing." >&2
+    fi
   fi
 fi
 
