@@ -68,10 +68,30 @@ export function AdminLicensePanel({
       {error && <Alert>{error}</Alert>}
       {license.verifyError && (
         <Alert>
-          <strong>License token cannot be verified on this panel.</strong>{" "}
+          <strong>
+            {license.trustMode === "heartbeat"
+              ? "License heartbeat is stale."
+              : "License token cannot be verified on this panel."}
+          </strong>{" "}
           {license.verifyError}{" "}
-          Premium features will stay locked until the verifier is configured —
-          see <a className="underline" href="https://github.com/macdirtycow/qadbak/blob/main/docs/COMMERCIAL.md#license-verification">docs/COMMERCIAL.md</a>.
+          {license.trustMode === "heartbeat" ? (
+            <>
+              Premium features will reactivate as soon as the next heartbeat
+              succeeds.
+            </>
+          ) : (
+            <>
+              Premium features will stay locked until the verifier is configured
+              — see{" "}
+              <a
+                className="underline"
+                href="https://github.com/macdirtycow/qadbak/blob/main/docs/COMMERCIAL.md#license-verification"
+              >
+                docs/COMMERCIAL.md
+              </a>
+              .
+            </>
+          )}
         </Alert>
       )}
       {syncHint && (
@@ -156,13 +176,26 @@ export function AdminLicensePanel({
               <dd className="text-white">{license.artifactVersion}</dd>
             </div>
           ) : null}
-          {license.verifyAlgo ? (
+          <div>
+            <dt className="text-sm text-panel-muted">Trust mode</dt>
+            <dd className="text-white">
+              {license.trustMode === "crypto" && license.verifyAlgo === "EdDSA"
+                ? "Cryptographic — Ed25519 (config/license-public.pem)"
+                : license.trustMode === "crypto" &&
+                    license.verifyAlgo === "HS256"
+                  ? "Cryptographic — HS256 (QADBAK_LICENSE_JWT_SECRET)"
+                  : license.trustMode === "heartbeat"
+                    ? `Heartbeat-based (license server is source of truth; grace = ${license.heartbeatGraceHours ?? 48}h)`
+                    : "—"}
+            </dd>
+          </div>
+          {license.trustMode === "heartbeat" ? (
             <div>
-              <dt className="text-sm text-panel-muted">Verified with</dt>
+              <dt className="text-sm text-panel-muted">Heartbeat freshness</dt>
               <dd className="text-white">
-                {license.verifyAlgo === "EdDSA"
-                  ? "Ed25519 (config/license-public.pem)"
-                  : "HS256 (QADBAK_LICENSE_JWT_SECRET)"}
+                {license.heartbeatFresh
+                  ? "Fresh — license is trusted"
+                  : "Stale — Premium features are locked until next heartbeat"}
               </dd>
             </div>
           ) : null}

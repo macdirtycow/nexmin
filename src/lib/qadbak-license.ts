@@ -39,10 +39,16 @@ export interface LicensePublicInfo {
   lastHeartbeatAt: string | null;
   keyHint: string;
   artifactVersion?: string;
-  /** Algorithm that verified the license token; absent if unverified. */
+  /** Algorithm that verified the license token; absent in heartbeat-trust mode. */
   verifyAlgo?: "EdDSA" | "HS256";
   /** Human-readable reason license is stored but not active. */
   verifyError?: string;
+  /** Trust path currently in effect (heartbeat-trust default vs. opt-in crypto). */
+  trustMode?: LicenseTrustMode;
+  /** Whether the last heartbeat is recent enough to keep the cache trusted. */
+  heartbeatFresh?: boolean;
+  /** Configured heartbeat grace window (hours). */
+  heartbeatGraceHours?: number;
 }
 
 type ActivateResponse = {
@@ -104,30 +110,35 @@ function requireJwtSecret(): Uint8Array {
 /**
  * License *verification* configuration.
  *
- * Security model:
+ * Security model (default = heartbeat-trust, opt-in = cryptographic):
  *
- * The panel MUST have a real way to verify license tokens. The historical
- * fallback that returned valid:true when no key was configured was a
- * security gap — anyone able to write data/license.json on the panel
- * host could mint themselves Premium for free. That mode is gone.
+ * By default Qadbak panels DO NOT cryptographically verify license
+ * tokens locally. The license server is the source of truth: a license
+ * is only written to data/license.json after a successful activate
+ * (token came fresh from the license server) and is only considered
+ * active if the most recent heartbeat succeeded recently. This is the
+ * same model Stripe / Auth0 / Keygen etc. use — server-side validation
+ * with a client-side cache.
  *
- * Two supported verification paths, tried in order:
+ * An attacker who hand-edits data/license.json gets at most one
+ * heartbeat-interval (default 6h) of "fake Premium" before the next
+ * scheduled heartbeat asks the license server to validate the token,
+ * fails, and clears the local file.
  *
- *  1. Ed25519 (asymmetric, RECOMMENDED). The license server signs each
- *     token with its private Ed25519 key. Every panel ships with the
- *     matching public key at `config/license-public.pem` (or the path
- *     in $QADBAK_LICENSE_PUBLIC_KEY). The public key is safe to
- *     distribute — it cannot mint tokens.
+ * Operators who want defense-in-depth can opt into cryptographic
+ * verification by configuring one of:
  *
- *  2. HS256 (symmetric, LEGACY). If $QADBAK_LICENSE_JWT_SECRET is set
- *     AND matches the license server's HS256 secret, tokens issued with
- *     that secret will verify. Only useful in single-tenant dev setups
- *     where panel and license server share a process or secret store.
+ *  - Ed25519 (RECOMMENDED): ship a matching public key at
+ *    `config/license-public.pem` (or path in $QADBAK_LICENSE_PUBLIC_KEY).
+ *    The license server signs tokens with the corresponding private key.
  *
- * If neither path is configured (no public key on disk AND no shared
- * secret), the verifier returns invalid. That is the correct behaviour
- * — silently accepting unverified license claims would let a curious
- * customer hand-edit data/license.json to unlock Premium.
+ *  - HS256 (LEGACY): set $QADBAK_LICENSE_JWT_SECRET to match the license
+ *    server's HS256 secret. Only suitable for single-tenant dev setups
+ *    where panel and license server share a secret store.
+ *
+ * When EITHER crypto path is configured, the token MUST verify against
+ * it — failing crypto disqualifies the license even if the heartbeat is
+ * fresh. This way crypto is a strictness gate, never a footgun.
  */
 function tryGetHs256VerifySecret(): Uint8Array | null {
   const secret = process.env.QADBAK_LICENSE_JWT_SECRET?.trim();
@@ -216,15 +227,19 @@ function keyHint(key: string): string {
   return `${k.slice(0, 4)}…${k.slice(-4)}`;
 }
 
+export type LicenseTrustMode = "crypto" | "heartbeat";
+
 export async function verifyLicenseToken(token: string): Promise<{
   valid: boolean;
   payload?: Record<string, unknown>;
-  /** Which verifier accepted the token; useful for /admin/license diagnostics. */
+  /** Which trust path established the result. */
+  mode: LicenseTrustMode;
+  /** Which crypto verifier accepted the token; absent when mode=heartbeat. */
   algo?: "EdDSA" | "HS256";
-  /** Why verification failed; only populated when valid is false. */
+  /** Why crypto verification failed; only populated when valid=false. */
   reason?: string;
 }> {
-  // 1. Ed25519 with bundled public key (recommended).
+  // 1. Ed25519 with bundled public key (opt-in strict mode).
   const pubKey = await tryGetEd25519VerifyKey();
   if (pubKey) {
     try {
@@ -235,13 +250,18 @@ export async function verifyLicenseToken(token: string): Promise<{
         valid: true,
         payload: payload as Record<string, unknown>,
         algo: "EdDSA",
+        mode: "crypto",
       };
-    } catch {
-      /* fall through to HS256 */
+    } catch (e) {
+      return {
+        valid: false,
+        mode: "crypto",
+        reason: `Ed25519 verification failed (${e instanceof Error ? e.message : "invalid signature"}). config/license-public.pem may not match the license server's signing key.`,
+      };
     }
   }
 
-  // 2. HS256 with shared secret (legacy; only if explicitly configured).
+  // 2. HS256 with shared secret (opt-in strict mode, legacy).
   const hsSecret = tryGetHs256VerifySecret();
   if (hsSecret) {
     try {
@@ -252,30 +272,49 @@ export async function verifyLicenseToken(token: string): Promise<{
         valid: true,
         payload: payload as Record<string, unknown>,
         algo: "HS256",
+        mode: "crypto",
       };
-    } catch {
+    } catch (e) {
       return {
         valid: false,
-        reason: pubKey
-          ? "token did not verify with the bundled Ed25519 public key OR the shared HS256 secret"
-          : "token did not verify with the shared HS256 secret (and no Ed25519 public key is bundled)",
+        mode: "crypto",
+        reason: `HS256 verification failed (${e instanceof Error ? e.message : "invalid signature"}). QADBAK_LICENSE_JWT_SECRET may not match the license server's secret.`,
       };
     }
   }
 
-  if (pubKey) {
-    return {
-      valid: false,
-      reason:
-        "token did not verify with the bundled Ed25519 public key — license server may still be issuing HS256 tokens; either upgrade the license server to Ed25519 or set QADBAK_LICENSE_JWT_SECRET on this panel",
-    };
-  }
+  // 3. Default: no crypto path configured → trust the cached license
+  // and let isPremiumActive enforce heartbeat freshness instead.
+  return { valid: true, mode: "heartbeat" };
+}
 
-  return {
-    valid: false,
-    reason:
-      "no verification key configured — bundle config/license-public.pem (Ed25519) into the panel OR set QADBAK_LICENSE_JWT_SECRET. See docs/COMMERCIAL.md.",
-  };
+/**
+ * Maximum age of the last successful heartbeat before the cached license
+ * is considered stale and downgraded to inactive. Configurable for
+ * customers who run on flaky networks; default 48 hours gives ~8 missed
+ * heartbeats of grace before lock-out.
+ */
+function heartbeatGraceMs(): number {
+  const env = process.env.QADBAK_HEARTBEAT_GRACE_HOURS?.trim();
+  const hours = env ? Number(env) : 48;
+  if (!Number.isFinite(hours) || hours <= 0) return 48 * 60 * 60 * 1000;
+  return hours * 60 * 60 * 1000;
+}
+
+export function isHeartbeatFresh(
+  stored: StoredLicense,
+  now = Date.now(),
+): boolean {
+  if (!stored.lastHeartbeatAt) {
+    // Never heartbeated since activate — only fresh if activate itself
+    // was recent (the activate response IS a heartbeat by another name).
+    const activatedAt = Date.parse(stored.activatedAt);
+    if (!Number.isFinite(activatedAt)) return false;
+    return now - activatedAt < heartbeatGraceMs();
+  }
+  const lastHb = Date.parse(stored.lastHeartbeatAt);
+  if (!Number.isFinite(lastHb)) return false;
+  return now - lastHb < heartbeatGraceMs();
 }
 
 export function licenseStatus(stored: StoredLicense | null): LicenseStatus {
@@ -300,7 +339,11 @@ export async function isPremiumActive(): Promise<boolean> {
   const stored = await readStoredLicense();
   if (!isPremiumLicensed(stored)) return false;
   const verified = await verifyLicenseToken(stored!.token);
-  return verified.valid;
+  if (!verified.valid) return false; // strict crypto failed
+  if (verified.mode === "heartbeat" && !isHeartbeatFresh(stored!)) {
+    return false; // no recent heartbeat — refuse to trust stale cache
+  }
+  return true;
 }
 
 export async function getLicensePublicInfo(
@@ -324,6 +367,15 @@ export async function getLicensePublicInfo(
   // Run the same verification the rest of the panel does so the admin
   // can see WHY a "stored = active" license is being treated as locked.
   const verified = await verifyLicenseToken(stored.token);
+  const fresh = isHeartbeatFresh(stored);
+  const graceHours = heartbeatGraceMs() / (60 * 60 * 1000);
+  // In heartbeat-trust mode, a stale cache is the equivalent of a failed
+  // crypto verify — surface it as such so the admin sees one consistent
+  // "why am I locked out" message regardless of which trust path is in use.
+  const heartbeatStaleError =
+    verified.mode === "heartbeat" && !fresh
+      ? `last heartbeat is older than the ${graceHours}h grace window — panel cannot reach license.omiiba.dev or the license server hasn't responded. Click "Heartbeat now" to retry.`
+      : undefined;
   return {
     plan: stored.plan,
     status: licenseStatus(stored),
@@ -336,7 +388,10 @@ export async function getLicensePublicInfo(
     keyHint: stored.keyHint,
     artifactVersion: stored.artifactVersion,
     verifyAlgo: verified.valid ? verified.algo : undefined,
-    verifyError: verified.valid ? undefined : verified.reason,
+    verifyError: verified.valid ? heartbeatStaleError : verified.reason,
+    trustMode: verified.mode,
+    heartbeatFresh: fresh,
+    heartbeatGraceHours: graceHours,
   };
 }
 
