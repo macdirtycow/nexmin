@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Qadbak — Self-hosted hosting control panel</title>
+    <title>Qadbak — The hosting panel that explains itself, heals itself and lets you undo</title>
     <meta
       name="description"
-      content="Qadbak is a modern self-hosted hosting control panel. Run domains, mail, DNS, SSL, files and databases on your own VPS — with a separate admin and client UI. From €2.50/month."
+      content="A modern self-hosted hosting control panel for your VPS. Every action is journaled in plain English, safe actions are undoable, the server flags its own problems, and apps like WordPress install in one click. From €2.50/month."
     />
     <meta name="theme-color" content="#06090f" />
     <meta name="application-name" content="Qadbak" />
@@ -22,7 +22,7 @@
     <meta property="og:title" content="Qadbak — Self-hosted hosting control panel" />
     <meta
       property="og:description"
-      content="Modern control panel for your VPS. Domains, mail, DNS, SSL, files, databases — one polished UI, two access levels. Premium from €2.50."
+      content="Modern control panel for your VPS. Every action is journaled, undoable and explained in plain English. WordPress in one click. Premium from €2.50."
     />
     <meta property="og:url" content="https://qadbak.com" />
     <meta property="og:type" content="website" />
@@ -39,10 +39,10 @@
             Qadbak
           </a>
           <nav class="nav-links" aria-label="Main">
+            <a href="#different">What's different</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#compare">vs cPanel</a>
-            <a href="#deploy">Deploy</a>
             <a href="#faq">FAQ</a>
           </nav>
           <div class="nav-actions">
@@ -56,6 +56,7 @@
           </div>
         </div>
         <div class="mobile-menu" aria-label="Mobile">
+          <a href="#different">What's different</a>
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
           <a href="#compare">vs cPanel</a>
@@ -73,14 +74,15 @@
         <div class="container hero-grid">
           <div>
             <p class="eyebrow"><span class="eyebrow-dot"></span> Self-hosted on your VPS · v1.0 beta</p>
-            <h1>The hosting panel <span>that's actually yours.</span></h1>
+            <h1>A hosting panel that <span>explains itself, undoes itself, heals itself.</span></h1>
             <p class="hero-lead">
-              Manage domains, mail, DNS, SSL, files and databases from one modern UI you run on your own server.
-              Two access levels — admin and client — without ever sharing root.
+              Every click writes a plain-English journal of the exact shell commands and files touched.
+              Safe actions are one-click undoable. Disk, RAM, SSL and services are checked in the background.
+              Install WordPress on a new domain in one click. All on your own VPS, root never shared.
             </p>
             <div class="hero-cta">
               <a href="https://license.omiiba.dev/buy" class="btn btn-primary btn-lg" rel="noopener">Get a license — from €2.50</a>
-              <a href="#features" class="btn btn-secondary btn-lg">See features</a>
+              <a href="#different" class="btn btn-secondary btn-lg">What makes it different</a>
             </div>
 
             <div class="trust-row">
@@ -116,30 +118,30 @@
               <span class="panel-dot"></span>
               <span class="panel-dot"></span>
               <span class="panel-dot"></span>
-              <span class="panel-url">qadbak.com/dashboard</span>
+              <span class="panel-url">qadbak.com/admin/journal</span>
             </div>
             <div class="panel-body">
               <aside class="panel-side">
                 <div class="panel-brand"><span>Q</span> Qadbak</div>
-                <div class="panel-nav active">Dashboard</div>
+                <div class="panel-nav">Dashboard</div>
                 <div class="panel-nav">Domains</div>
-                <div class="panel-nav">Mail &amp; DNS</div>
-                <div class="panel-nav">Files</div>
-                <div class="panel-nav">Server</div>
+                <div class="panel-nav">Apps</div>
+                <div class="panel-nav active">Action journal</div>
+                <div class="panel-nav">Self-healing</div>
               </aside>
               <div class="panel-main">
-                <h3><span class="live-dot"></span>All services healthy</h3>
-                <p>Domains on this host</p>
-                <div class="panel-metrics">
-                  <div class="metric"><span>Domains</span><strong>24</strong></div>
-                  <div class="metric"><span>Active</span><strong>22</strong></div>
-                  <div class="metric"><span>SSL OK</span><strong>21</strong></div>
-                </div>
+                <h3><span class="live-dot"></span>Add mailbox · sarah@acme.host</h3>
+                <p>2 seconds ago · admin · undoable for 24h</p>
                 <div class="panel-rows">
-                  <div class="panel-row head"><span>Domain</span><span>Owner</span><span>Status</span></div>
-                  <div class="panel-row"><span>acme.host</span><span>client</span><span class="status-ok">Live</span></div>
-                  <div class="panel-row"><span>meadow-lane.host</span><span>demo</span><span class="status-ok">Live</span></div>
-                  <div class="panel-row"><span>mail.co</span><span>admin</span><span class="status-ok">Live</span></div>
+                  <div class="panel-row head"><span>Step</span><span>What ran</span><span>Result</span></div>
+                  <div class="panel-row"><span>shell</span><span><span class="code-chip">doveadm pw -s SHA512-CRYPT</span></span><span class="status-ok">ok · 40ms</span></div>
+                  <div class="panel-row"><span>file</span><span>+ /etc/dovecot/passwd</span><span class="status-ok">ok</span></div>
+                  <div class="panel-row"><span>reload</span><span>systemctl reload dovecot</span><span class="status-ok">ok</span></div>
+                  <div class="panel-row"><span>journal</span><span>mailbox.add · sarah@acme.host</span><span class="status-ok">undoable</span></div>
+                </div>
+                <div class="hero-undo-row">
+                  <span class="hero-undo-label">Undo this action</span>
+                  <span class="hero-undo-btn">Undo</span>
                 </div>
               </div>
             </div>
@@ -147,13 +149,94 @@
         </div>
       </section>
 
+      <!-- ──────────────── What's different ──────────────── -->
+      <section id="different">
+        <div class="container">
+          <p class="section-label">Why Qadbak</p>
+          <h2 class="section-title">Four things no other panel does this well.</h2>
+          <p class="section-lead">
+            cPanel, Plesk and HestiaCP all run sites just fine. Qadbak is built for the moments around that —
+            when something goes wrong, when you want to know what just happened, or when a junior admin needs guardrails.
+          </p>
+
+          <div class="diff-grid">
+            <article class="diff-card">
+              <div class="diff-num">01</div>
+              <div class="diff-tag">Explain mode</div>
+              <h3>Every action is a journal entry.</h3>
+              <p>
+                Every panel click writes a structured, append-only entry: the exact shell commands run,
+                the files touched, the services reloaded. Click <em>"Add mailbox"</em> and see the actual
+                <span class="code-chip">doveadm pw</span>, the line added to <span class="code-chip">/etc/dovecot/passwd</span>,
+                and the reload — in plain English, with passwords redacted.
+              </p>
+              <ul class="diff-bullets">
+                <li>Append-only JSONL, sanitized, per-server</li>
+                <li>Filter by user, action type, status, undoability</li>
+                <li>Perfect for handover, audits and "what changed?"</li>
+              </ul>
+            </article>
+
+            <article class="diff-card">
+              <div class="diff-num">02</div>
+              <div class="diff-tag">Reversible</div>
+              <h3>Undo is a button, not a backup restore.</h3>
+              <p>
+                Safe actions — mailboxes, DNS records, aliases — are reversed by the server with a single click.
+                Every undo runs a real server-side dispatcher with safety checks: e.g. mailbox undo refuses if
+                the inbox is no longer empty. No prayer required.
+              </p>
+              <ul class="diff-bullets">
+                <li>Currently undoable: <span class="code-chip">mailbox.add</span>, <span class="code-chip">dns.record.add</span>, <span class="code-chip">dns.record.delete</span>, <span class="code-chip">alias.add</span>, <span class="code-chip">alias.delete</span></li>
+                <li>24-hour TTL so cleanup is sane</li>
+                <li>Re-journals the undo step itself</li>
+              </ul>
+            </article>
+
+            <article class="diff-card">
+              <div class="diff-num">03</div>
+              <div class="diff-tag">Self-healing</div>
+              <h3>The server flags its own problems.</h3>
+              <p>
+                Disk filling, RAM saturated, SSL cert about to expire, services that should be running but aren't —
+                the health dashboard checks all of it in parallel and explains what's wrong in plain English,
+                with the exact command you'd run to fix it next to a copy button.
+              </p>
+              <ul class="diff-bullets">
+                <li>Disk, memory, SSL expiry, service status</li>
+                <li>Severity-ranked: critical / warning / info</li>
+                <li>Distinguishes "not installed" from "installed but stopped"</li>
+              </ul>
+            </article>
+
+            <article class="diff-card">
+              <div class="diff-num">04</div>
+              <div class="diff-tag">Intent-based</div>
+              <h3>WordPress in one click. Really.</h3>
+              <p>
+                Pick a template, fill three fields, click install. The orchestrator creates the domain,
+                provisions the database and user, downloads WordPress, generates fresh salts, writes a real
+                <span class="code-chip">wp-config.php</span> and hands you the admin URL — all inside a single
+                journal entry so you can see exactly what happened.
+              </p>
+              <ul class="diff-bullets">
+                <li>Today: WordPress (more templates coming)</li>
+                <li>Every install is one journaled, reviewable operation</li>
+                <li>No vendor stack — vanilla nginx + PHP-FPM + MariaDB</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <!-- ──────────────── Features ──────────────── -->
       <section id="features">
         <div class="container">
-          <p class="section-label">Features</p>
-          <h2 class="section-title">Everything you need to run sites — nothing you don't.</h2>
+          <p class="section-label">The basics, done well</p>
+          <h2 class="section-title">All the panel workflows you expect — just sharper.</h2>
           <p class="section-lead">
-            Qadbak ships with the workflows hosting providers actually use, in a UI that doesn't feel like 2008.
+            Beyond the differentiators above, Qadbak still does every classic hosting workflow a provider needs,
+            in a UI that doesn't feel like 2008.
           </p>
           <div class="grid-3">
             <article class="card">
@@ -389,6 +472,34 @@
                   <td class="no">License key</td>
                   <td class="yes">Install only</td>
                 </tr>
+                <tr>
+                  <td>Action journal (Explain mode)</td>
+                  <td class="yes">Plain-English, per click</td>
+                  <td class="maybe">Server log digging</td>
+                  <td class="maybe">Audit log (limited)</td>
+                  <td class="no">No</td>
+                </tr>
+                <tr>
+                  <td>One-click undo for safe actions</td>
+                  <td class="yes">Mailboxes, DNS, aliases</td>
+                  <td class="no">No</td>
+                  <td class="no">No</td>
+                  <td class="no">No</td>
+                </tr>
+                <tr>
+                  <td>Self-healing health checks</td>
+                  <td class="yes">Disk · RAM · SSL · services</td>
+                  <td class="maybe">Basic alerts</td>
+                  <td class="maybe">Basic monitoring</td>
+                  <td class="maybe">Manual</td>
+                </tr>
+                <tr>
+                  <td>Intent-based app installs</td>
+                  <td class="yes">WordPress · 1 click · journaled</td>
+                  <td class="yes">Softaculous (paid add-on)</td>
+                  <td class="yes">Installatron / WP Toolkit</td>
+                  <td class="maybe">Quick installs</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -445,6 +556,43 @@
           <p class="section-label">FAQ</p>
           <h2 class="section-title" style="text-align: center">Questions, answered straight.</h2>
           <div class="faq">
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                What does "Explain mode" actually show me?
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div class="faq-a">
+                Every panel action that mutates the server writes a structured entry to the action journal:
+                the high-level action (e.g. <em>"Add mailbox sarah@acme.host"</em>), who triggered it, and a step-by-step
+                list of the real shell commands, file writes and service reloads that ran — with passwords and salts
+                redacted. You browse it under <span class="code-chip">/admin/journal</span>. It's the answer to "wait, what just happened on my server?".
+              </div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Which actions can I actually undo?
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div class="faq-a">
+                Right now: <span class="code-chip">mailbox.add</span>, <span class="code-chip">dns.record.add</span>,
+                <span class="code-chip">dns.record.delete</span>, <span class="code-chip">alias.add</span> and
+                <span class="code-chip">alias.delete</span>. Each undo runs a real server-side dispatcher with safety checks —
+                e.g. a mailbox undo refuses if the inbox already has messages — and is itself journaled.
+                Undo TTL is 24 hours, after which entries become read-only history.
+              </div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Will self-healing wake me up at 3AM?
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div class="faq-a">
+                No — by design. The self-healing dashboard runs the same checks (disk, RAM, SSL expiry, services)
+                when you open <span class="code-chip">/admin/health</span> and surfaces severity-ranked findings with the
+                exact fix command. Email/Slack alerting is on the roadmap; today it's a pull-based, plain-English status board
+                instead of yet another paging tool.
+              </div>
+            </div>
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
                 What do I actually get when I buy a license?
@@ -522,12 +670,14 @@
           </a>
           <p class="footer-tagline">
             Independent hosting control panel — built by Omiiba in the Netherlands.
+            Journaled. Undoable. Self-healing. One-click apps.
             <em style="display:block;margin-top:0.5rem;font-size:0.85rem">2009 vapor → 2020s infrastructure.</em>
           </p>
         </div>
         <div>
           <h4>Product</h4>
           <ul>
+            <li><a href="#different">What's different</a></li>
             <li><a href="#features">Features</a></li>
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="#compare">Compare</a></li>
