@@ -1,22 +1,32 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-let cachedBody: string | null = null;
+const cachedBodies = new Map<string, string>();
 
-/** Inner HTML of marketing-site/index.html (shared with static zip). */
-export function getMarketingBodyHtml(): string {
-  if (cachedBody) return cachedBody;
-  const raw = readFileSync(
-    join(process.cwd(), "marketing-site/index.html"),
-    "utf8",
-  );
+function extractBody(htmlPath: string): string {
+  const cached = cachedBodies.get(htmlPath);
+  if (cached) return cached;
+  const raw = readFileSync(join(process.cwd(), htmlPath), "utf8");
   const match = raw.match(/<body[^>]*>([\s\S]*)<\/body>/i);
   if (!match) {
-    throw new Error("marketing-site/index.html: missing <body>");
+    throw new Error(`${htmlPath}: missing <body>`);
   }
-  cachedBody = match[1].replace(
+  const body = match[1].replace(
     /<script[^>]*src="[^"]*landing\.js"[^>]*>\s*<\/script>\s*/i,
     "",
   );
-  return cachedBody;
+  cachedBodies.set(htmlPath, body);
+  return body;
+}
+
+/** Inner HTML of marketing-site/index.html (shared with static zip). */
+export function getMarketingBodyHtml(): string {
+  return extractBody("marketing-site/index.html");
+}
+
+/** Inner HTML of a legal page (e.g. "privacy", "terms", "refund"). */
+export function getLegalBodyHtml(
+  slug: "privacy" | "terms" | "refund",
+): string {
+  return extractBody(`marketing-site/${slug}/index.html`);
 }

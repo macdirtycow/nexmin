@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Qadbak — Independent hosting control panel</title>
+    <title>Qadbak — Self-hosted hosting control panel</title>
     <meta
       name="description"
-      content="Qadbak is a self-hosted hosting control panel. Domains, mail, DNS, SSL, files, databases, and server admin — with separate admin and client access."
+      content="Qadbak is a modern self-hosted hosting control panel. Run domains, mail, DNS, SSL, files and databases on your own VPS — with a separate admin and client UI. From €2.50/month."
     />
     <meta name="theme-color" content="#06090f" />
     <meta name="application-name" content="Qadbak" />
@@ -19,10 +19,10 @@
     />
     <link rel="stylesheet" href="/landing.css" />
     <meta property="og:site_name" content="Qadbak" />
-    <meta property="og:title" content="Qadbak — Independent hosting control panel" />
+    <meta property="og:title" content="Qadbak — Self-hosted hosting control panel" />
     <meta
       property="og:description"
-      content="Run your own VPS panel. Domains, mail, DNS, SSL, and server tools in one modern UI."
+      content="Modern control panel for your VPS. Domains, mail, DNS, SSL, files, databases — one polished UI, two access levels. Premium from €2.50."
     />
     <meta property="og:url" content="https://qadbak.com" />
     <meta property="og:type" content="website" />
@@ -40,14 +40,14 @@
           </a>
           <nav class="nav-links" aria-label="Main">
             <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#compare">vs cPanel</a>
             <a href="#deploy">Deploy</a>
-            <a href="#access">Access</a>
             <a href="#faq">FAQ</a>
-            <a href="#about-name">Name</a>
           </nav>
           <div class="nav-actions">
             <a href="https://github.com/macdirtycow/qadbak" class="btn btn-ghost" rel="noopener">GitHub</a>
-            <a href="/login" class="btn btn-primary">Sign in to panel</a>
+            <a href="https://license.omiiba.dev/buy" class="btn btn-primary" rel="noopener">Buy license</a>
             <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
@@ -57,33 +57,57 @@
         </div>
         <div class="mobile-menu" aria-label="Mobile">
           <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#compare">vs cPanel</a>
           <a href="#deploy">Deploy</a>
-          <a href="#access">Access</a>
           <a href="#faq">FAQ</a>
-          <a href="#about-name">Name</a>
+          <a href="https://license.omiiba.dev/buy" rel="noopener">Buy license</a>
           <a href="/login">Sign in to panel</a>
         </div>
       </div>
     </header>
 
     <main>
+      <!-- ──────────────── Hero ──────────────── -->
       <section class="hero">
         <div class="container hero-grid">
           <div>
-            <p class="eyebrow"><span class="eyebrow-dot"></span> Self-hosted on your VPS</p>
-            <h1>Your hosting panel, <span>called Qadbak</span></h1>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> Self-hosted on your VPS · v1.0 beta</p>
+            <h1>The hosting panel <span>that's actually yours.</span></h1>
             <p class="hero-lead">
-              One English interface for domains, mail, DNS, SSL, files, databases, and server admin.
-              Admins run the host; clients manage only their domains — without sharing root passwords.
+              Manage domains, mail, DNS, SSL, files and databases from one modern UI you run on your own server.
+              Two access levels — admin and client — without ever sharing root.
             </p>
             <div class="hero-cta">
-              <a href="/login" class="btn btn-primary btn-lg">Sign in at qadbak.com</a>
+              <a href="https://license.omiiba.dev/buy" class="btn btn-primary btn-lg" rel="noopener">Get a license — from €2.50</a>
               <a href="#features" class="btn btn-secondary btn-lg">See features</a>
             </div>
-            <div class="hero-stats">
-              <div><strong>Native</strong> provisioning on the host</div>
-              <div><strong>Stack</strong> nginx, mail, MariaDB</div>
-              <div><strong>Secure</strong> API stays server-side</div>
+
+            <div class="trust-row">
+              <div class="trust-badge">
+                <span class="trust-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <div><strong>Self-hosted</strong>Your VPS, your data</div>
+              </div>
+              <div class="trust-badge">
+                <span class="trust-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9"/></svg>
+                </span>
+                <div><strong>EU-based</strong>GDPR by default</div>
+              </div>
+              <div class="trust-badge">
+                <span class="trust-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <div><strong>Open source</strong>MIT-licensed core</div>
+              </div>
+              <div class="trust-badge">
+                <span class="trust-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <div><strong>Instant activate</strong>Key by email, &lt; 1 min</div>
+              </div>
             </div>
           </div>
 
@@ -100,10 +124,11 @@
                 <div class="panel-nav active">Dashboard</div>
                 <div class="panel-nav">Domains</div>
                 <div class="panel-nav">Mail &amp; DNS</div>
+                <div class="panel-nav">Files</div>
                 <div class="panel-nav">Server</div>
               </aside>
               <div class="panel-main">
-                <h3>Welcome back</h3>
+                <h3><span class="live-dot"></span>All services healthy</h3>
                 <p>Domains on this host</p>
                 <div class="panel-metrics">
                   <div class="metric"><span>Domains</span><strong>24</strong></div>
@@ -122,13 +147,13 @@
         </div>
       </section>
 
+      <!-- ──────────────── Features ──────────────── -->
       <section id="features">
         <div class="container">
           <p class="section-label">Features</p>
-          <h2 class="section-title">Hosting workflows in one panel</h2>
+          <h2 class="section-title">Everything you need to run sites — nothing you don't.</h2>
           <p class="section-lead">
-            Qadbak is the product at qadbak.com — a complete control panel you run on your own server,
-            with role-based access for administrators and customers.
+            Qadbak ships with the workflows hosting providers actually use, in a UI that doesn't feel like 2008.
           </p>
           <div class="grid-3">
             <article class="card">
@@ -138,7 +163,7 @@
                 </svg>
               </div>
               <h3>Domains</h3>
-              <p>Create sites, subdomains, aliases, and lifecycle actions from one list.</p>
+              <p>Add sites in seconds — subdomains, aliases, redirects and reverse proxies. Per-site nginx, lifecycle in one list.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">
@@ -147,7 +172,7 @@
                 </svg>
               </div>
               <h3>Email</h3>
-              <p>Mailboxes, forwarding, IMAP, and logs — scoped per domain for clients.</p>
+              <p>Mailboxes, forwarding, IMAP, mail logs and a sane SPF/DKIM setup helper. Scoped per domain for clients.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">
@@ -156,7 +181,7 @@
                 </svg>
               </div>
               <h3>DNS &amp; SSL</h3>
-              <p>Records, Let’s Encrypt, and certificate status with clear feedback.</p>
+              <p>One-click DNS records, automatic Let's Encrypt, and a clear status badge per certificate.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">
@@ -165,7 +190,7 @@
                 </svg>
               </div>
               <h3>Databases</h3>
-              <p>MariaDB databases and users managed from the panel.</p>
+              <p>MariaDB databases and users managed per-domain, with phpMyAdmin shortcut when you need it.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">
@@ -174,7 +199,7 @@
                 </svg>
               </div>
               <h3>Files &amp; terminal</h3>
-              <p>Native file manager and in-browser shell as the domain unix user.</p>
+              <p>Native file manager + in-browser shell as the domain unix user. No more dragging FTP clients around.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">
@@ -183,157 +208,295 @@
                 </svg>
               </div>
               <h3>Server admin</h3>
-              <p>Service control, stack reload, backups, resellers, and host metrics.</p>
+              <p>Services, stack reload, backups, resellers, system metrics — everything an operator needs.</p>
             </article>
           </div>
         </div>
       </section>
 
+      <!-- ──────────────── Pricing ──────────────── -->
+      <section id="pricing">
+        <div class="container">
+          <p class="section-label">Pricing</p>
+          <h2 class="section-title">Pick a license, pay once, activate in one click.</h2>
+          <p class="section-lead">
+            All plans include full Premium features, 50 domains per server, 1 VPS per license.
+            One-time payment in EUR — your license is mailed instantly after Stripe checkout.
+          </p>
+
+          <div class="pricing-grid">
+            <div class="price-card">
+              <p class="price-name">Pro · 1 month</p>
+              <p class="price-amount">€2<sup>.50</sup></p>
+              <p class="price-period">one-time · expires after 1 month</p>
+              <ul class="price-features">
+                <li>All Premium modules</li>
+                <li>50 domains</li>
+                <li>1 VPS / activation</li>
+                <li>Email support</li>
+              </ul>
+              <div class="price-cta">
+                <a class="btn btn-secondary" href="https://license.omiiba.dev/buy" rel="noopener">Try Pro</a>
+              </div>
+            </div>
+
+            <div class="price-card">
+              <p class="price-name">Pro · 3 months</p>
+              <p class="price-amount">€7<sup>.45</sup></p>
+              <p class="price-period">one-time · expires after 3 months</p>
+              <ul class="price-features">
+                <li>All Premium modules</li>
+                <li>50 domains</li>
+                <li>1 VPS / activation</li>
+                <li>Email support</li>
+              </ul>
+              <div class="price-cta">
+                <a class="btn btn-secondary" href="https://license.omiiba.dev/buy" rel="noopener">Get Pro</a>
+              </div>
+            </div>
+
+            <div class="price-card popular">
+              <span class="price-badge">Most popular</span>
+              <p class="price-name">Pro · 1 year</p>
+              <p class="price-amount">€20<sup>.00</sup></p>
+              <p class="price-period">one-time · expires after 12 months</p>
+              <ul class="price-features">
+                <li>All Premium modules</li>
+                <li>50 domains</li>
+                <li>1 VPS / activation</li>
+                <li>Priority email support</li>
+                <li>Free minor upgrades</li>
+              </ul>
+              <div class="price-cta">
+                <a class="btn btn-primary" href="https://license.omiiba.dev/buy" rel="noopener">Best value</a>
+              </div>
+            </div>
+
+            <div class="price-card">
+              <p class="price-name">Pro · 6 months</p>
+              <p class="price-amount">€10<sup>.50</sup></p>
+              <p class="price-period">one-time · expires after 6 months</p>
+              <ul class="price-features">
+                <li>All Premium modules</li>
+                <li>50 domains</li>
+                <li>1 VPS / activation</li>
+                <li>Email support</li>
+              </ul>
+              <div class="price-cta">
+                <a class="btn btn-secondary" href="https://license.omiiba.dev/buy" rel="noopener">Get Pro</a>
+              </div>
+            </div>
+
+            <div class="price-card">
+              <p class="price-name">Pro · Lifetime</p>
+              <p class="price-amount">€220</p>
+              <p class="price-period">one-time · no expiry, ever</p>
+              <ul class="price-features">
+                <li>All Premium modules</li>
+                <li>50 domains</li>
+                <li>1 VPS / activation</li>
+                <li>Priority email support</li>
+                <li>All future major versions</li>
+              </ul>
+              <div class="price-cta">
+                <a class="btn btn-secondary" href="https://license.omiiba.dev/buy" rel="noopener">Go lifetime</a>
+              </div>
+            </div>
+          </div>
+
+          <p class="section-lead" style="margin-top: 2rem; text-align: center; max-width: 44rem; margin-left: auto; margin-right: auto;">
+            Need to move to a different VPS? Just remove the old activation in your admin — no support ticket needed.
+            14-day refund if your key was never activated. <a href="/refund" style="color:#5eead4">Read refund policy</a>.
+          </p>
+        </div>
+      </section>
+
+      <!-- ──────────────── Comparison ──────────────── -->
+      <section id="compare">
+        <div class="container">
+          <p class="section-label">Comparison</p>
+          <h2 class="section-title">Why pick Qadbak over the classics?</h2>
+          <p class="section-lead">
+            cPanel and Plesk are great. They're also expensive, account-bound, and visually stuck in 2010.
+            Qadbak runs anywhere, costs a fraction, and looks like software made this decade.
+          </p>
+
+          <div style="overflow-x: auto;">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>&nbsp;</th>
+                  <th class="us">Qadbak</th>
+                  <th>cPanel</th>
+                  <th>Plesk</th>
+                  <th>HestiaCP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Starting price / month</td>
+                  <td class="yes">€2.50</td>
+                  <td>~€35</td>
+                  <td>~€15</td>
+                  <td>Free</td>
+                </tr>
+                <tr>
+                  <td>One-time lifetime option</td>
+                  <td class="yes">€220</td>
+                  <td class="no">No</td>
+                  <td class="no">No</td>
+                  <td>Free</td>
+                </tr>
+                <tr>
+                  <td>Modern web UI</td>
+                  <td class="yes">Yes</td>
+                  <td class="no">Legacy</td>
+                  <td class="maybe">Mixed</td>
+                  <td class="maybe">Functional</td>
+                </tr>
+                <tr>
+                  <td>Admin / client role split</td>
+                  <td class="yes">Native</td>
+                  <td class="yes">WHM / cPanel</td>
+                  <td class="yes">Yes</td>
+                  <td class="yes">Yes</td>
+                </tr>
+                <tr>
+                  <td>Open source</td>
+                  <td class="yes">MIT core</td>
+                  <td class="no">No</td>
+                  <td class="no">No</td>
+                  <td class="yes">GPL</td>
+                </tr>
+                <tr>
+                  <td>EU-based vendor (GDPR)</td>
+                  <td class="yes">Netherlands</td>
+                  <td class="no">USA</td>
+                  <td class="maybe">EU+US</td>
+                  <td class="yes">EU</td>
+                </tr>
+                <tr>
+                  <td>Per-user PHP-FPM isolation</td>
+                  <td class="yes">Yes</td>
+                  <td class="yes">Yes</td>
+                  <td class="yes">Yes</td>
+                  <td class="maybe">Manual</td>
+                </tr>
+                <tr>
+                  <td>Activation in &lt; 1 minute</td>
+                  <td class="yes">Email key, paste</td>
+                  <td class="no">License server</td>
+                  <td class="no">License key</td>
+                  <td class="yes">Install only</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────── Deploy ──────────────── -->
       <section id="deploy">
         <div class="container">
           <p class="section-label">Deploy</p>
-          <h2 class="section-title">Run Qadbak on your own VPS</h2>
+          <h2 class="section-title">Three steps from cold VPS to live panel.</h2>
           <p class="section-lead">
-            Point your panel hostname to the server, run the installer, and open
-            <strong>https://your-host/login</strong>.
+            No vendor lock-in, no proprietary stack. Vanilla nginx + Postfix + MariaDB on Ubuntu 22.04 / 24.04.
           </p>
           <div class="steps">
             <div class="step">
               <div class="step-num">01</div>
-              <h3>Ubuntu 22.04 VPS</h3>
-              <p>Root access and DNS for your panel hostname. The installer sets up nginx, mail, and the web stack.</p>
+              <h3>Provision a VPS</h3>
+              <p>Any €5/month Ubuntu 22.04 or 24.04 box works. Point an A record (your-host.com) to the IP.</p>
             </div>
             <div class="step">
               <div class="step-num">02</div>
-              <h3>Install Qadbak</h3>
-              <p><code>sudo bash install/qadbak-install.sh</code> from <a href="https://github.com/macdirtycow/qadbak" style="color:#5eead4">github.com/macdirtycow/qadbak</a>.</p>
+              <h3>Run the installer</h3>
+              <p><span class="code-chip">sudo bash install/qadbak-install.sh</span> from <a href="https://github.com/macdirtycow/qadbak" rel="noopener" style="color:#5eead4">github.com/macdirtycow/qadbak</a>. Sets up nginx, mail, MariaDB, panel.</p>
             </div>
             <div class="step">
               <div class="step-num">03</div>
-              <h3>TLS &amp; sign in</h3>
-              <p>Optional Let’s Encrypt. Users open the panel at your hostname — ports 80/443 (or :11000).</p>
+              <h3>Activate Premium</h3>
+              <p>Sign in → Server admin → License → paste your <span class="code-chip">QAD-…</span> key → Refresh modules. Done.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="access">
-        <div class="container">
-          <p class="section-label">Access</p>
-          <h2 class="section-title">Two roles, one Qadbak panel</h2>
-          <p class="section-lead">Same look and feel — different permissions on every API route.</p>
-          <div class="grid-3" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))">
-            <article class="card">
-              <h3>Administrator</h3>
-              <p>All domains, server settings, services, backups, resellers, and host tools.</p>
-            </article>
-            <article class="card">
-              <h3>Client</h3>
-              <p>Only assigned domains: mail, DNS, SSL, databases, and files — no server-wide menus.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="about-name">
-        <div class="container">
-          <p class="section-label">The name</p>
-          <h2 class="section-title">From 2009 headlines to a real panel</h2>
-          <p class="origin-blurb">
-            Named after an infamous 2009 shell — rebuilt as a self-hosted hosting panel.
-            This product is <strong>not</strong> affiliated with Qadbak Investments.
-          </p>
-          <p class="section-lead" style="margin-bottom: 1.5rem">
-            Around 2009, <a href="https://en.wikipedia.org/wiki/Qadbak_Investments" rel="noopener" style="color:#5eead4">Qadbak Investments</a>
-            made noise in football and Formula&nbsp;1 press. It became a story about buzz without backing.
-            The brand was left behind in finance; it fits hosting control far better.
-          </p>
-          <div class="origin-grid">
-            <div class="origin-card then">
-              <h3>2009 · Qadbak Investments</h3>
-              <ul>
-                <li>Press releases, unclear backers</li>
-                <li>Notts County takeover headlines</li>
-                <li>Near-miss F1 team sale narrative</li>
-                <li>Name avoided in serious business since</li>
-              </ul>
-            </div>
-            <div class="origin-card now">
-              <h3>Today · Qadbak panel</h3>
-              <ul>
-                <li>Open code you run on <strong>your</strong> VPS</li>
-                <li>Domains, mail, DNS, SSL in one UI</li>
-                <li>Ports 80/443 = your panel</li>
-                <li>Same word — opposite substance</li>
-              </ul>
-            </div>
-          </div>
-          <p class="origin-links">
-            Read more:
-            <a href="/about">About the name</a> ·
-            <a href="https://github.com/macdirtycow/qadbak/blob/main/docs/ABOUT-THE-NAME.md" rel="noopener">docs on GitHub</a> ·
-            <a href="https://www.reuters.com/article/sports/bmw-sell-f1-team-to-swiss-based-qadbak-idUSTRE58E675/" rel="noopener">Reuters (2009)</a>
-          </p>
-        </div>
-      </section>
-
+      <!-- ──────────────── Big CTA ──────────────── -->
       <section>
         <div class="container">
           <div class="cta-block">
-            <h2>Open your Qadbak panel</h2>
+            <h2>Ready to ditch the legacy panels?</h2>
             <p>
-              Deploy on your VPS and sign in with your Qadbak user — hosting credentials stay on the server.
+              Start with one month for the price of a coffee. Move up when you're sure. Lifetime when you're hooked.
             </p>
             <div class="cta-buttons">
-              <a href="/login" class="btn btn-primary btn-lg">https://qadbak.com/login</a>
-              <a href="https://github.com/macdirtycow/qadbak" class="btn btn-secondary btn-lg" rel="noopener">View source</a>
+              <a href="https://license.omiiba.dev/buy" class="btn btn-primary btn-lg" rel="noopener">Buy a license</a>
+              <a href="https://github.com/macdirtycow/qadbak" class="btn btn-secondary btn-lg" rel="noopener">View on GitHub</a>
             </div>
           </div>
         </div>
       </section>
 
+      <!-- ──────────────── FAQ ──────────────── -->
       <section id="faq">
         <div class="container">
           <p class="section-label">FAQ</p>
-          <h2 class="section-title" style="text-align: center">About Qadbak</h2>
+          <h2 class="section-title" style="text-align: center">Questions, answered straight.</h2>
           <div class="faq">
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
-                What is Qadbak?
+                What do I actually get when I buy a license?
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <div class="faq-a">
-                Qadbak is a hosting control panel by Omiiba. You install it on your VPS; admins and clients use the web UI at your panel hostname.
+                You instantly receive a <span class="code-chip">QAD-…</span> license key by email. Paste it in your panel's Server admin → License page, click Activate, and the Premium modules unlock immediately on that VPS. No download separately, no extra account.
               </div>
             </div>
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
-                Do I need another control panel?
+                Can I install Qadbak without a license?
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <div class="faq-a">
-                No. The default installer sets up the hosting stack and native provisioning. Qadbak is the only panel UI you need for day-to-day work.
+                Yes. The Qadbak panel itself is open source (MIT). You can run it for free with all core features — domains, mail, DNS, SSL, files, databases. The Premium license unlocks advanced modules like multi-tenant clients, per-user PHP-FPM isolation, panel-vhost provisioning, RBAC and live admin updates.
               </div>
             </div>
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
-                Static site vs full app?
+                One license per VPS — what if I move to a new server?
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <div class="faq-a">
-                This marketing page can be static HTML. Sign-in requires the full Qadbak app from the repository on your server.
+                In the license admin, click "Remove" next to the old activation, then activate on the new server. Takes 30 seconds. No support ticket, no waiting. If you need genuinely concurrent VPSes (e.g. staging + prod), email us — we'll bump your slot.
               </div>
             </div>
-            <div class="faq-item" id="about-name">
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Refunds?
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div class="faq-a">
+                14-day right of withdrawal (EU consumer law) as long as your key was never activated. See the <a href="/refund">refund policy</a> for the full details.
+              </div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Is my data sent to your servers?
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div class="faq-a">
+                No. Domains, files, mailboxes, databases — all of it stays on YOUR VPS. The only thing we receive is a tiny heartbeat from your panel to <span class="code-chip">license.omiiba.dev</span> to keep your Premium key valid. See <a href="/privacy">privacy policy</a> for exactly what's logged.
+              </div>
+            </div>
+            <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
                 Why is it called Qadbak?
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <div class="faq-a">
-                The name once belonged to a 2009 investment story that turned into a cautionary tale about empty promises.
-                This project is unrelated: same word, different job — a real
-                <a href="https://en.wikipedia.org/wiki/Qadbak_Investments" rel="noopener" style="color:#5eead4">hosting panel</a> on your server.
-                <a href="/about" style="color:#5eead4">Read more</a>
+                The name once belonged to a 2009 investment story that turned into a cautionary tale about empty promises. This project reuses the name for the opposite — real working software on your VPS. <a href="/about">Read the full story</a>.
               </div>
             </div>
             <div class="faq-item">
@@ -342,7 +505,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <div class="faq-a">
-                Qadbak is developed by <a href="https://omiiba.dev" style="color:#5eead4">Omiiba</a>. The panel brand is Qadbak; Omiiba is the parent company behind the product.
+                Qadbak is built and operated by <a href="https://omiiba.dev" rel="noopener">Omiiba</a> from the Netherlands. We dogfood the panel on our own infrastructure.
               </div>
             </div>
           </div>
@@ -358,31 +521,38 @@
             Qadbak
           </a>
           <p class="footer-tagline">
-            Independent hosting control panel — a product by Omiiba.
+            Independent hosting control panel — built by Omiiba in the Netherlands.
             <em style="display:block;margin-top:0.5rem;font-size:0.85rem">2009 vapor → 2020s infrastructure.</em>
           </p>
         </div>
         <div>
-          <h4>Qadbak</h4>
+          <h4>Product</h4>
           <ul>
             <li><a href="#features">Features</a></li>
-            <li><a href="/login">Panel login</a></li>
-            <li><a href="https://github.com/macdirtycow/qadbak" rel="noopener">Source</a></li>
-            <li><a href="/about">About the name</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#compare">Compare</a></li>
+            <li><a href="https://license.omiiba.dev/buy" rel="noopener">Buy license</a></li>
+            <li><a href="https://license.omiiba.dev/" rel="noopener">Check license</a></li>
+            <li><a href="/login">Sign in to panel</a></li>
           </ul>
         </div>
         <div>
-          <h4>Omiiba</h4>
+          <h4>Company</h4>
           <ul>
-            <li><a href="https://omiiba.dev" rel="noopener">omiiba.dev</a></li>
-            <li><a href="https://omiiba.com" rel="noopener">omiiba.com</a></li>
-            <li><a href="mailto:info@omiiba.com">Contact</a></li>
+            <li><a href="https://omiiba.dev" rel="noopener">Omiiba</a></li>
+            <li><a href="/about">About the name</a></li>
+            <li><a href="mailto:support@omiiba.dev">support@omiiba.dev</a></li>
+            <li><a href="https://github.com/macdirtycow/qadbak" rel="noopener">GitHub</a></li>
           </ul>
         </div>
       </div>
       <div class="container footer-bottom">
-        <span>© 2026 Qadbak · Omiiba</span>
-        <span>qadbak.com</span>
+        <span>© 2026 Omiiba · Qadbak is a registered product</span>
+        <div class="footer-legal">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/refund">Refund</a>
+        </div>
       </div>
     </footer>
 
