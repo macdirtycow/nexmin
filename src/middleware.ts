@@ -1,6 +1,10 @@
 import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import {
+  clientRbacEnabled,
+  isClientBlockedPath,
+} from "./middleware/client-rbac";
 
 const COOKIE_NAME = "panel_session";
 
@@ -25,23 +29,6 @@ function getSecret(): Uint8Array | null {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 16) return null;
   return new TextEncoder().encode(secret);
-}
-
-function isClientBlockedPath(pathname: string): boolean {
-  if (pathname.startsWith("/admin")) return true;
-  if (pathname.startsWith("/api/admin")) return true;
-  if (pathname === "/fases" || pathname.startsWith("/fases/")) return true;
-  if (pathname === "/domains/new") return true;
-  if (pathname.startsWith("/api/server/")) return true;
-  return false;
-}
-
-/** Set via .env.local when Premium is activated (QADBAK_PREMIUM_FEATURES=client-rbac,...). */
-function premiumClientRbacEnabled(): boolean {
-  return (process.env.QADBAK_PREMIUM_FEATURES ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .includes("client-rbac");
 }
 
 function clientForbiddenResponse(request: NextRequest, pathname: string) {
@@ -76,7 +63,7 @@ export async function middleware(request: NextRequest) {
     const role = String(payload.role ?? "");
     if (
       role === "client" &&
-      premiumClientRbacEnabled() &&
+      clientRbacEnabled() &&
       isClientBlockedPath(pathname)
     ) {
       return clientForbiddenResponse(request, pathname);

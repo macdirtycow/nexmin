@@ -1,4 +1,13 @@
-import { premiumLibUnavailable } from "@/lib/premium/unavailable";
+import "server-only";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { requirePremiumFeature } from "./premium/guard";
+
+const execFileAsync = promisify(execFile);
+
+export const UPDATE_HELPER_WRAPPER =
+  process.env.QADBAK_UPDATE_HELPER_WRAPPER ??
+  "/opt/qadbak/scripts/run-update-helper.sh";
 
 export type LinuxUpdateStatus = {
   updatedAt: string;
@@ -29,26 +38,90 @@ export type UpdateJobMeta = {
   exitCode?: number;
 };
 
+type HelperPayload = {
+  ok?: boolean;
+  error?: string;
+  linux?: LinuxUpdateStatus;
+  fromCache?: boolean;
+  qadbak?: QadbakUpdateStatus;
+  job?: UpdateJobMeta;
+  log?: string;
+  backupDir?: string;
+  copied?: string[];
+  pong?: boolean;
+};
+
+async function runUpdateHelper(args: string[]): Promise<HelperPayload> {
+  const { stdout } = await execFileAsync(
+    "sudo",
+    ["-n", UPDATE_HELPER_WRAPPER, ...args],
+    {
+      timeout: 600_000,
+      maxBuffer: 8 * 1024 * 1024,
+    },
+  );
+  const line = stdout.trim().split("\n").pop() ?? "{}";
+  const parsed = JSON.parse(line) as HelperPayload;
+  if (parsed.ok === false) {
+    throw new Error(parsed.error ?? "Update helper failed");
+  }
+  return parsed;
+}
+
 export async function probeUpdatesHelperSudo(): Promise<boolean> {
-  premiumLibUnavailable("admin-updates");
+  try {
+    await requirePremiumFeature("admin-updates");
+  } catch {
+    return false;
+  }
+  try {
+    await runUpdateHelper(["ping"]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export async function getLinuxUpdateStatus(_refresh = false) {
-  premiumLibUnavailable("admin-updates");
+export async function getLinuxUpdateStatus(refresh = false): Promise<{
+  linux: LinuxUpdateStatus;
+  fromCache?: boolean;
+}> {
+  await requirePremiumFeature("admin-updates");
+  const r = await runUpdateHelper([refresh ? "linux-refresh" : "linux-status"]);
+  if (!r.linux) throw new Error("No Linux update status returned.");
+  return { linux: r.linux, fromCache: r.fromCache };
 }
 
-export async function startLinuxUpgrade() {
-  premiumLibUnavailable("admin-updates");
+export async function startLinuxUpgrade(): Promise<UpdateJobMeta> {
+  await requirePremiumFeature("admin-updates");
+  const r = await runUpdateHelper(["linux-upgrade-start"]);
+  if (!r.job) throw new Error("No job started.");
+  return r.job;
 }
 
-export async function getQadbakUpdateStatus() {
-  premiumLibUnavailable("admin-updates");
+export async function getQadbakUpdateStatus(): Promise<QadbakUpdateStatus> {
+  await requirePremiumFeature("admin-updates");
+  const r = await runUpdateHelper(["qadbak-status"]);
+  if (!r.qadbak) throw new Error("No Qadbak update status returned.");
+  return r.qadbak;
 }
 
-export async function startQadbakUpgrade() {
-  premiumLibUnavailable("admin-updates");
+export async function startQadbakUpgrade(): Promise<{
+  job: UpdateJobMeta;
+  backupDir?: string;
+  copied?: string[];
+}> {
+  await requirePremiumFeature("admin-updates");
+  const r = await runUpdateHelper(["qadbak-upgrade-start"]);
+  if (!r.job) throw new Error("No job started.");
+  return { job: r.job, backupDir: r.backupDir, copied: r.copied };
 }
 
-export async function getUpdateJob(_jobId: string) {
-  premiumLibUnavailable("admin-updates");
+export async function getUpdateJob(
+  jobId: string,
+): Promise<{ job: UpdateJobMeta; log: string }> {
+  await requirePremiumFeature("admin-updates");
+  const r = await runUpdateHelper(["job-status", jobId]);
+  if (!r.job) throw new Error("Job not found.");
+  return { job: r.job, log: r.log ?? "" };
 }

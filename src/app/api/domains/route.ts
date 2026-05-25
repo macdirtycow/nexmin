@@ -4,6 +4,11 @@ import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { beginJournal } from "@/lib/journal";
 import { randomPanelPassword } from "@/lib/panel-password";
 import { repairAvailable, repairDomainWebsite } from "@/lib/domain-repair";
+import {
+  ensurePanelVhost,
+  upsertPanelClient,
+} from "@/lib/panel-client-admin";
+import { PremiumRequiredError } from "@/lib/premium/types";
 import { isPremiumFeatureEnabled } from "@/lib/premium/server";
 import { requireSession } from "@/lib/session";
 import { VirtualMinError } from "@/lib/errors";
@@ -139,23 +144,74 @@ async function doCreateDomain(request: Request) {
     await auditLog(session.username, "create-domain", domainName);
     journal.infoStep(`Domain '${domainName}' visible in registry after lookup retry.`);
 
-    // Premium client provisioning (multi-tenant-clients,
-    // panel-client-vhost) is gated by isPremiumFeatureEnabled. The
-    // actual implementation will land as static TypeScript under
-    // src/lib/premium/ in a follow-up commit; until then we surface a
-    // clear premiumNote instead of pretending to create the account.
+    // Premium client provisioning (multi-tenant-clients) and per-tenant
+    // panel.<domain> vhost (panel-client-vhost) are independent license
+    // features; either may be missing. Each branch tries the real
+    // helper and falls back to a `premiumNote` if the gate fires.
     let premiumNote: string | undefined;
+    let clientUsername: string | undefined;
+    let clientPassword: string | undefined;
+    let panelUrl: string | undefined;
     const wantClient =
       body.type !== "sub" &&
       body.type !== "alias" &&
       body.createClientAccount !== false;
     if (wantClient) {
-      if (!(await isPremiumFeatureEnabled("multi-tenant-clients"))) {
+      if (
+        !(await isPremiumFeatureEnabled("panel-client-vhost")) ||
+        !(await isPremiumFeatureEnabled("multi-tenant-clients"))
+      ) {
         premiumNote =
           "Client account not created — Qadbak Premium license required (Server admin → License).";
       } else {
+        try {
+          const upsert = await upsertPanelClient({
+            domain: domainName,
+            username: body.user,
+          });
+          clientUsername = upsert.username;
+          clientPassword = upsert.password;
+          journal.infoStep(
+            `Provisioned panel client '${upsert.username}' for ${domainName}.`,
+          );
+        } catch (err) {
+          if (err instanceof PremiumRequiredError) {
+            premiumNote = `Client account not created — Premium feature missing: ${err.feature}.`;
+          } else {
+            journal.warnStep(
+              `Panel client provisioning failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+            premiumNote =
+              "Panel client provisioning failed — see action journal.";
+          }
+        }
+      }
+    }
+
+    if (body.createPanelVhost && body.type !== "alias") {
+      if (!(await isPremiumFeatureEnabled("panel-client-vhost"))) {
         premiumNote =
-          "Premium licensed — multi-tenant client provisioning module not yet available in this build.";
+          (premiumNote ? premiumNote + " " : "") +
+          "Panel vhost not applied — panel-client-vhost feature not licensed.";
+      } else {
+        try {
+          await ensurePanelVhost(domainName);
+          journal.infoStep(`Applied panel.${domainName} nginx vhost.`);
+          panelUrl = `http://panel.${domainName}/login`;
+        } catch (err) {
+          if (err instanceof PremiumRequiredError) {
+            premiumNote =
+              (premiumNote ? premiumNote + " " : "") +
+              `Panel vhost not applied — Premium feature missing: ${err.feature}.`;
+          } else {
+            journal.warnStep(
+              `Panel vhost apply failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+            premiumNote =
+              (premiumNote ? premiumNote + " " : "") +
+              "Panel vhost apply failed — see action journal.";
+          }
+        }
       }
     }
 
@@ -191,6 +247,9 @@ async function doCreateDomain(request: Request) {
       hostingNote,
       premiumNote,
       unixPassword: unixPassGenerated ? unixPass : undefined,
+      clientUsername,
+      clientPassword,
+      panelUrl,
       journalId: finished.id,
     });
   } catch (err) {
