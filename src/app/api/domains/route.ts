@@ -11,7 +11,10 @@ import { requireSession } from "@/lib/session";
 import { findUserByUsername } from "@/lib/users";
 import { VirtualMinError } from "@/lib/errors";
 import { getProvisioner } from "@/lib/provisioner";
-import { consumeLastJournalSteps } from "@/lib/provisioner/native-exec";
+import {
+  consumeLastJournalSteps,
+  runWithJournalStore,
+} from "@/lib/provisioner/native-exec";
 import { isIndependentMode } from "@/lib/provisioner/native-stub";
 
 type UsersClientModule = {
@@ -41,6 +44,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  return runWithJournalStore(async () => doCreateDomain(request));
+}
+
+async function doCreateDomain(request: Request) {
   let journal: ReturnType<typeof beginJournal> | undefined;
   try {
     const session = await requireAdmin();

@@ -1,7 +1,10 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { beginJournal } from "@/lib/journal";
-import { consumeLastJournalSteps } from "@/lib/provisioner/native-exec";
+import {
+  consumeLastJournalSteps,
+  runWithJournalStore,
+} from "@/lib/provisioner/native-exec";
 import { requireSession } from "@/lib/session";
 import { getProvisioner } from "@/lib/provisioner";
 
@@ -20,48 +23,50 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  let journal: ReturnType<typeof beginJournal> | undefined;
-  try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
-    const body = (await request.json()) as {
-      user?: string;
-      pass?: string;
-      real?: string;
-    };
-    if (!body.user || !body.pass) {
-      return jsonError("Username and password are required.");
-    }
-    journal = beginJournal({
-      action: "mailbox.add",
-      summary: `Add mailbox ${body.user}@${domain}`,
-      session,
-      target: { domain, mailbox: body.user, user: body.user },
-      metadata: { hasDisplayName: Boolean(body.real) },
-    });
-    consumeLastJournalSteps();
-    journal.infoStep(
-      `Validated input — mailbox=${body.user}, domain=${domain}, displayName=${body.real ? "yes" : "no"}`,
-    );
-    await getProvisioner().createMailbox(domain, body.user, body.pass, body.real, session);
-    journal.captureFromHelper(consumeLastJournalSteps());
-    journal.setUndoSpec({
-      kind: "mailbox.add",
-      payload: { domain, user: body.user },
-      warning: `This will delete the mailbox ${body.user}@${domain} and its Maildir. Anything received in the meantime will be lost.`,
-      ttlMinutes: 60,
-    });
-    await auditLog(session.username, "create-user", domain, body.user);
-    const finished = await journal.finish(true);
-    return jsonOk({ ok: true, journalId: finished.id });
-  } catch (err) {
-    if (journal) {
+  return runWithJournalStore(async () => {
+    let journal: ReturnType<typeof beginJournal> | undefined;
+    try {
+      const session = await requireSession();
+      const { domain: encoded } = await params;
+      const domain = decodeURIComponent(encoded);
+      const body = (await request.json()) as {
+        user?: string;
+        pass?: string;
+        real?: string;
+      };
+      if (!body.user || !body.pass) {
+        return jsonError("Username and password are required.");
+      }
+      journal = beginJournal({
+        action: "mailbox.add",
+        summary: `Add mailbox ${body.user}@${domain}`,
+        session,
+        target: { domain, mailbox: body.user, user: body.user },
+        metadata: { hasDisplayName: Boolean(body.real) },
+      });
+      consumeLastJournalSteps();
+      journal.infoStep(
+        `Validated input — mailbox=${body.user}, domain=${domain}, displayName=${body.real ? "yes" : "no"}`,
+      );
+      await getProvisioner().createMailbox(domain, body.user, body.pass, body.real, session);
       journal.captureFromHelper(consumeLastJournalSteps());
-      await journal.finish(false, err instanceof Error ? err.message : String(err));
+      journal.setUndoSpec({
+        kind: "mailbox.add",
+        payload: { domain, user: body.user },
+        warning: `This will delete the mailbox ${body.user}@${domain} and its Maildir. Anything received in the meantime will be lost.`,
+        ttlMinutes: 60,
+      });
+      await auditLog(session.username, "create-user", domain, body.user);
+      const finished = await journal.finish(true);
+      return jsonOk({ ok: true, journalId: finished.id });
+    } catch (err) {
+      if (journal) {
+        journal.captureFromHelper(consumeLastJournalSteps());
+        await journal.finish(false, err instanceof Error ? err.message : String(err));
+      }
+      return handleApiError(err);
     }
-    return handleApiError(err);
-  }
+  });
 }
 
 export async function PATCH(request: Request, { params }: Params) {

@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { extractJournalSteps } from "@/lib/journal/helper-stream";
 import type { JournalStep } from "@/lib/journal/types";
 
@@ -16,21 +17,39 @@ export type HelperResult = {
 };
 
 /**
- * Latest journal steps extracted from the most recent helper run.
+ * Per-request journal-step capture.
  *
- * The provisioning helper is invoked from many sites in the codebase; rather
- * than thread a journal builder through every call signature, we let the
- * helper stash the steps here and have the surrounding API route pick them up.
+ * The provisioning helper is invoked from many call sites in the codebase;
+ * rather than thread a JournalBuilder argument through every signature
+ * (getProvisioner().createDomain → native-ops → runProvisioningHelper), we
+ * stash captured steps in an AsyncLocalStorage that flows automatically
+ * across `await` boundaries.
  *
- * This relies on Node's single-threaded request handling — each API request
- * runs sequentially through `runProvisioningHelper` and reads the steps
- * before yielding to anything else.
+ * The previous implementation used a single module-level array which was
+ * a real cross-request contamination hazard: when request A awaited the
+ * sudo wrapper, request B could call consumeLastJournalSteps() and grab
+ * A's steps (or vice-versa). With AsyncLocalStorage each request gets an
+ * isolated store, and helper calls outside a wrapped scope are no-ops
+ * (steps are silently dropped instead of leaking globally).
+ *
+ * Callers wrap their handler body in `runWithJournalStore(async () => …)`.
  */
-let lastJournalSteps: JournalStep[] = [];
+interface JournalScope {
+  steps: JournalStep[];
+}
+const journalStore = new AsyncLocalStorage<JournalScope>();
 
+/** Wrap an async block so runProvisioningHelper steps are captured per-request. */
+export function runWithJournalStore<T>(fn: () => Promise<T>): Promise<T> {
+  return journalStore.run({ steps: [] }, fn);
+}
+
+/** Drain steps captured since the last consume call. Empty array outside a scope. */
 export function consumeLastJournalSteps(): JournalStep[] {
-  const steps = lastJournalSteps;
-  lastJournalSteps = [];
+  const scope = journalStore.getStore();
+  if (!scope) return [];
+  const steps = scope.steps;
+  scope.steps = [];
   return steps;
 }
 
@@ -51,9 +70,11 @@ function parseHelperStdout(stdout: string): HelperResult | null {
 
 function rememberSteps(stdout: string): void {
   if (!stdout) return;
+  const scope = journalStore.getStore();
+  if (!scope) return; // outside a wrapped scope — drop steps rather than leak globally
   const steps = extractJournalSteps(stdout);
   if (steps.length > 0) {
-    lastJournalSteps = lastJournalSteps.concat(steps);
+    scope.steps.push(...steps);
   }
 }
 

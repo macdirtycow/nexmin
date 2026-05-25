@@ -7,7 +7,10 @@
  */
 
 import { beginJournal } from "@/lib/journal";
-import { consumeLastJournalSteps } from "@/lib/provisioner/native-exec";
+import {
+  consumeLastJournalSteps,
+  runWithJournalStore,
+} from "@/lib/provisioner/native-exec";
 import { getTemplate } from "./registry";
 import type { AppInstallContext, AppInstallResult, AppTemplate } from "./types";
 
@@ -65,38 +68,40 @@ export async function runAppInstall(opts: {
   rawInput: Record<string, unknown>;
   session: AppInstallContext["session"];
 }): Promise<AppInstallResult> {
-  const template = getTemplate(opts.templateId);
-  if (!template) throw new AppNotFoundError(opts.templateId);
+  return runWithJournalStore(async () => {
+    const template = getTemplate(opts.templateId);
+    if (!template) throw new AppNotFoundError(opts.templateId);
 
-  const input = validate(template, opts.rawInput);
+    const input = validate(template, opts.rawInput);
 
-  const journal = beginJournal({
-    action: `app.install.${template.id}`,
-    summary: `Install ${template.label} on ${input.domain ?? "(unknown)"}`,
-    session: opts.session,
-    target: input.domain ? { domain: input.domain } : undefined,
-    metadata: { templateId: template.id, fields: Object.keys(input) },
-  });
-  consumeLastJournalSteps();
-  journal.infoStep(
-    `Validated input for ${template.label} — fields: ${Object.keys(input).join(", ")}`,
-  );
-
-  try {
-    const partial = await template.install({ input, session: opts.session });
-    journal.captureFromHelper(consumeLastJournalSteps());
+    const journal = beginJournal({
+      action: `app.install.${template.id}`,
+      summary: `Install ${template.label} on ${input.domain ?? "(unknown)"}`,
+      session: opts.session,
+      target: input.domain ? { domain: input.domain } : undefined,
+      metadata: { templateId: template.id, fields: Object.keys(input) },
+    });
+    consumeLastJournalSteps();
     journal.infoStep(
-      `${template.label} installed on ${partial.domain}. Wizard URL: ${partial.primaryUrl}`,
+      `Validated input for ${template.label} — fields: ${Object.keys(input).join(", ")}`,
     );
-    const finished = await journal.finish(true);
-    return {
-      ...partial,
-      appId: template.id,
-      journalId: finished.id,
-    };
-  } catch (err) {
-    journal.captureFromHelper(consumeLastJournalSteps());
-    await journal.finish(false, err instanceof Error ? err.message : String(err));
-    throw err;
-  }
+
+    try {
+      const partial = await template.install({ input, session: opts.session });
+      journal.captureFromHelper(consumeLastJournalSteps());
+      journal.infoStep(
+        `${template.label} installed on ${partial.domain}. Wizard URL: ${partial.primaryUrl}`,
+      );
+      const finished = await journal.finish(true);
+      return {
+        ...partial,
+        appId: template.id,
+        journalId: finished.id,
+      };
+    } catch (err) {
+      journal.captureFromHelper(consumeLastJournalSteps());
+      await journal.finish(false, err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  });
 }

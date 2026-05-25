@@ -136,6 +136,33 @@ export async function getEntry(
 }
 
 /**
+ * Per-file mutex chain for the read-modify-write done by markEntryUndone.
+ *
+ * Two parallel undo requests landing on the same day file would otherwise race:
+ *   - undo A reads file → mutates in memory → starts writing tmp
+ *   - undo B reads file (without A's update!) → mutates → starts writing tmp
+ *   - both rename(tmp → file); whoever lands last clobbers the other.
+ * The mutex serializes rewrites per JSONL path while leaving append-only
+ * persistEntry() untouched (kernel append is atomic for small writes).
+ */
+const fileLocks = new Map<string, Promise<unknown>>();
+
+async function withFileLock<T>(file: string, fn: () => Promise<T>): Promise<T> {
+  const prev = fileLocks.get(file) ?? Promise.resolve();
+  const next = prev.then(fn, fn);
+  fileLocks.set(
+    file,
+    next.catch(() => undefined),
+  );
+  try {
+    return await next;
+  } finally {
+    // Allow GC of completed chains so the map can't grow unboundedly.
+    if (fileLocks.get(file) === next) fileLocks.delete(file);
+  }
+}
+
+/**
  * Mark a single entry as undone — rewrites the per-day JSONL file in place
  * with the entry's undoneAt / undoneBy / undoneByEntryId fields set.
  *
@@ -143,7 +170,8 @@ export async function getEntry(
  * (~once per minute at most across the whole panel) and we'd rather have
  * the source of truth in one place than maintain a sidecar undo-events
  * file that the reader has to cross-reference. Writes go via rename for
- * atomicity on the same filesystem.
+ * atomicity on the same filesystem, and the read-modify-write is serialized
+ * per file via withFileLock to prevent lost updates between concurrent undos.
  */
 export async function markEntryUndone(
   id: string,
@@ -157,37 +185,40 @@ export async function markEntryUndone(
     d.setUTCDate(d.getUTCDate() - i);
     const key = dateKey(d);
     const file = dateFilePath(key);
-    let raw: string;
-    try {
-      raw = await readFile(file, "utf8");
-    } catch {
-      continue;
-    }
-    const lines = raw.split("\n");
-    let found: JournalEntry | null = null;
-    const updated = lines.map((line) => {
-      const t = line.trim();
-      if (!t.startsWith("{")) return line;
+    const found = await withFileLock(file, async () => {
+      let raw: string;
       try {
-        const e = JSON.parse(t) as JournalEntry;
-        if (e.id === id) {
-          e.undoneAt = new Date().toISOString();
-          e.undoneBy = by;
-          e.undoneByEntryId = undoEntryId;
-          e.undoable = false;
-          found = e;
-          return JSON.stringify(e);
-        }
+        raw = await readFile(file, "utf8");
       } catch {
-        /* leave line as-is */
+        return null;
       }
-      return line;
+      const lines = raw.split("\n");
+      let hit: JournalEntry | null = null;
+      const updated = lines.map((line) => {
+        const t = line.trim();
+        if (!t.startsWith("{")) return line;
+        try {
+          const e = JSON.parse(t) as JournalEntry;
+          if (e.id === id) {
+            e.undoneAt = new Date().toISOString();
+            e.undoneBy = by;
+            e.undoneByEntryId = undoEntryId;
+            e.undoable = false;
+            hit = e;
+            return JSON.stringify(e);
+          }
+        } catch {
+          /* leave line as-is */
+        }
+        return line;
+      });
+      if (!hit) return null;
+      const tmp = `${file}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      await writeFile(tmp, updated.join("\n"), "utf8");
+      await rename(tmp, file);
+      return hit;
     });
-    if (!found) continue;
-    const tmp = `${file}.tmp-${process.pid}-${Date.now()}`;
-    await writeFile(tmp, updated.join("\n"), "utf8");
-    await rename(tmp, file);
-    return found;
+    if (found) return found;
   }
   return null;
 }
