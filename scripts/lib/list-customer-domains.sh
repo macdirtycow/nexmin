@@ -27,8 +27,21 @@ _should_skip_nginx_customer_domain() {
   [[ -n "$panel" && "$domain" == "$panel" ]] && return 0
   [[ -n "$panel" && "$domain" == "www.${panel}" ]] && return 0
   [[ "$domain" == "license.omiiba.dev" ]] && return 0
-  if [[ "$domain" == "omiiba.dev" || "$domain" == "www.omiiba.dev" ]]; then
-    [[ -f /var/www/omiiba.dev/index.html || -f /etc/nginx/sites-enabled/omiiba.dev.conf ]] && return 0
+
+  # If an operator-managed nginx vhost already exists for this domain
+  # (any file not named qadbak-customer-*), skip auto-generating a
+  # customer vhost to avoid "conflicting server name" warnings.
+  local enabled_dir="/etc/nginx/sites-enabled"
+  if [[ -d "$enabled_dir" ]]; then
+    local f base
+    for f in "$enabled_dir"/*; do
+      [[ -e "$f" ]] || continue
+      base="$(basename "$f")"
+      [[ "$base" == qadbak-customer-* ]] && continue
+      if grep -qE "server_name[[:space:]]+([^;]*[[:space:]])?${domain//./\\.}([[:space:]]|;)" "$f" 2>/dev/null; then
+        return 0
+      fi
+    done
   fi
   return 1
 }
