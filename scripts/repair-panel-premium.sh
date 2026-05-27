@@ -46,7 +46,15 @@ else
 fi
 
 echo ""
-echo "==> Heartbeat (refresh features from license server)"
+echo "==> Install salt (fingerprint tag for license compliance)"
+if [[ -f "$ENV_FILE" ]] && grep -q '^QADBAK_INSTALL_SALT=' "$ENV_FILE" 2>/dev/null; then
+  grep '^QADBAK_INSTALL_SALT=' "$ENV_FILE" | sed 's/=.*/=…(set)/'
+else
+  echo "  MISSING QADBAK_INSTALL_SALT — run: sudo bash scripts/update-qadbak.sh"
+fi
+
+echo ""
+echo "==> Heartbeat (refresh features + fingerprint from license server)"
 sudo -u "$USER" bash -c "set -a && source '$ENV_FILE' && set +a && node '$ROOT/scripts/qadbak-license-cli.mjs' heartbeat" || {
   echo "WARN: heartbeat failed — check JWT secret matches license server" >&2
 }

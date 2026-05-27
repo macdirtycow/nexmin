@@ -395,9 +395,15 @@ export async function getLicensePublicInfo(
 }
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const { licenseClientMeta } = await import("./license-client-meta");
+  const meta = licenseClientMeta();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (meta.fingerprintTag) headers["X-QB-Tag"] = meta.fingerprintTag;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
@@ -449,9 +455,18 @@ export async function activateLicense(key: string): Promise<StoredLicense> {
 export async function heartbeatLicense(): Promise<StoredLicense | null> {
   const stored = await readStoredLicense();
   if (!stored) return null;
+  const { licenseClientMeta } = await import("./license-client-meta");
+  const meta = licenseClientMeta();
   const data = await postJson<HeartbeatResponse>(
     `${licenseServerFetchBase()}/v1/heartbeat`,
-    { token: stored.token, instanceId: stored.instanceId },
+    {
+      token: stored.token,
+      instanceId: stored.instanceId,
+      fingerprintTag: meta.fingerprintTag,
+      panelVersion: meta.panelVersion,
+      publicHost: meta.publicHost,
+      hostname: meta.publicHost,
+    },
   );
   if (data.status === "revoked") {
     await clearStoredLicense();
