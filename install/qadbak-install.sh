@@ -265,8 +265,21 @@ else
 fi
 
 if [[ -n "${QADBAK_LICENSE_KEY:-}" ]]; then
-  sudo -u "$QADBAK_USER" node "$QADBAK_DIR/scripts/qadbak-license-cli.mjs" activate "$QADBAK_LICENSE_KEY" \
-    || echo "  WARN: license activation failed — set QADBAK_LICENSE_JWT_SECRET, start license server, then use Server admin → License" >&2
+  echo "==> Activate Premium license"
+  ACTIVATE_OUT="$(sudo -u "$QADBAK_USER" bash -c "set -a && source '$ENV_FILE' && set +a && node '$QADBAK_DIR/scripts/qadbak-license-cli.mjs' activate '$QADBAK_LICENSE_KEY'" 2>&1)" || true
+  echo "$ACTIVATE_OUT"
+  if echo "$ACTIVATE_OUT" | grep -q '"ok":true'; then
+    echo "  OK — Premium license active on this server"
+    sudo -u "$QADBAK_USER" bash -c "set -a && source '$ENV_FILE' && set +a && node '$QADBAK_DIR/scripts/qadbak-license-cli.mjs' heartbeat" 2>/dev/null || true
+    bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh" 2>/dev/null || true
+  else
+    echo "  WARN: license activation failed on install." >&2
+    echo "    Common fixes:" >&2
+    echo "    1) License admin → open your key → raise Max servers (VPS) or Remove old server activation" >&2
+    echo "    2) curl -sf https://license.omiiba.dev/health" >&2
+    echo "    3) sudo -u $QADBAK_USER bash -c \"set -a && source $ENV_FILE && set +a && node $QADBAK_DIR/scripts/qadbak-license-cli.mjs activate YOUR_KEY\"" >&2
+    echo "    Then: Server admin → License in the panel" >&2
+  fi
 fi
 
 VERIFY_OK=0

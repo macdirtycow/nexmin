@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="${QADBAK_DIR:-/opt/qadbak}"
-DOMAIN="${TEST_DOMAIN:?Set TEST_DOMAIN=your-domain.example.com}"
 WRAPPER="$ROOT/scripts/run-provisioning-helper.sh"
 
 [[ -f "$ROOT/.env.local" ]] && source "$ROOT/.env.local"
 FEATURES="${QADBAK_NATIVE_FEATURES:-}"
+
+DOMAIN="${TEST_DOMAIN:-}"
+if [[ -z "$DOMAIN" ]] && [[ -f "$ROOT/data/native-domains.json" ]]; then
+  DOMAIN="$(grep -o '"name":"[^"]*"' "$ROOT/data/native-domains.json" 2>/dev/null | head -1 | sed 's/"name":"//;s/"//')"
+fi
+if [[ -z "$DOMAIN" ]]; then
+  echo "SKIP — no TEST_DOMAIN and no domains in native-domains.json (fresh VPS is OK)"
+  echo "  Later: TEST_DOMAIN=example.com bash $0"
+  exit 0
+fi
 
 has() { echo "$FEATURES" | tr ',' '\n' | grep -qx "$1"; }
 

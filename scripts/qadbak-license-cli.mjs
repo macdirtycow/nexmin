@@ -13,6 +13,31 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(ROOT);
 
+/** Load panel .env.local so activate/heartbeat see QADBAK_LICENSE_* when run from install/CLI. */
+async function loadEnvLocal() {
+  try {
+    const raw = await readFile(path.join(ROOT, ".env.local"), "utf8");
+    for (const line of raw.split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const i = t.indexOf("=");
+      if (i < 1) continue;
+      const k = t.slice(0, i).trim();
+      if (!k || process.env[k] !== undefined) continue;
+      let v = t.slice(i + 1).trim();
+      if (
+        (v.startsWith('"') && v.endsWith('"')) ||
+        (v.startsWith("'") && v.endsWith("'"))
+      ) {
+        v = v.slice(1, -1);
+      }
+      process.env[k] = v;
+    }
+  } catch {
+    /* optional */
+  }
+}
+
 async function readLicenseJson() {
   try {
     const raw = await readFile(path.join(ROOT, "data", "license.json"), "utf8");
@@ -132,6 +157,8 @@ async function deactivate() {
 
 const cmd = process.argv[2];
 const arg = process.argv[3];
+
+await loadEnvLocal();
 
 try {
   if (cmd === "activate" && arg) await activate(arg);

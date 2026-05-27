@@ -25,7 +25,7 @@ done
 if [[ -f "$ROOT/data/native-domains.json" ]] && grep -q '"name"' "$ROOT/data/native-domains.json"; then
   pass "native-domains.json"
 else
-  fail "native-domains.json empty — run export-native-domains.sh"
+  echo "  WARN native-domains.json empty — fresh VPS; create a domain in the panel first" >&2
 fi
 
 if sudo -u qadbak sudo -n "$ROOT/scripts/run-provisioning-helper.sh" ping 2>/dev/null | grep -q '"ok":true'; then
