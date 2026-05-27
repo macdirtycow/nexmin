@@ -10,15 +10,15 @@ export type BrandingThemeColors = {
   textColor: string;
 };
 
-/** Omiiba / Qadbak unified stone gray (marketing, panel, license). */
+/** Cool dark gray — same depth as Ocean blue, neutral accents (marketing, panel). */
 export const DEFAULT_BRANDING_THEME: BrandingThemeColors = {
-  primaryColor: "#e8e6e1",
-  accentColor: "#d8d4cc",
-  backgroundColor: "#0f0f0e",
-  cardColor: "#1c1c1a",
-  borderColor: "#2e2e2c",
-  mutedColor: "#9c9892",
-  textColor: "#eceae6",
+  primaryColor: "#e8ecf4",
+  accentColor: "#cbd5e1",
+  backgroundColor: "#0f1419",
+  cardColor: "#1a2332",
+  borderColor: "#2d3a4f",
+  mutedColor: "#94a3b8",
+  textColor: "#f1f5f9",
 };
 
 /** Optional green preset (white-label). */

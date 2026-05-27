@@ -24,7 +24,7 @@ export const BRANDING_PRESETS: BrandingPreset[] = [
   {
     id: "slate",
     name: "Stone",
-    description: "Warm gray — Omiiba / Qadbak default",
+    description: "Cool slate gray — Omiiba / Qadbak default",
     colors: DEFAULT_BRANDING_THEME,
   },
   {
@@ -117,7 +117,13 @@ export function inferThemeIdFromColors(
     return "emerald";
   }
   if (primary === "#3b82f6") return "ocean";
-  if (primary === "#e8e6e1" || primary === "#64748b") return "slate";
+  if (
+    primary === "#e8e6e1" ||
+    primary === "#e8ecf4" ||
+    primary === "#64748b"
+  ) {
+    return "slate";
+  }
   return DEFAULT_BRANDING_THEME_ID;
 }
 
