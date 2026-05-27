@@ -18,6 +18,14 @@ fi
 if [[ -f "$ROOT/public/landing.js" ]]; then
   cp "$ROOT/public/landing.js" "$TMP/assets/js/main.js"
 fi
+if [[ -f "$ROOT/marketing-site/assets/img/logo.svg" ]]; then
+  cp "$ROOT/marketing-site/assets/img/logo.svg" "$TMP/assets/img/logo.svg"
+elif [[ -f "$ROOT/public/logo.svg" ]]; then
+  cp "$ROOT/public/logo.svg" "$TMP/assets/img/logo.svg"
+fi
+if [[ -f "$ROOT/marketing-site/assets/img/favicon.svg" ]]; then
+  cp "$ROOT/marketing-site/assets/img/favicon.svg" "$TMP/assets/img/favicon.svg"
+fi
 
 # Cross-platform sed -i wrapper (mac requires the empty backup-suffix arg).
 sedi() {
@@ -35,6 +43,8 @@ rewrite_root_html() {
     -e 's|href="/landing.css"|href="assets/css/style.css"|g' \
     -e 's|src="/landing.js"|src="assets/js/main.js"|g' \
     -e 's|href="/favicon.svg"|href="assets/img/favicon.svg"|g' \
+    -e 's|src="/assets/img/logo.svg"|src="assets/img/logo.svg"|g' \
+    -e 's|src="/logo.svg"|src="assets/img/logo.svg"|g' \
     -e 's|href="/login"|href="https://qadbak.com/login"|g' \
     -e 's|href="/about"|href="about.html"|g' \
     -e 's|href="/privacy"|href="privacy/index.html"|g' \
@@ -49,6 +59,8 @@ rewrite_about_html() {
   sedi \
     -e 's|href="/landing.css"|href="../assets/css/style.css"|g' \
     -e 's|href="/favicon.svg"|href="../assets/img/favicon.svg"|g' \
+    -e 's|src="/assets/img/logo.svg"|src="../assets/img/logo.svg"|g' \
+    -e 's|src="/logo.svg"|src="../assets/img/logo.svg"|g' \
     -e 's|href="/login"|href="https://qadbak.com/login"|g' \
     -e 's|href="/"|href="../"|g' \
     -e 's|href="/privacy"|href="../privacy/index.html"|g' \
@@ -62,6 +74,8 @@ if [[ -f "$TMP/about.html" ]]; then
   sedi \
     -e 's|href="/landing.css"|href="assets/css/style.css"|g' \
     -e 's|href="/favicon.svg"|href="assets/img/favicon.svg"|g' \
+    -e 's|src="/assets/img/logo.svg"|src="assets/img/logo.svg"|g' \
+    -e 's|src="/logo.svg"|src="assets/img/logo.svg"|g' \
     -e 's|href="/login"|href="https://qadbak.com/login"|g' \
     -e 's|href="/"|href="index.html"|g' \
     -e 's|href="/privacy"|href="privacy/index.html"|g' \
