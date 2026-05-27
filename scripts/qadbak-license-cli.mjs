@@ -6,7 +6,7 @@
  * download. `git pull && npm run build && pm2 restart` is the entire
  * update flow for Core and Premium customers alike.
  */
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,6 +45,24 @@ async function readLicenseJson() {
   } catch {
     return null;
   }
+}
+
+/** Keep in sync with src/lib/premium/env-sync.ts */
+async function syncPremiumFeaturesEnv(features) {
+  const envPath = path.join(ROOT, ".env.local");
+  const line = `QADBAK_PREMIUM_FEATURES=${(features ?? []).join(",")}`;
+  let content = "";
+  try {
+    content = await readFile(envPath, "utf8");
+  } catch {
+    content = "";
+  }
+  if (/^QADBAK_PREMIUM_FEATURES=/m.test(content)) {
+    content = content.replace(/^QADBAK_PREMIUM_FEATURES=.*$/m, line);
+  } else {
+    content = `${content.trimEnd()}\n${line}\n`;
+  }
+  await writeFile(envPath, content, "utf8");
 }
 
 async function postLicenseServer(pathname, body) {
@@ -107,6 +125,7 @@ async function activate(key) {
     `${JSON.stringify(stored, null, 2)}\n`,
     "utf8",
   );
+  await syncPremiumFeaturesEnv(stored.features);
   console.log(JSON.stringify({ ok: true, plan: data.plan, features: data.features }));
 }
 
@@ -141,7 +160,10 @@ async function heartbeat() {
     `${JSON.stringify(updated, null, 2)}\n`,
     "utf8",
   );
-  console.log(JSON.stringify({ ok: true, status: data.status }));
+  await syncPremiumFeaturesEnv(updated.features);
+  console.log(
+    JSON.stringify({ ok: true, status: data.status, features: updated.features }),
+  );
 }
 
 async function status() {
