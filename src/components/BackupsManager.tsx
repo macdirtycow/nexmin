@@ -223,9 +223,24 @@ export function BackupsManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Restore failed.");
-      const r = data.result as { restored?: string[]; preview?: string[] } | undefined;
+      const r = data.result as {
+        restored?: string[];
+        preview?: string[];
+        entries?: number;
+        mailAccounts?: { user?: string; email?: string }[];
+        components?: string[];
+        settingsFiles?: string[];
+      } | undefined;
       if (restoreTest && r?.preview?.length) {
-        setSuccess(`Test OK — ${r.preview.length} entries (first files listed in logs).`);
+        const mailN = r.mailAccounts?.length ?? 0;
+        const comps = r.components?.length ? ` · ${r.components.join(", ")}` : "";
+        const mailHint = mailN > 0 ? ` · ${mailN} mail account(s)` : "";
+        const settingsHint = r.settingsFiles?.length
+          ? ` · settings: ${r.settingsFiles.map((f) => f.replace(/\.json$/, "")).join(", ")}`
+          : "";
+        setSuccess(
+          `Test OK — ${r.entries ?? r.preview.length} paths in archive${mailHint}${settingsHint}${comps}.`,
+        );
       } else if (r?.restored?.length) {
         setSuccess(`Restored: ${r.restored.join(", ")}`);
       } else {
@@ -253,7 +268,7 @@ export function BackupsManager({
         title="Backups"
         description={
           nativeMode
-            ? "Qadbak backups: website, mail, databases, and panel config in ~/backups"
+            ? "Full backups in ~/backups: website, all mail accounts, panel settings (mail, DNS, PHP, SSL, aliases, …), BIND zone, SSL certificates, crontab, MySQL, and mail routing maps."
             : undefined
         }
       />
@@ -314,8 +329,8 @@ export function BackupsManager({
         <Card>
           <h2 className="text-lg font-medium text-white">Automatic schedule</h2>
           <p className="mt-1 text-sm text-panel-muted">
-            Cron on the domain unix user. Backups include public_html, Maildir, MySQL dumps,
-            and Qadbak domain config.
+            Cron on the domain unix user. Each run includes the website, all mailboxes,
+            panel settings, DNS zone, SSL certs, crontab, MySQL, and Postfix routing snapshot.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
@@ -430,7 +445,7 @@ export function BackupsManager({
           <h2 className="text-lg font-medium text-white">Restore</h2>
           <p className="mt-2 text-sm text-panel-muted">
             {nativeMode
-              ? "Filename from the list above (in ~/backups). Test lists archive contents without writing."
+              ? "Filename from ~/backups. Test shows manifest and mail paths without writing data."
               : "Local path or cloud URL (e.g. s3://…). Run a test restore first."}
           </p>
           <div className="mt-4 space-y-3">

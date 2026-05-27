@@ -24,6 +24,8 @@ import {
   readDomainConfigJson,
   writeDomainConfigJson,
 } from "./provisioning-common.mjs";
+import { backupMailToStaging, restoreMailFromHome } from "./backup-mail.mjs";
+import { backupDomainExtras, restoreDomainExtras, listDomainSettingsFiles } from "./backup-extras.mjs";
 
 const exec = promisify(execFile);
 const BACKUP_CFG = "backups.json";
@@ -164,6 +166,22 @@ export async function backupList(domain) {
     });
   }
   files.sort((a, b) => b.modified.localeCompare(a.modified));
+  for (const f of files.slice(0, 40)) {
+    try {
+      const { stdout } = await exec(
+        "tar",
+        ["-xOf", path.join(dir, f.name), "manifest.json"],
+        { timeout: 60_000, maxBuffer: 512 * 1024 },
+      );
+      const manifest = JSON.parse(stdout);
+      if (Array.isArray(manifest.components)) f.components = manifest.components;
+      if (Array.isArray(manifest.mailAccounts)) {
+        f.mailAccounts = manifest.mailAccounts.length;
+      }
+    } catch {
+      /* legacy archives without manifest */
+    }
+  }
   const sched = await loadSchedule(domain);
   emit({ ok: true, backups: files, schedule: sched });
 }
@@ -191,12 +209,29 @@ export async function backupCreate(domain, scopeArg) {
     components.push("public_html");
   }
 
-  const maildir = path.join(home, "Maildir");
-  if (scope === "full" && (await fileExists(maildir))) {
-    await exec("cp", ["-a", maildir, path.join(staging, "Maildir")], {
-      timeout: 600_000,
-    });
-    components.push("mail");
+  let mailAccounts = [];
+  if (scope === "full") {
+    const mail = await backupMailToStaging(
+      path.join(staging, "mail"),
+      domain,
+      user,
+      home,
+    );
+    if (mail.included) {
+      mailAccounts = mail.accounts;
+      const label =
+        mail.accounts.length > 1
+          ? `mail (${mail.accounts.length} accounts)`
+          : mail.accounts.length === 1
+            ? `mail (${mail.accounts[0].user})`
+            : "mail";
+      components.push(label);
+      await writeFile(
+        path.join(staging, "mail-accounts.json"),
+        `${JSON.stringify({ accounts: mail.accounts, paths: mail.entries }, null, 2)}\n`,
+        "utf8",
+      );
+    }
   }
 
   const cfgDir = domainConfigDir(domain);
@@ -204,7 +239,17 @@ export async function backupCreate(domain, scopeArg) {
     await exec("cp", ["-a", cfgDir, path.join(staging, "qadbak-config")], {
       timeout: 120_000,
     });
-    components.push("qadbak-config");
+    const settingsFiles = await listDomainSettingsFiles(domain);
+    const settingsLabel =
+      settingsFiles.length > 0
+        ? `settings (${settingsFiles.length}: ${settingsFiles.map((f) => f.replace(/\.json$/, "")).slice(0, 6).join(", ")}${settingsFiles.length > 6 ? ", …" : ""})`
+        : "settings";
+    components.push(settingsLabel);
+  }
+
+  if (scope === "full") {
+    const extras = await backupDomainExtras(domain, user, home, staging);
+    components.push(...extras.components);
   }
 
   const mysqlDir = path.join(staging, "mysql");
@@ -230,15 +275,19 @@ export async function backupCreate(domain, scopeArg) {
     }
   }
 
+  const settingsFiles =
+    scope === "full" ? await listDomainSettingsFiles(domain) : [];
   const manifest = {
-    version: 1,
+    version: 3,
     domain,
     created: new Date().toISOString(),
     scope,
     components,
+    mailAccounts,
+    settingsFiles,
   };
   await writeFile(
-    path.join(staging, "qadbak-backup-manifest.json"),
+    path.join(staging, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,
     "utf8",
   );
@@ -259,6 +308,7 @@ export async function backupCreate(domain, scopeArg) {
     path: file,
     sizeBytes: (await stat(file)).size,
     components,
+    mailAccounts,
   });
 }
 
@@ -363,8 +413,32 @@ export async function backupRestore(domain, source, testOnly) {
       timeout: 120_000,
       maxBuffer: 8 * 1024 * 1024,
     });
-    const lines = stdout.split("\n").filter(Boolean).slice(0, 200);
-    emit({ ok: true, test: true, entries: lines.length, preview: lines.slice(0, 30) });
+    const lines = stdout.split("\n").filter(Boolean);
+    let manifest = null;
+    try {
+      const { stdout: raw } = await exec("tar", ["-xOf", archive, "manifest.json"], {
+        timeout: 60_000,
+        maxBuffer: 512 * 1024,
+      });
+      manifest = JSON.parse(raw);
+    } catch {
+      /* legacy archive */
+    }
+    const important = lines.filter((l) =>
+      /^(mail\/|Maildir\/|qadbak-config\/|mysql\/|dns\/|ssl\/|manifest\.json|mail-accounts\.json|settings-index\.json|postfix-domain\.json|crontab\.txt)/.test(
+        l,
+      ),
+    );
+    emit({
+      ok: true,
+      test: true,
+      entries: lines.length,
+      preview: [...important.slice(0, 20), ...lines.slice(0, 10)].slice(0, 30),
+      manifest,
+      mailAccounts: manifest?.mailAccounts ?? [],
+      components: manifest?.components ?? [],
+      settingsFiles: manifest?.settingsFiles ?? [],
+    });
     return;
   }
 
@@ -383,13 +457,10 @@ export async function backupRestore(domain, source, testOnly) {
     restored.push("public_html");
   }
 
-  const mailStaging = path.join(staging, "Maildir");
-  if (await fileExists(mailStaging)) {
-    const maildir = path.join(home, "Maildir");
-    await rm(maildir, { recursive: true, force: true }).catch(() => {});
-    await cp(mailStaging, maildir, { recursive: true });
-    await exec("chown", ["-R", `${user}:${user}`, maildir]);
-    restored.push("mail");
+  const mailRestore = await restoreMailFromHome(home, staging, user);
+  if (mailRestore.restored.length) {
+    const n = mailRestore.accounts.length || mailRestore.restored.length;
+    restored.push(n > 1 ? `mail (${n} accounts)` : "mail");
   }
 
   const cfgStaging = path.join(staging, "qadbak-config");
@@ -397,8 +468,13 @@ export async function backupRestore(domain, source, testOnly) {
     const target = domainConfigDir(d);
     await rm(target, { recursive: true, force: true }).catch(() => {});
     await cp(cfgStaging, target, { recursive: true });
-    restored.push("qadbak-config");
+    const settingsFiles = await listDomainSettingsFiles(d);
+    restored.push(
+      settingsFiles.length ? `settings (${settingsFiles.length} files)` : "settings",
+    );
   }
+
+  await restoreDomainExtras(d, user, home, staging, restored);
 
   const mysqlStaging = path.join(staging, "mysql");
   if (await fileExists(mysqlStaging)) {

@@ -166,8 +166,14 @@ export async function listScheduledBackupsNative(
 ): Promise<ScheduledBackup[]> {
   const r = await runProvisioningHelper("backup-list", domain);
   const files =
-    (r.backups as { name: string; sizeBytes?: number; modified?: string; kind?: string }[]) ??
-    [];
+    (r.backups as {
+      name: string;
+      sizeBytes?: number;
+      modified?: string;
+      kind?: string;
+      components?: string[];
+      mailAccounts?: number;
+    }[]) ?? [];
   const sched = r.schedule as
     | { schedule?: string; enabled?: boolean; retain?: number }
     | undefined;
@@ -181,10 +187,16 @@ export async function listScheduledBackupsNative(
     });
   }
   for (const f of files) {
+    const parts = [formatBytes(f.sizeBytes ?? 0)];
+    if (f.components?.length) parts.push(f.components.join(", "));
+    else if (f.mailAccounts && f.mailAccounts > 0) {
+      parts.push(`mail (${f.mailAccounts} accounts)`);
+    }
+    parts.push(f.name);
     rows.push({
       id: f.name,
       schedule: f.kind === "scheduled" ? "Scheduled" : "Manual",
-      dest: `${formatBytes(f.sizeBytes ?? 0)} · ${f.name}`,
+      dest: parts.join(" · "),
       enabled: "1",
     });
   }
@@ -207,7 +219,15 @@ export async function restoreDomainNative(
   source: string,
   opts: { test?: boolean; allFeatures?: boolean },
   _actor: Actor,
-): Promise<{ restored?: string[]; preview?: string[]; test?: boolean }> {
+): Promise<{
+  restored?: string[];
+  preview?: string[];
+  test?: boolean;
+  entries?: number;
+  mailAccounts?: { user?: string; email?: string }[];
+  components?: string[];
+  settingsFiles?: string[];
+}> {
   const r = await runProvisioningHelper(
     "backup-restore",
     domain,
@@ -218,6 +238,10 @@ export async function restoreDomainNative(
     restored: r.restored as string[] | undefined,
     preview: r.preview as string[] | undefined,
     test: Boolean(r.test),
+    entries: r.entries as number | undefined,
+    mailAccounts: r.mailAccounts as { user?: string; email?: string }[] | undefined,
+    components: r.components as string[] | undefined,
+    settingsFiles: r.settingsFiles as string[] | undefined,
   };
 }
 
