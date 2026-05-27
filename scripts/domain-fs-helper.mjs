@@ -349,7 +349,7 @@ async function movePath(srcAbs, payload) {
   }
 
   await fs.rename(src, dest);
-  const destSt = await fs.stat(dest);
+  destSt = await fs.stat(dest);
   if (destSt.isDirectory()) {
     await chownTree(dest);
   } else {

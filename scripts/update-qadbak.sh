@@ -40,6 +40,9 @@ if [[ -f "$ENV_FILE" ]] && ! grep -q '^QADBAK_INSTALL_SALT=' "$ENV_FILE" 2>/dev/
   echo "==> Added QADBAK_INSTALL_SALT to .env.local (rebuild required)"
 fi
 
+echo "==> Syntax check (domain-fs-helper)"
+node --check "$ROOT/scripts/domain-fs-helper.mjs"
+
 echo "==> Build (as $USER — never npm install/build as root)"
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/fix-qadbak-ownership.sh" ]]; then
   bash "$ROOT/scripts/fix-qadbak-ownership.sh"

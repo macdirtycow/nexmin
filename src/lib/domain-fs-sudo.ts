@@ -53,7 +53,9 @@ export async function runDomainFsSudo(
         "Native file access needs sudo. On the server run: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak.",
       );
     }
-    throw err;
+    throw new VirtualMinError(
+      "Native file helper failed. On the server run: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak.",
+    );
   }
 }
 
