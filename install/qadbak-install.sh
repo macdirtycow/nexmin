@@ -171,7 +171,8 @@ for s in configure-domain-fs-sudo configure-domain-repair-sudo configure-domain-
   configure-panel-vhost-sudo configure-updates-sudo configure-php-fpm-sudo \
   configure-panel-pm2-sudo configure-host-services-sudo \
   configure-stack-helper-sudo \
-  configure-admin-terminal-sudo configure-provisioning-helper-sudo; do
+  configure-admin-terminal-sudo configure-provisioning-helper-sudo \
+  configure-backup-download-sudo; do
   if ! bash "$QADBAK_DIR/scripts/${s}.sh"; then
     echo "" >&2
     echo "WARN: $s failed — install paused. Resume without rebuilding:" >&2

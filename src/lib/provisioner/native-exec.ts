@@ -10,6 +10,10 @@ export const PROVISIONING_HELPER_WRAPPER =
   process.env.QADBAK_PROVISIONING_WRAPPER ??
   "/opt/qadbak/scripts/run-provisioning-helper.sh";
 
+export const BACKUP_DOWNLOAD_WRAPPER =
+  process.env.QADBAK_BACKUP_DOWNLOAD_WRAPPER ??
+  "/opt/qadbak/scripts/run-backup-download.sh";
+
 export type HelperResult = {
   ok?: boolean;
   error?: string;
