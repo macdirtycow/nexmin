@@ -431,7 +431,26 @@ export function saveDomainFileContent(path: string, content: string): void {
   touchEntry(path, new TextEncoder().encode(content).length);
 }
 
-export function createDomainFile(parent: string, name: string, content = ""): string {
+export type DomainFileWriteOptions = {
+  /** When true (default for upload), replace an existing file at the same path. */
+  overwrite?: boolean;
+};
+
+function mockFileExists(path: string): boolean {
+  return MOCK_TEXT[path] !== undefined || MOCK_BINARY[path] !== undefined;
+}
+
+function clearMockFile(path: string): void {
+  delete MOCK_TEXT[path];
+  delete MOCK_BINARY[path];
+}
+
+export function createDomainFile(
+  parent: string,
+  name: string,
+  content = "",
+  options?: DomainFileWriteOptions,
+): string {
   if (!isPanelFilesMode()) {
     throw new VirtualMinError("Creating files is not available on the live server.");
   }
@@ -442,9 +461,11 @@ export function createDomainFile(parent: string, name: string, content = ""): st
     throw new VirtualMinError("You can only create text files here. Upload other types.");
   }
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
-  if (MOCK_TEXT[path] !== undefined || MOCK_BINARY[path]) {
+  const overwrite = options?.overwrite !== false;
+  if (mockFileExists(path) && !overwrite) {
     throw new VirtualMinError("File already exists.");
   }
+  if (mockFileExists(path)) clearMockFile(path);
   MOCK_TEXT[path] = content;
   touchEntry(path, new TextEncoder().encode(content).length);
   return path;
@@ -454,6 +475,7 @@ export function uploadDomainFile(
   parent: string,
   name: string,
   data: Uint8Array,
+  options?: DomainFileWriteOptions,
 ): string {
   if (!isPanelFilesMode()) {
     throw new VirtualMinError("Upload is not available on the live server.");
@@ -462,9 +484,11 @@ export function uploadDomainFile(
   assertWritableDir(parentNorm);
   const safe = safeFileName(name);
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
-  if (MOCK_TEXT[path] !== undefined || MOCK_BINARY[path]) {
-    throw new VirtualMinError(`File ${safe} already exists. Delete it first or rename.`);
+  const overwrite = options?.overwrite !== false;
+  if (mockFileExists(path) && !overwrite) {
+    throw new VirtualMinError(`File ${safe} already exists. Enable overwrite or rename.`);
   }
+  if (mockFileExists(path)) clearMockFile(path);
 
   const textLike = isTextFileName(safe);
   if (textLike) {

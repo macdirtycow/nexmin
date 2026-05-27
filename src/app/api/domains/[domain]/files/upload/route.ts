@@ -47,6 +47,7 @@ export async function POST(request: Request, { params }: Params) {
 
     const form = await request.formData();
     const dir = String(form.get("dir") ?? "");
+    const overwrite = form.get("overwrite") !== "false";
     const parentNorm = normalizeDir(dir);
     const files = form.getAll("files");
     if (files.length === 0) return jsonError("No files received.");
@@ -69,7 +70,9 @@ export async function POST(request: Request, { params }: Params) {
         if (size > maxBytes) {
           return jsonError(`File ${item.name} is larger than ${limitLabel}.`);
         }
-        await uploadDomainFileFromTempLive(domain, rel, tempPath, maxBytes, session);
+        await uploadDomainFileFromTempLive(domain, rel, tempPath, maxBytes, session, {
+          overwrite,
+        });
         tempPaths = tempPaths.filter((p) => p !== tempPath);
         await unlink(tempPath).catch(() => {});
       } else {
@@ -77,7 +80,7 @@ export async function POST(request: Request, { params }: Params) {
         if (bytes.byteLength > maxBytes) {
           return jsonError(`File ${item.name} is larger than ${limitLabel}.`);
         }
-        uploadDomainFile(dir, item.name, bytes);
+        uploadDomainFile(dir, item.name, bytes, { overwrite });
       }
 
       uploaded.push(rel);

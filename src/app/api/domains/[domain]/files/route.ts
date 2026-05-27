@@ -93,6 +93,7 @@ export async function POST(request: Request, { params }: Params) {
           body.parent ?? "",
           body.name,
           body.content ?? "",
+          { overwrite: body.overwrite !== false },
         );
       }
       await auditLog(session.username, "create-file", domain, path);

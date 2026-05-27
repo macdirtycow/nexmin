@@ -349,6 +349,7 @@ async function movePath(srcAbs, payload) {
 async function installUpload(absDest, payload) {
   const tempPath = String(payload.tempPath ?? "");
   const maxBytes = Number(payload.maxBytes ?? 0);
+  const overwrite = payload.overwrite !== false;
   if (!tempPath || !Number.isFinite(maxBytes) || maxBytes <= 0) {
     fail("tempPath and maxBytes required.");
   }
@@ -374,7 +375,18 @@ async function installUpload(absDest, payload) {
 
   const parent = path.dirname(absDest);
   await assertHomePath(parent);
-  await fs.copyFile(resolvedTemp, absDest);
+  const dest = await assertHomePath(absDest);
+  if (!overwrite) {
+    try {
+      await fs.stat(dest);
+      fail("File already exists.");
+    } catch (e) {
+      if (e && typeof e === "object" && "code" in e && e.code !== "ENOENT") {
+        throw e;
+      }
+    }
+  }
+  await fs.copyFile(resolvedTemp, dest);
   await chownToHomeUser(absDest);
   await fs.unlink(resolvedTemp).catch(() => {});
   emit({ ok: true, sizeBytes: st.size });

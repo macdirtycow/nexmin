@@ -43,6 +43,7 @@ export function FileManager({
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [overwriteExisting, setOverwriteExisting] = useState(true);
 
   const [newDirName, setNewDirName] = useState("");
   const [showNewDir, setShowNewDir] = useState(false);
@@ -185,6 +186,21 @@ export function FileManager({
     const files = Array.from(fileList);
     if (files.length === 0) return;
 
+    if (!overwriteExisting) {
+      const names = new Set((listing.entries ?? []).map((e) => e.name));
+      const conflicts = files
+        .map((f) => f.name.replace(/[/\\]/g, "").trim())
+        .filter((n) => n && names.has(n));
+      if (conflicts.length > 0) {
+        setError(
+          conflicts.length === 1
+            ? `${conflicts[0]} already exists. Enable overwrite or choose another name.`
+            : `${conflicts.length} files already exist (${conflicts.slice(0, 3).join(", ")}${conflicts.length > 3 ? ", …" : ""}). Enable overwrite or rename.`,
+        );
+        return;
+      }
+    }
+
     const tooLarge = files.find((f) => f.size > maxUploadBytes);
     if (tooLarge) {
       setError(`${tooLarge.name} is larger than ${uploadLimitLabel}.`);
@@ -197,6 +213,7 @@ export function FileManager({
     try {
       const form = new FormData();
       form.set("dir", listing.cwd);
+      form.set("overwrite", overwriteExisting ? "true" : "false");
       for (const f of files) form.append("files", f);
       const res = await fetch(`/api/domains/${enc}/files/upload`, {
         method: "POST",
@@ -258,6 +275,7 @@ export function FileManager({
           parent: listing.cwd,
           name: newFileName,
           content: "",
+          overwrite: overwriteExisting,
         }),
       });
       const data = await res.json();
@@ -366,6 +384,14 @@ export function FileManager({
                     Drag files here or choose from your computer (max. {uploadLimitLabel} per file
                     {uploadPremium ? ", Premium" : ", Core"}).
                   </p>
+                  <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-panel-muted">
+                    <input
+                      type="checkbox"
+                      checked={overwriteExisting}
+                      onChange={(e) => setOverwriteExisting(e.target.checked)}
+                    />
+                    Overwrite existing files with the same name
+                  </label>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <input

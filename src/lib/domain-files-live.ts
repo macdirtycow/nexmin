@@ -187,6 +187,7 @@ export async function uploadDomainFileFromTempLive(
   tempPath: string,
   maxBytes: number,
   actor: { role: Role; domains: string[] },
+  options?: { overwrite?: boolean },
 ): Promise<number> {
   const parent = panelPath.includes("/")
     ? panelPath.replace(/\/[^/]+$/, "")
@@ -196,7 +197,7 @@ export async function uploadDomainFileFromTempLive(
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
-  const { sizeBytes } = await runDomainFsInstallUpload(abs, tempPath, maxBytes);
+  const { sizeBytes } = await runDomainFsInstallUpload(abs, tempPath, maxBytes, options);
   markLiveFilesystemReady();
   return sizeBytes;
 }

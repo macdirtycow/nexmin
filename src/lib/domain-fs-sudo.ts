@@ -53,8 +53,13 @@ export async function runDomainFsInstallUpload(
   destAbs: string,
   tempPath: string,
   maxBytes: number,
+  options?: { overwrite?: boolean },
 ): Promise<{ sizeBytes: number }> {
-  const payload = JSON.stringify({ tempPath, maxBytes });
+  const payload = JSON.stringify({
+    tempPath,
+    maxBytes,
+    overwrite: options?.overwrite !== false,
+  });
   const stdout = await runDomainFsSudo(["install-upload", destAbs, payload], {
     timeout: uploadInstallTimeoutMs(maxBytes),
     maxBuffer: 1024 * 1024,
