@@ -2,6 +2,7 @@
 
 import { DomainPanelClientCard } from "@/components/DomainPanelClientCard";
 import { DomainQuickLinks } from "@/components/DomainQuickLinks";
+import { formatDomainDisk } from "@/lib/format-quota";
 import { WebsiteHealthCard } from "@/components/WebsiteHealthCard";
 import { Badge, Button, Card } from "@/components/ui";
 import type { VirtualMinDomain } from "@/lib/types";
@@ -94,8 +95,8 @@ export function DomainDetail({
         </Card>
         <Card>
           <h2 className="text-sm font-medium text-panel-muted">Disk usage (MB)</h2>
-          <p className="mt-1 text-white">
-            {domain.disk_used ?? "—"} / {domain.disk_limit ?? "—"}
+          <p className="mt-1 font-mono text-white tabular-nums">
+            {formatDomainDisk(domain.disk_used, domain.disk_limit)} MB
           </p>
         </Card>
       </div>

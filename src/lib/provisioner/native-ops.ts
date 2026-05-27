@@ -55,10 +55,15 @@ export async function listMailboxesNative(
   _actor: Actor,
 ): Promise<VirtualMinMailbox[]> {
   const r = await runProvisioningHelper("mail-list", domain);
-  return ((r.mailboxes as { user: string; real?: string }[]) ?? []).map((m) => ({
+  return (
+    (r.mailboxes as { user: string; real?: string; quota?: string; quotaUsedMb?: string }[]) ??
+    []
+  ).map((m) => ({
     user: m.user,
     name: m.user,
     real: m.real,
+    quota: m.quotaUsedMb ?? m.quota ?? "0",
+    quotaUsedMb: m.quotaUsedMb ?? m.quota,
   })) as VirtualMinMailbox[];
 }
 

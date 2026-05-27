@@ -17,6 +17,7 @@ import {
 import { ensureNativeMailStack, syncVirtualDomainsFile, rebuildPostfixMailboxMaps, rebuildVirtualAliasMap } from "./mail-sync.mjs";
 import { ensureInboundMailDns } from "./mail-dns.mjs";
 import { ensureStandardMailboxes } from "./mail-folders.mjs";
+import { enrichMailboxesWithUsage } from "./mail-quota.mjs";
 import { doveadmAvailable } from "./doveadm-util.mjs";
 
 const exec = promisify(execFile);
@@ -37,7 +38,8 @@ async function unixUserExists(name) {
 
 export async function mailListDirect(domain) {
   const layout = await layoutForDomain(domain);
-  const mailboxes = await listMailboxesFromLayout(layout);
+  let mailboxes = await listMailboxesFromLayout(layout);
+  mailboxes = await enrichMailboxesWithUsage(layout, mailboxes);
   emit({ ok: true, mailboxes, source: "postfix-dovecot", layout: { aliasMap: layout.aliasMap } });
 }
 

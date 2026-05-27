@@ -1,13 +1,18 @@
+import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import type { Role } from "../types";
 import type { VirtualMinDomain } from "../types";
+
+const execFileAsync = promisify(execFile);
 
 export type NativeDomainRecord = {
   name: string;
   user: string;
   disabled?: boolean;
   plan?: string;
+  disk_limit?: string;
 };
 
 const REGISTRY = path.join(process.cwd(), "data", "native-domains.json");
@@ -28,6 +33,7 @@ export async function loadNativeDomainRegistry(): Promise<NativeDomainRecord[]> 
         user,
         disabled: Boolean(r.disabled),
         plan: String(r.plan ?? "Default"),
+        disk_limit: r.disk_limit ? String(r.disk_limit) : undefined,
       });
     }
     return out;
@@ -70,6 +76,53 @@ export async function scanHomeDomains(): Promise<NativeDomainRecord[]> {
   return out;
 }
 
+async function diskLimitForDomain(domainName: string): Promise<string | undefined> {
+  const cfgPath = path.join(
+    process.cwd(),
+    "data",
+    "domain-config",
+    domainName.toLowerCase(),
+    "limits.json",
+  );
+  try {
+    const raw = await fs.readFile(cfgPath, "utf8");
+    const cfg = JSON.parse(raw) as { disk?: string };
+    if (cfg.disk?.trim()) return cfg.disk.trim();
+  } catch {
+    /* */
+  }
+  return undefined;
+}
+
+async function homeDiskUsedMb(unixUser: string): Promise<string> {
+  const user = unixUser.trim();
+  if (!user) return "0";
+  try {
+    const { stdout } = await execFileAsync("du", ["-sm", `/home/${user}`], {
+      timeout: 120_000,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    const mb = stdout.split("\t")[0]?.trim();
+    return mb && /^\d+(\.\d+)?$/.test(mb) ? mb : "0";
+  } catch {
+    return "0";
+  }
+}
+
+async function enrichDomainDisk(row: NativeDomainRecord): Promise<VirtualMinDomain> {
+  const used = await homeDiskUsedMb(row.user);
+  const limit =
+    (await diskLimitForDomain(row.name)) ?? row.disk_limit?.trim() ?? undefined;
+  return {
+    name: row.name,
+    disabled: row.disabled ? "1" : "0",
+    plan: row.plan ?? "Default",
+    user: row.user,
+    disk_used: used,
+    disk_limit: limit,
+  };
+}
+
 export async function listDomainsNative(actor: {
   role: Role;
   domains: string[];
@@ -77,16 +130,11 @@ export async function listDomainsNative(actor: {
   let rows = await loadNativeDomainRegistry();
   if (rows.length === 0) rows = await scanHomeDomains();
 
-  const mapped: VirtualMinDomain[] = rows.map((r) => ({
-    name: r.name,
-    disabled: r.disabled ? "1" : "0",
-    plan: r.plan ?? "Default",
-    user: r.user,
-  }));
+  let mapped = await Promise.all(rows.map((r) => enrichDomainDisk(r)));
 
   if (actor.role === "client") {
     const allowed = new Set(actor.domains.map((d) => d.toLowerCase()));
-    return mapped.filter((d) => allowed.has(d.name.toLowerCase()));
+    mapped = mapped.filter((d) => allowed.has(d.name.toLowerCase()));
   }
   return mapped;
 }

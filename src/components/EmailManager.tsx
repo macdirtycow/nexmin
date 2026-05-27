@@ -8,6 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
+import { formatMailboxUsedMb } from "@/lib/format-quota";
 import type { VirtualMinMailbox } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -241,7 +242,9 @@ export function EmailManager({
                     {name}@{domain}
                   </td>
                   <td className="px-6 py-4 text-panel-muted">{u.real ?? "—"}</td>
-                  <td className="px-6 py-4 text-panel-muted">{u.quota ?? "—"}</td>
+                  <td className="px-6 py-4 font-mono text-panel-muted tabular-nums">
+                    {formatMailboxUsedMb(u)}
+                  </td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <Link
                       href={`/domains/${enc}/mail/${encodeURIComponent(name)}`}

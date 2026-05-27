@@ -3,6 +3,7 @@
 import { Badge, Button, Card } from "@/components/ui";
 import type { VirtualMinDomain } from "@/lib/types";
 import { isDomainDisabled } from "@/lib/domain-utils";
+import { formatDomainDisk } from "@/lib/format-quota";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -114,8 +115,8 @@ export function DomainsList({
                   </Badge>
                 </td>
                 <td className="px-6 py-4 text-panel-muted">{d.plan ?? "—"}</td>
-                <td className="px-6 py-4 text-panel-muted">
-                  {d.disk_used ?? "—"} / {d.disk_limit ?? "—"}
+                <td className="px-6 py-4 font-mono text-panel-muted tabular-nums">
+                  {formatDomainDisk(d.disk_used, d.disk_limit)}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2">
