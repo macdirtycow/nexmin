@@ -17,12 +17,15 @@ export default async function BackupsPage({ params }: Props) {
   }
   const nativeMode = nativeFeatureEnabled("backup") || isIndependentMode();
 
+  const isAdmin = session.role === "admin";
+
   return (
     <BackupsManager
       domain={domain}
       initialScheduled={scheduled}
       canBackup
-      canRestore={session.role === "admin"}
+      canRestore={isAdmin}
+      canUpload={isAdmin && nativeMode}
       nativeMode={nativeMode}
       initialError={error}
     />

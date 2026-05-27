@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import type { ScheduledBackup } from "@/lib/provisioner";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function BackupsManager({
@@ -19,6 +19,7 @@ export function BackupsManager({
   initialScheduled,
   canBackup,
   canRestore,
+  canUpload = false,
   initialError,
   nativeMode = false,
 }: {
@@ -26,6 +27,8 @@ export function BackupsManager({
   initialScheduled: ScheduledBackup[];
   canBackup: boolean;
   canRestore: boolean;
+  /** Admin + native backups: show upload UI */
+  canUpload?: boolean;
   initialError: string;
   nativeMode?: boolean;
 }) {
@@ -45,6 +48,8 @@ export function BackupsManager({
   const [confirmTyped, setConfirmTyped] = useState("");
   const [cronSchedule, setCronSchedule] = useState("0 3 * * *");
   const [retainCount, setRetainCount] = useState(7);
+  const [uploadName, setUploadName] = useState("");
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const scheduleRow = useMemo(
     () => scheduled.find((s) => s.id === "schedule"),
@@ -149,6 +154,42 @@ export function BackupsManager({
     }
   }
 
+  async function uploadBackup(file: File) {
+    if (!file.name.toLowerCase().endsWith(".tar.gz")) {
+      setError("Only .tar.gz backup archives are supported.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (uploadName.trim()) form.append("name", uploadName.trim());
+      const res = await fetch(`/api/domains/${enc}/backups/upload`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+      const r = data.result as { file?: string; sizeBytes?: number } | undefined;
+      const mb =
+        r?.sizeBytes && r.sizeBytes > 0
+          ? ` (${(r.sizeBytes / 1024 / 1024).toFixed(1)} MB)`
+          : "";
+      setSuccess(`Backup uploaded: ${r?.file ?? file.name}${mb}`);
+      setUploadName("");
+      if (uploadInputRef.current) uploadInputRef.current.value = "";
+      if (data.scheduled) setScheduled(data.scheduled);
+      else await refreshList();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function deleteBackup(name: string) {
     if (!confirm(`Delete backup ${name}?`)) return;
     setLoading(true);
@@ -220,11 +261,53 @@ export function BackupsManager({
       {success && <Alert variant="success">{success}</Alert>}
 
       {canBackup && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {canUpload && (
+            <>
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept=".tar.gz,application/gzip,application/x-gzip"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadBackup(file);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                variant="secondary"
+                disabled={loading}
+                onClick={() => uploadInputRef.current?.click()}
+              >
+                {loading ? "Working…" : "Upload backup"}
+              </Button>
+            </>
+          )}
           <Button onClick={startBackup} disabled={loading}>
             {loading ? "Working…" : "Back up now"}
           </Button>
         </div>
+      )}
+
+      {canUpload && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Upload backup</h2>
+          <p className="mt-2 text-sm text-panel-muted">
+            Import a .tar.gz archive into ~/backups (from a download or another server). Then use
+            Restore below.
+          </p>
+          <div className="mt-4 max-w-xl">
+            <Label htmlFor="upload-name">Filename on server (optional)</Label>
+            <Input
+              id="upload-name"
+              className="mt-1 font-mono text-sm"
+              placeholder={`${domain}-uploaded-….tar.gz`}
+              value={uploadName}
+              onChange={(e) => setUploadName(e.target.value)}
+            />
+          </div>
+        </Card>
       )}
 
       {nativeMode && canRestore && (

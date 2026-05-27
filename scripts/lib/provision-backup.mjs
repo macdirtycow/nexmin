@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import os from "node:os";
 import {
   access,
   readdir,
@@ -9,6 +10,9 @@ import {
   writeFile,
   readFile,
   cp,
+  rename,
+  realpath,
+  open,
 } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -265,6 +269,68 @@ export async function backupDelete(domain, name) {
   if (!(await fileExists(full))) fail(`Backup not found: ${fname}`);
   await rm(full);
   emit({ ok: true, deleted: fname });
+}
+
+async function assertPanelUploadTemp(tempPath) {
+  const tmpRoot = await realpath(os.tmpdir());
+  const resolved = await realpath(tempPath).catch(() => null);
+  if (!resolved || !resolved.startsWith(`${tmpRoot}${path.sep}`)) {
+    fail("Invalid temp path");
+  }
+  const base = path.basename(resolved);
+  if (!base.startsWith("qadbak-upload-")) {
+    fail("Invalid temp file");
+  }
+  const st = await stat(resolved);
+  if (!st.isFile()) fail("Not a file");
+  return { resolved, sizeBytes: st.size };
+}
+
+async function assertGzipArchive(filePath) {
+  const buf = Buffer.alloc(2);
+  const fh = await open(filePath, "r");
+  try {
+    await fh.read(buf, 0, 2, 0);
+  } finally {
+    await fh.close();
+  }
+  if (buf[0] !== 0x1f || buf[1] !== 0x8b) {
+    fail("File must be a .tar.gz gzip archive");
+  }
+}
+
+/** Import a backup archive uploaded via the panel (temp file under os.tmpdir()). */
+export async function backupUpload(domain, tempPath, destNameArg) {
+  const { user, home } = await resolveDomainUser(domain);
+  const { resolved, sizeBytes } = await assertPanelUploadTemp(tempPath);
+  await assertGzipArchive(resolved);
+
+  const dir = backupsDir(home);
+  await mkdir(dir, { recursive: true });
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  let fname = destNameArg?.trim()
+    ? safeBackupName(destNameArg.trim())
+    : `${domain}-uploaded-${stamp}.tar.gz`;
+  const dest = path.join(dir, fname);
+  if (await fileExists(dest)) {
+    fname = `${domain}-uploaded-${stamp}.tar.gz`;
+  }
+  const finalPath = path.join(dir, fname);
+
+  await rename(resolved, finalPath);
+  await exec("chown", [`${user}:${user}`, finalPath]);
+
+  const sched = await loadSchedule(domain);
+  await pruneOldBackups(home, sched.retain);
+
+  emit({
+    ok: true,
+    file: fname,
+    path: finalPath,
+    sizeBytes: (await stat(finalPath)).size,
+    uploadedBytes: sizeBytes,
+  });
 }
 
 /** Resolve absolute path + size for panel download (path stays server-side until streamed). */
