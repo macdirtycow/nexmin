@@ -4,44 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>About the name Qadbak</title>
+    <meta name="theme-color" content="#0c100e" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/landing.css" />
   </head>
   <body>
-    <div class="bg-grid" aria-hidden="true"></div>
-    <div class="bg-glow" aria-hidden="true"></div>
     <header class="nav">
-      <div class="container nav-inner">
-        <a href="/" class="logo"><span class="logo-icon">Q</span> Qadbak</a>
-        <div class="nav-actions">
-          <a href="/" class="btn btn-ghost">Home</a>
-          <a href="/login" class="btn btn-primary">Sign in</a>
+      <div class="container">
+        <div class="nav-inner">
+          <a href="/" class="logo">
+            <span class="logo-mark" aria-hidden="true">Q</span>
+            Qadbak
+          </a>
+          <div class="nav-actions">
+            <a href="/" class="btn btn-secondary">Home</a>
+            <a href="/login" class="btn btn-primary">Panel login</a>
+          </div>
         </div>
       </div>
     </header>
-    <main class="container" style="padding: 4rem 0; max-width: 640px">
+    <main class="container page-main" style="max-width: 640px">
       <p class="section-label">The name</p>
       <h1 class="section-title">About Qadbak</h1>
       <p class="section-lead">
         This control panel is <strong>not</strong> affiliated with Qadbak Investments (2009).
       </p>
       <p style="color: var(--muted)">
-        <a href="https://en.wikipedia.org/wiki/Qadbak_Investments" rel="noopener" style="color: #5eead4"
-          >Qadbak Investments</a
-        >
+        <a href="https://en.wikipedia.org/wiki/Qadbak_Investments" rel="noopener">Qadbak Investments</a>
         appeared in football and F1 headlines around Notts County and BMW Sauber — later remembered as hype without
         substance. This project reuses the name for the opposite: open code on your VPS as a real hosting panel.
       </p>
       <div class="origin-grid" style="margin-top: 2rem">
-        <div class="origin-card then">
+        <div class="origin-card">
           <h3>2009</h3>
           <p style="color: var(--muted); margin: 0">Press releases, unclear backers, name abandoned in finance.</p>
         </div>
-        <div class="origin-card now">
+        <div class="origin-card">
           <h3>Today</h3>
           <p style="color: var(--muted); margin: 0">Domains, mail, DNS, SSL — your panel on ports 80/443.</p>
         </div>

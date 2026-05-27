@@ -1,15 +1,8 @@
-import { getLegalBodyHtml } from "@/lib/marketing";
+import { getAboutBodyHtml } from "@/lib/marketing";
 import Script from "next/script";
 
-type Slug = "privacy" | "terms" | "refund";
-
-/**
- * Renders /privacy, /terms, /refund pages by injecting their static HTML
- * body. See MarketingHome.tsx for the architectural rationale on why the
- * font + stylesheet <link> tags live in the component instead of going
- * through next/font / CSS imports.
- */
-export function MarketingLegalPage({ slug }: { slug: Slug }) {
+/** Renders /about from marketing-site/about.html (same style as legal pages). */
+export function MarketingAboutPage() {
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,7 +18,7 @@ export function MarketingLegalPage({ slug }: { slug: Slug }) {
       />
       {/* eslint-disable-next-line @next/next/no-css-tags -- shared with the static marketing build; see MarketingHome.tsx. */}
       <link rel="stylesheet" href="/landing.css" />
-      <div dangerouslySetInnerHTML={{ __html: getLegalBodyHtml(slug) }} />
+      <div dangerouslySetInnerHTML={{ __html: getAboutBodyHtml() }} />
       <Script src="/landing.js" strategy="afterInteractive" />
     </>
   );

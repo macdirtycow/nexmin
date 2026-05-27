@@ -10,7 +10,19 @@ export type BrandingThemeColors = {
   textColor: string;
 };
 
+/** Omiiba / Qadbak unified premium green (marketing, panel, license). */
 export const DEFAULT_BRANDING_THEME: BrandingThemeColors = {
+  primaryColor: "#2ea872",
+  accentColor: "#7dd3a8",
+  backgroundColor: "#0c100e",
+  cardColor: "#141a17",
+  borderColor: "#2a3830",
+  mutedColor: "#9caaa3",
+  textColor: "#ece8e1",
+};
+
+/** Legacy blue preset (white-label option). */
+export const OCEAN_BRANDING_THEME: BrandingThemeColors = {
   primaryColor: "#3b82f6",
   accentColor: "#5eead4",
   backgroundColor: "#0f1419",
@@ -39,8 +51,8 @@ export function normalizeBrandingTheme(
     primaryColor: norm(partial?.primaryColor, d.primaryColor),
     accentColor: norm(partial?.accentColor, d.accentColor),
     backgroundColor: norm(partial?.backgroundColor, d.backgroundColor),
-    cardColor: norm(partial?.cardColor, d.cardColor),
     borderColor: norm(partial?.borderColor, d.borderColor),
+    cardColor: norm(partial?.cardColor, d.cardColor),
     mutedColor: norm(partial?.mutedColor, d.mutedColor),
     textColor: norm(partial?.textColor, d.textColor),
   };

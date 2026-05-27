@@ -30,3 +30,8 @@ export function getLegalBodyHtml(
 ): string {
   return extractBody(`marketing-site/${slug}/index.html`);
 }
+
+/** Inner HTML of marketing-site/about.html */
+export function getAboutBodyHtml(): string {
+  return extractBody("marketing-site/about.html");
+}

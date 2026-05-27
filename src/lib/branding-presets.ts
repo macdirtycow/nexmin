@@ -1,5 +1,6 @@
 import {
   DEFAULT_BRANDING_THEME,
+  OCEAN_BRANDING_THEME,
   type BrandingThemeColors,
 } from "@/lib/branding-theme";
 
@@ -20,24 +21,16 @@ export type BrandingPreset = {
 
 export const BRANDING_PRESETS: BrandingPreset[] = [
   {
-    id: "ocean",
-    name: "Ocean",
-    description: "Blue and teal — Qadbak default",
+    id: "emerald",
+    name: "Forest",
+    description: "Premium green — Omiiba / Qadbak default",
     colors: DEFAULT_BRANDING_THEME,
   },
   {
-    id: "emerald",
-    name: "Emerald",
-    description: "Fresh green for hosting and growth",
-    colors: {
-      primaryColor: "#10b981",
-      accentColor: "#6ee7b7",
-      backgroundColor: "#0c1210",
-      cardColor: "#152019",
-      borderColor: "#234032",
-      mutedColor: "#9ca3af",
-      textColor: "#ecfdf5",
-    },
+    id: "ocean",
+    name: "Ocean",
+    description: "Blue and teal — alternate",
+    colors: OCEAN_BRANDING_THEME,
   },
   {
     id: "violet",
@@ -97,7 +90,7 @@ export const BRANDING_PRESETS: BrandingPreset[] = [
   },
 ];
 
-export const DEFAULT_BRANDING_THEME_ID: BrandingThemeId = "ocean";
+export const DEFAULT_BRANDING_THEME_ID: BrandingThemeId = "emerald";
 
 const PRESET_BY_ID = new Map(
   BRANDING_PRESETS.map((p) => [p.id, p] as const),
@@ -127,6 +120,8 @@ export function inferThemeIdFromColors(
       return preset.id;
     }
   }
+  if (primary === "#10b981" || primary === "#34d399") return "emerald";
+  if (primary === "#3b82f6") return "ocean";
   return DEFAULT_BRANDING_THEME_ID;
 }
 

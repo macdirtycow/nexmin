@@ -6,7 +6,7 @@ import Script from "next/script";
  *
  * The HTML body is authored by hand in `marketing-site/index.html` and
  * injected via dangerouslySetInnerHTML, which means it references the
- * DM Sans font + `/landing.css` classes directly in its markup. Migrating
+ * IBM Plex Sans / Newsreader + `/landing.css` classes directly in its markup. Migrating
  * to `next/font` or a CSS import would require re-templating the entire
  * marketing site to use Next-generated class names, which we deliberately
  * avoid — the static HTML doubles as a standalone build (see
@@ -25,9 +25,9 @@ export function MarketingHome() {
         href="https://fonts.gstatic.com"
         crossOrigin="anonymous"
       />
-      {/* eslint-disable-next-line @next/next/no-page-custom-font -- marketing HTML is authored standalone and ships the same DM Sans link in both the Next route and the static build. */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- marketing HTML is authored standalone and ships the same font link in both the Next route and the static build. */}
       <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap"
         rel="stylesheet"
       />
       {/* eslint-disable-next-line @next/next/no-css-tags -- landing.css is shared verbatim with the static marketing build; not eligible for Next's CSS pipeline. */}
