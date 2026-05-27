@@ -95,14 +95,6 @@ export function QadbakWebmailClient({
           <Button
             type="button"
             variant="secondary"
-            disabled={!m.user || m.sendLoading}
-            onClick={() => void m.composeTestToSelf()}
-          >
-            {m.sendLoading ? "Sending…" : "Test send"}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
             disabled={m.loading || m.messagesLoading}
             onClick={() => void m.refreshAll()}
           >

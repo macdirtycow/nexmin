@@ -4,6 +4,14 @@ import path from "node:path";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { brandingCssVars as buildBrandingCssVars } from "@/lib/branding-css";
 import {
+  colorsForThemeId,
+  DEFAULT_BRANDING_THEME_ID,
+  getBrandingPreset,
+  inferThemeIdFromColors,
+  isBrandingThemeId,
+  type BrandingThemeId,
+} from "@/lib/branding-presets";
+import {
   DEFAULT_BRANDING_THEME,
   normalizeBrandingTheme,
   type BrandingThemeColors,
@@ -17,19 +25,23 @@ const LOGO_FILE = path.join(BRANDING_DIR, "logo.png");
 export type PanelBranding = {
   brandName: string;
   tagline: string;
+  themeId: BrandingThemeId;
   hasLogo: boolean;
 } & BrandingThemeColors;
 
 export type PanelBrandingInput = {
   brandName?: string;
   tagline?: string;
+  themeId?: string;
   logoBase64?: string | null;
   reset?: boolean;
-} & Partial<BrandingThemeColors>;
+};
 
 type StoredBranding = {
   brandName?: string;
   tagline?: string;
+  themeId?: string;
+  /** @deprecated Legacy per-color storage; migrated to themeId on load */
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
@@ -38,6 +50,26 @@ type StoredBranding = {
   mutedColor?: string;
   textColor?: string;
 };
+
+function resolveStoredThemeId(data: StoredBranding): BrandingThemeId {
+  if (data.themeId && isBrandingThemeId(data.themeId)) return data.themeId;
+  return inferThemeIdFromColors(data);
+}
+
+function panelFromStored(
+  data: StoredBranding,
+  hasLogo: boolean,
+): PanelBranding {
+  const themeId = resolveStoredThemeId(data);
+  const colors = normalizeBrandingTheme(colorsForThemeId(themeId));
+  return {
+    brandName: data.brandName!.trim(),
+    tagline: (data.tagline ?? APP_TAGLINE).trim(),
+    themeId,
+    hasLogo,
+    ...colors,
+  };
+}
 
 export async function loadPanelBranding(): Promise<PanelBranding | null> {
   try {
@@ -51,13 +83,7 @@ export async function loadPanelBranding(): Promise<PanelBranding | null> {
     } catch {
       hasLogo = false;
     }
-    const colors = normalizeBrandingTheme(data);
-    return {
-      brandName: data.brandName.trim(),
-      tagline: (data.tagline ?? APP_TAGLINE).trim(),
-      hasLogo,
-      ...colors,
-    };
+    return panelFromStored(data, hasLogo);
   } catch {
     return null;
   }
@@ -70,6 +96,7 @@ export function displayBranding(
     return {
       brandName: APP_NAME,
       tagline: APP_TAGLINE,
+      themeId: DEFAULT_BRANDING_THEME_ID,
       hasLogo: false,
       isCustom: false,
       ...DEFAULT_BRANDING_THEME,
@@ -83,7 +110,7 @@ export function brandingCssVars(b: PanelBranding): string {
 }
 
 export function brandingThemeFromPanel(b: PanelBranding): BrandingThemeColors {
-  return normalizeBrandingTheme(b);
+  return normalizeBrandingTheme(colorsForThemeId(b.themeId));
 }
 
 export async function savePanelBranding(
@@ -98,24 +125,23 @@ export async function savePanelBranding(
   const existing = (await loadPanelBranding()) ?? {
     brandName: APP_NAME,
     tagline: APP_TAGLINE,
+    themeId: DEFAULT_BRANDING_THEME_ID,
     hasLogo: false,
     ...DEFAULT_BRANDING_THEME,
   };
-  const merged = normalizeBrandingTheme({
-    primaryColor: input.primaryColor ?? existing.primaryColor,
-    accentColor: input.accentColor ?? existing.accentColor,
-    backgroundColor: input.backgroundColor ?? existing.backgroundColor,
-    cardColor: input.cardColor ?? existing.cardColor,
-    borderColor: input.borderColor ?? existing.borderColor,
-    mutedColor: input.mutedColor ?? existing.mutedColor,
-    textColor: input.textColor ?? existing.textColor,
-  });
+
+  const themeId =
+    input.themeId && isBrandingThemeId(input.themeId)
+      ? input.themeId
+      : existing.themeId;
+
   const next: StoredBranding = {
     brandName: (input.brandName ?? existing.brandName).trim() || APP_NAME,
     tagline: (input.tagline ?? existing.tagline).trim() || APP_TAGLINE,
-    ...merged,
+    themeId,
   };
   await writeFile(BRANDING_JSON, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+
   if (input.logoBase64 === null) {
     await rm(LOGO_FILE, { force: true });
   } else if (input.logoBase64?.startsWith("data:image/")) {
@@ -130,9 +156,12 @@ export function logoPublicPath(hasLogo: boolean): string | null {
 }
 
 export function brandingPublicPayload(b: PanelBranding & { isCustom: boolean }) {
+  const preset = getBrandingPreset(b.themeId);
   return {
     brandName: b.brandName,
     tagline: b.tagline,
+    themeId: b.themeId,
+    themeName: preset.name,
     logoUrl: logoPublicPath(b.hasLogo),
     isCustom: b.isCustom,
     ...brandingThemeFromPanel(b),

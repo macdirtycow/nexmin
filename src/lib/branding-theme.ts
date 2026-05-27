@@ -1,4 +1,4 @@
-/** Panel theme colors — shared by server and client (no server-only). */
+/** Panel theme colors — resolved from presets on the server. */
 
 export type BrandingThemeColors = {
   primaryColor: string;
@@ -19,22 +19,6 @@ export const DEFAULT_BRANDING_THEME: BrandingThemeColors = {
   mutedColor: "#94a3b8",
   textColor: "#f1f5f9",
 };
-
-export type BrandingColorKey = keyof BrandingThemeColors;
-
-export const BRANDING_COLOR_FIELDS: {
-  key: BrandingColorKey;
-  label: string;
-  hint: string;
-}[] = [
-  { key: "primaryColor", label: "Primary", hint: "Buttons and active nav" },
-  { key: "accentColor", label: "Accent", hint: "Links and focus rings" },
-  { key: "backgroundColor", label: "Background", hint: "Page and input fields" },
-  { key: "cardColor", label: "Cards", hint: "Panels, header bar, dialogs" },
-  { key: "borderColor", label: "Borders", hint: "Cards, inputs, dividers" },
-  { key: "mutedColor", label: "Muted text", hint: "Secondary labels and hints" },
-  { key: "textColor", label: "Main text", hint: "Headings and body on dark UI" },
-];
 
 export function normalizeBrandingTheme(
   partial?: Partial<BrandingThemeColors> | null,

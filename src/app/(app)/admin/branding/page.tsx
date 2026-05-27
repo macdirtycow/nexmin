@@ -28,15 +28,9 @@ export default async function BrandingPage() {
   return (
     <BrandingEditor
       initial={{
-        brandName: b.brandName,
-        tagline: b.tagline,
-        primaryColor: b.primaryColor,
-        accentColor: b.accentColor,
-        backgroundColor: b.backgroundColor,
-        cardColor: b.cardColor,
-        borderColor: b.borderColor,
-        mutedColor: b.mutedColor,
-        textColor: b.textColor,
+        brandName: b.isCustom ? b.brandName : "",
+        tagline: b.isCustom ? b.tagline : "",
+        themeId: b.themeId,
         logoUrl: logoPublicPath(b.hasLogo),
         isCustom: b.isCustom,
       }}

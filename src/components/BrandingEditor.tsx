@@ -3,68 +3,20 @@
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import { applyBrandingTheme } from "@/lib/branding-css";
 import {
-  BRANDING_COLOR_FIELDS,
-  type BrandingThemeColors,
-} from "@/lib/branding-theme";
+  BRANDING_PRESETS,
+  colorsForThemeId,
+  type BrandingThemeId,
+} from "@/lib/branding-presets";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-type BrandingState = BrandingThemeColors & {
+type BrandingState = {
   brandName: string;
   tagline: string;
+  themeId: BrandingThemeId;
   logoUrl: string | null;
   isCustom: boolean;
 };
-
-function themeFromForm(form: BrandingState): BrandingThemeColors {
-  return {
-    primaryColor: form.primaryColor,
-    accentColor: form.accentColor,
-    backgroundColor: form.backgroundColor,
-    cardColor: form.cardColor,
-    borderColor: form.borderColor,
-    mutedColor: form.mutedColor,
-    textColor: form.textColor,
-  };
-}
-
-function ColorPicker({
-  id,
-  label,
-  hint,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  hint: string;
-  value: string;
-  onChange: (hex: string) => void;
-}) {
-  return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
-      <div className="mt-1 flex items-center gap-2">
-        <Input
-          id={id}
-          type="color"
-          className="h-10 w-14 shrink-0 cursor-pointer p-1"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <Input
-          type="text"
-          className="font-mono text-xs"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          pattern="^#[0-9A-Fa-f]{6}$"
-          placeholder="#000000"
-        />
-      </div>
-      <p className="mt-1 text-xs text-panel-muted">{hint}</p>
-    </div>
-  );
-}
 
 export function BrandingEditor({ initial }: { initial: BrandingState }) {
   const router = useRouter();
@@ -74,15 +26,14 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
   const [busy, setBusy] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(initial.logoUrl);
 
-  const theme = useMemo(() => themeFromForm(form), [form]);
+  const themeColors = useMemo(
+    () => colorsForThemeId(form.themeId),
+    [form.themeId],
+  );
 
   useEffect(() => {
-    applyBrandingTheme(theme);
-  }, [theme]);
-
-  function patchTheme(patch: Partial<BrandingThemeColors>) {
-    setForm((f) => ({ ...f, ...patch }));
-  }
+    applyBrandingTheme(themeColors);
+  }, [themeColors]);
 
   async function save(payload: Record<string, unknown>) {
     setBusy(true);
@@ -94,13 +45,24 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as BrandingState & { error?: string };
+      const data = (await res.json()) as BrandingState & {
+        error?: string;
+        themeId?: BrandingThemeId;
+      };
       if (!res.ok) throw new Error(data.error ?? "Save failed.");
-      setForm(data);
-      setLogoPreview(data.logoUrl);
-      applyBrandingTheme(themeFromForm(data));
+      setForm({
+        brandName: data.brandName,
+        tagline: data.tagline,
+        themeId: data.themeId ?? form.themeId,
+        logoUrl: data.logoUrl ?? null,
+        isCustom: data.isCustom,
+      });
+      setLogoPreview(data.logoUrl ?? null);
+      if (data.themeId) {
+        applyBrandingTheme(colorsForThemeId(data.themeId));
+      }
       router.refresh();
-      setSuccess("Branding saved — theme applies across login and panel.");
+      setSuccess("Branding saved — applies on login and across the panel.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed.");
     } finally {
@@ -109,44 +71,54 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
   }
 
   function saveAll() {
+    if (!form.brandName.trim()) {
+      setError("Company name is required.");
+      return;
+    }
     void save({
-      brandName: form.brandName,
-      tagline: form.tagline,
-      ...themeFromForm(form),
+      brandName: form.brandName.trim(),
+      tagline: form.tagline.trim(),
+      themeId: form.themeId,
     });
   }
 
   function onLogoFile(file: File | null) {
     if (!file) return;
+    if (!form.brandName.trim()) {
+      setError("Enter a company name before uploading a logo.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result ?? "");
       setLogoPreview(dataUrl);
       void save({
-        brandName: form.brandName,
-        tagline: form.tagline,
-        ...themeFromForm(form),
+        brandName: form.brandName.trim(),
+        tagline: form.tagline.trim(),
+        themeId: form.themeId,
         logoBase64: dataUrl,
       });
     };
     reader.readAsDataURL(file);
   }
 
-  const accentFields = BRANDING_COLOR_FIELDS.filter((f) =>
-    ["primaryColor", "accentColor"].includes(f.key),
-  );
-  const surfaceFields = BRANDING_COLOR_FIELDS.filter((f) =>
-    ["backgroundColor", "cardColor", "borderColor", "mutedColor", "textColor"].includes(
-      f.key,
-    ),
-  );
+  function removeLogo() {
+    setLogoPreview(null);
+    void save({
+      brandName: form.brandName.trim(),
+      tagline: form.tagline.trim(),
+      themeId: form.themeId,
+      logoBase64: null,
+    });
+  }
 
   return (
     <Card>
       <h2 className="text-lg font-medium text-panel-text">Panel branding</h2>
       <p className="mt-2 text-sm text-panel-muted">
-        White-label the full panel: name, logo, buttons, backgrounds, cards, borders,
-        and text. Changes preview live below.
+        Choose one of six themes, set your company name, and optionally upload a
+        logo. Colors are fixed per theme so the panel stays readable and
+        consistent.
       </p>
       {error && (
         <div className="mt-4">
@@ -160,54 +132,76 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
       )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="brand-name">Brand name</Label>
+        <div className="sm:col-span-2">
+          <Label htmlFor="brand-name">Company name</Label>
           <Input
             id="brand-name"
             className="mt-1"
             value={form.brandName}
             onChange={(e) => setForm({ ...form, brandName: e.target.value })}
+            placeholder="Your hosting company"
+            required
           />
         </div>
-        <div>
-          <Label htmlFor="tagline">Tagline</Label>
+        <div className="sm:col-span-2">
+          <Label htmlFor="tagline">Subtitle (optional)</Label>
           <Input
             id="tagline"
             className="mt-1"
             value={form.tagline}
             onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+            placeholder="Short line under your name on login"
           />
         </div>
       </div>
 
-      <h3 className="mt-8 text-sm font-semibold text-panel-text">Accent colors</h3>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        {accentFields.map((f) => (
-          <ColorPicker
-            key={f.key}
-            id={f.key}
-            label={f.label}
-            hint={f.hint}
-            value={form[f.key]}
-            onChange={(hex) => patchTheme({ [f.key]: hex })}
-          />
-        ))}
-      </div>
-
-      <h3 className="mt-8 text-sm font-semibold text-panel-text">
-        Surfaces & typography
-      </h3>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        {surfaceFields.map((f) => (
-          <ColorPicker
-            key={f.key}
-            id={f.key}
-            label={f.label}
-            hint={f.hint}
-            value={form[f.key]}
-            onChange={(hex) => patchTheme({ [f.key]: hex })}
-          />
-        ))}
+      <h3 className="mt-8 text-sm font-semibold text-panel-text">Theme</h3>
+      <p className="mt-1 text-xs text-panel-muted">
+        Click a theme to preview; save to apply for all users.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {BRANDING_PRESETS.map((preset) => {
+          const selected = form.themeId === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, themeId: preset.id }))}
+              className={`rounded-xl border p-4 text-left transition ${
+                selected
+                  ? "border-panel-accent bg-panel-accent/10 ring-1 ring-panel-accent/40"
+                  : "border-panel-border bg-panel-card/40 hover:border-panel-muted"
+              }`}
+            >
+              <div className="flex gap-2">
+                <span
+                  className="h-8 w-8 shrink-0 rounded-lg border border-white/10"
+                  style={{ backgroundColor: preset.colors.primaryColor }}
+                  aria-hidden
+                />
+                <span
+                  className="h-8 w-8 shrink-0 rounded-lg border border-white/10"
+                  style={{ backgroundColor: preset.colors.accentColor }}
+                  aria-hidden
+                />
+                <span
+                  className="h-8 flex-1 rounded-lg border border-white/10"
+                  style={{ backgroundColor: preset.colors.backgroundColor }}
+                  aria-hidden
+                />
+              </div>
+              <p className="mt-3 font-medium text-panel-text">{preset.name}</p>
+              <p className="mt-0.5 text-xs text-panel-muted">
+                {preset.description}
+              </p>
+              {selected ? (
+                <p className="mt-2 text-xs font-medium text-panel-link">
+                  Selected
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       <div
@@ -216,7 +210,7 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
       >
         <div className="border-b border-panel-border bg-panel-card/80 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-panel-muted">
-            Live preview
+            Live preview — {BRANDING_PRESETS.find((p) => p.id === form.themeId)?.name}
           </p>
         </div>
         <div className="bg-panel-bg p-4">
@@ -234,7 +228,9 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
                   ◆
                 </span>
               )}
-              <span className="font-semibold text-panel-text">{form.brandName}</span>
+              <span className="font-semibold text-panel-text">
+                {form.brandName.trim() || "Company name"}
+              </span>
               <nav className="ml-auto flex gap-1">
                 <span className="rounded-lg bg-panel-accent/20 px-2 py-1 text-xs text-panel-text">
                   Active
@@ -245,7 +241,9 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
               </nav>
             </div>
             <div className="space-y-3 p-4">
-              <p className="text-sm text-panel-muted">{form.tagline}</p>
+              {form.tagline ? (
+                <p className="text-sm text-panel-muted">{form.tagline}</p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button type="button" className="text-sm">
                   Primary
@@ -271,13 +269,27 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
           disabled={busy}
           onChange={(e) => onLogoFile(e.target.files?.[0] ?? null)}
         />
+        <p className="mt-1 text-xs text-panel-muted">
+          Shown in the header and on the login page. Recommended: wide logo on
+          transparent background, max height ~48px.
+        </p>
         {logoPreview ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoPreview}
-            alt="Logo preview"
-            className="mt-3 h-12 w-auto max-w-[200px] object-contain"
-          />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoPreview}
+              alt="Logo preview"
+              className="h-12 w-auto max-w-[200px] object-contain"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={removeLogo}
+            >
+              Remove logo
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -285,7 +297,11 @@ export function BrandingEditor({ initial }: { initial: BrandingState }) {
         <Button disabled={busy} onClick={saveAll}>
           {busy ? "Saving…" : "Save branding"}
         </Button>
-        <Button variant="secondary" disabled={busy} onClick={() => save({ reset: true })}>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => save({ reset: true })}
+        >
           Reset to Qadbak default
         </Button>
       </div>

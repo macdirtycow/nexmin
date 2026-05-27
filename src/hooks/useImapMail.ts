@@ -226,43 +226,6 @@ export function useImapMail({
     setError("");
   }
 
-  async function composeTestToSelf() {
-    if (!user) return;
-    const to = `${user}@${domain}`;
-    setSendLoading(true);
-    setError("");
-    setSendSuccess("");
-    try {
-      const res = await fetch(`/api/domains/${enc}/mailboxes/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user,
-          to,
-          subject: "Qadbak webmail test",
-          body: `Test message from Qadbak Mail at ${new Date().toLocaleString()}.\n\nYou should see this in INBOX and a copy in Sent.`,
-        }),
-      });
-      const data = (await res.json()) as {
-        error?: string;
-        savedToSent?: boolean;
-        sentSaveError?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Test send failed.");
-      let msg = `Test sent to ${to}. Check INBOX and Sent.`;
-      if (data.savedToSent === false) {
-        msg += ` Sent folder copy failed: ${data.sentSaveError ?? "unknown"}.`;
-      }
-      setSendSuccess(msg);
-      await load();
-      await loadMessages("Sent");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error.");
-    } finally {
-      setSendLoading(false);
-    }
-  }
-
   function startReply(mode: ComposeMode, msg: ImapMessageDetail) {
     const replyAddr = parseEmailAddress(msg.replyTo || msg.from || "");
     if (mode === "forward") {
@@ -463,7 +426,6 @@ export function useImapMail({
     openMessage,
     openComposeNew,
     openDraftForEdit,
-    composeTestToSelf,
     saveDraft,
     startReply,
     sendMail,
