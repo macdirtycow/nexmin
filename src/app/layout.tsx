@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
+import { BrandingHead } from "@/components/BrandingHead";
+import { displayBranding, loadPanelBranding } from "@/lib/branding";
 import { APP_NAME, APP_TAGLINE, APP_URL } from "@/lib/brand";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(APP_URL),
-  title: APP_NAME,
-  description: APP_TAGLINE,
-  openGraph: {
-    title: APP_NAME,
-    description: APP_TAGLINE,
-    url: APP_URL,
-    siteName: APP_NAME,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const stored = await loadPanelBranding();
+  const b = displayBranding(stored);
+  return {
+    metadataBase: new URL(APP_URL),
+    title: b.brandName,
+    description: b.tagline,
+    openGraph: {
+      title: b.brandName,
+      description: b.tagline,
+      url: APP_URL,
+      siteName: b.brandName,
+    },
+  };
+}
 
 export default function RootLayout({
   children,
@@ -21,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <BrandingHead />
+        {children}
+      </body>
     </html>
   );
 }

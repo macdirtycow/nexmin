@@ -23,6 +23,7 @@ import {
   backupList,
   backupCreate,
   backupDelete,
+  backupResolveDownload,
   backupRestore,
   backupScheduleGet,
   backupScheduleSet,
@@ -186,6 +187,9 @@ async function main() {
       break;
     case "backup-delete":
       await backupDelete(args[0], args[1]);
+      break;
+    case "backup-resolve":
+      await backupResolveDownload(args[0], args[1]);
       break;
     case "backup-restore":
       await backupRestore(args[0], args[1], args[2]);

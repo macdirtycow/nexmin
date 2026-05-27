@@ -1,0 +1,34 @@
+import { BrandingEditor } from "@/components/BrandingEditor";
+import { displayBranding, loadPanelBranding, logoPublicPath } from "@/lib/branding";
+import { PremiumUpgradeCard } from "@/lib/premium/stubs";
+import { requireAdminPage } from "@/lib/admin-api";
+import { isPremiumFeatureEnabled } from "@/lib/premium/server";
+
+export default async function BrandingPage() {
+  await requireAdminPage();
+  const premium = await isPremiumFeatureEnabled("white-label");
+  const stored = await loadPanelBranding();
+  const b = displayBranding(stored);
+
+  if (!premium) {
+    return (
+      <PremiumUpgradeCard
+        feature="white-label"
+        title="White-label branding (Premium)"
+      />
+    );
+  }
+
+  return (
+    <BrandingEditor
+      initial={{
+        brandName: b.brandName,
+        tagline: b.tagline,
+        primaryColor: b.primaryColor,
+        accentColor: b.accentColor,
+        logoUrl: logoPublicPath(b.hasLogo),
+        isCustom: b.isCustom,
+      }}
+    />
+  );
+}

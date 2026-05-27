@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import type { LicensePublicInfo } from "@/lib/qadbak-license";
+import type {
+  LicenseActivationRow,
+  LicensePublicInfo,
+} from "@/lib/qadbak-license";
 
 export function AdminLicensePanel({
   initialLicense,
@@ -16,6 +19,67 @@ export function AdminLicensePanel({
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState("");
   const [journalId, setJournalId] = useState("");
+  const [activations, setActivations] = useState<LicenseActivationRow[]>([]);
+  const [activationsLoading, setActivationsLoading] = useState(false);
+  const [maxServers, setMaxServers] = useState(1);
+
+  const loadActivations = useCallback(async () => {
+    if (license.status === "none" || license.keyHint === "—") {
+      setActivations([]);
+      return;
+    }
+    setActivationsLoading(true);
+    try {
+      const res = await fetch("/api/admin/license/activations");
+      const data = (await res.json()) as {
+        error?: string;
+        activations?: LicenseActivationRow[];
+        maxServers?: number;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Could not load activations.");
+      setActivations(data.activations ?? []);
+      setMaxServers(data.maxServers ?? 1);
+    } catch {
+      setActivations([]);
+    } finally {
+      setActivationsLoading(false);
+    }
+  }, [license.status, license.keyHint]);
+
+  useEffect(() => {
+    void loadActivations();
+  }, [loadActivations]);
+
+  async function removeActivation(instanceId: string) {
+    if (
+      !confirm(
+        `Remove activation for ${instanceId.slice(0, 8)}…? That server will lose Premium on next heartbeat.`,
+      )
+    ) {
+      return;
+    }
+    setBusy("remove-activation");
+    setError("");
+    try {
+      const res = await fetch("/api/admin/license/activations", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instanceId }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Remove failed.");
+      await loadActivations();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Remove failed.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function shortId(id: string) {
+    if (id.length <= 12) return id;
+    return `${id.slice(0, 8)}…${id.slice(-4)}`;
+  }
 
   async function runAction(action: string, payload: Record<string, string> = {}) {
     setBusy(action);
@@ -35,6 +99,13 @@ export function AdminLicensePanel({
       if (data.license) setLicense(data.license);
       setJournalId(data.journalId ?? "");
       if (action === "activate") setKey("");
+      if (
+        action === "activate" ||
+        action === "deactivate" ||
+        action === "heartbeat"
+      ) {
+        await loadActivations();
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
     } finally {
@@ -198,6 +269,89 @@ export function AdminLicensePanel({
           </Button>
         </div>
       </Card>
+
+      {license.keyHint !== "—" && license.status !== "none" ? (
+        <Card>
+          <h3 className="font-medium text-white">Other servers using this license</h3>
+          <p className="mt-2 text-sm text-panel-muted">
+            Up to {maxServers} server{maxServers === 1 ? "" : "s"} per license. Remove a
+            dead VPS here to free a slot, then activate on the new machine.
+          </p>
+          {activationsLoading ? (
+            <p className="mt-4 text-sm text-panel-muted">Loading activations…</p>
+          ) : activations.length === 0 ? (
+            <p className="mt-4 text-sm text-panel-muted">No activations recorded yet.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-panel-border text-panel-muted">
+                    <th className="py-2 pr-4">Host</th>
+                    <th className="py-2 pr-4">Instance</th>
+                    <th className="py-2 pr-4">First seen</th>
+                    <th className="py-2 pr-4">Last heartbeat</th>
+                    <th className="py-2 pr-4">Status</th>
+                    <th className="py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {activations.map((row) => (
+                    <tr
+                      key={row.instanceId}
+                      className="border-b border-panel-border/60"
+                    >
+                      <td className="py-2 pr-4 text-white">
+                        {row.hostnameHint}
+                        {row.isCurrent ? (
+                          <span className="ml-2 text-xs text-emerald-400">
+                            (this server)
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="py-2 pr-4 font-mono text-xs text-panel-muted">
+                        {shortId(row.instanceId)}
+                      </td>
+                      <td className="py-2 pr-4 text-panel-muted">
+                        {row.firstSeenAt
+                          ? new Date(row.firstSeenAt).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td className="py-2 pr-4 text-panel-muted">
+                        {row.lastHeartbeatAt
+                          ? new Date(row.lastHeartbeatAt).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td className="py-2 pr-4 capitalize text-white">
+                        {row.status}
+                      </td>
+                      <td className="py-2 text-right">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busy !== "" || row.isCurrent}
+                          onClick={() => removeActivation(row.instanceId)}
+                        >
+                          Remove
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy !== "" || activationsLoading}
+              onClick={() => loadActivations()}
+            >
+              Refresh list
+            </Button>
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

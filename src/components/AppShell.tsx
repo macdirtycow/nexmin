@@ -10,9 +10,18 @@ interface AppShellProps {
   children: React.ReactNode;
   username: string;
   role: "admin" | "client";
+  brandName?: string;
+  logoUrl?: string | null;
 }
 
-export function AppShell({ children, username, role }: AppShellProps) {
+export function AppShell({
+  children,
+  username,
+  role,
+  brandName,
+  logoUrl,
+}: AppShellProps) {
+  const title = brandName ?? APP_NAME;
   const pathname = usePathname();
   const router = useRouter();
 
@@ -27,8 +36,15 @@ export function AppShell({ children, username, role }: AppShellProps) {
       <header className="border-b border-panel-border bg-panel-card/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-lg font-semibold text-white">
-              {APP_NAME}
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 text-lg font-semibold text-white"
+            >
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-8 w-auto max-w-[120px]" />
+              ) : null}
+              {title}
             </Link>
             <nav className="flex gap-1">
               <NavLink href="/dashboard" active={pathname === "/dashboard"}>

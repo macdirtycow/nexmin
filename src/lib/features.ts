@@ -419,6 +419,7 @@ export const ADMIN_NAV = [
   { path: "/admin/templates", label: "Templates" },
   { path: "/admin/admins", label: "Administrators" },
   { path: "/admin/license", label: "License" },
+  { path: "/admin/branding", label: "Branding", premium: "white-label" as const },
   { path: "/admin/cloud", label: "Cloud (S3)" },
 ] as const;
 

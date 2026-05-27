@@ -42,17 +42,22 @@ export function ImapMailboxesManager({
   initialMailboxes,
   initialError,
   isAdmin,
+  initialUser = "",
+  webmailMode = false,
 }: {
   domain: string;
   initialMailboxes: ImapMailbox[];
   initialError: string;
   isAdmin: boolean;
+  initialUser?: string;
+  webmailMode?: boolean;
 }) {
   const enc = encodeURIComponent(domain);
   const [mailboxes, setMailboxes] = useState(initialMailboxes);
   const [error, setError] = useState(initialError);
   const [users, setUsers] = useState<MailUser[]>([]);
-  const [user, setUser] = useState("");
+  const [user, setUser] = useState(initialUser);
+  const [searchQuery, setSearchQuery] = useState("");
   const [source, setSource] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<string | null>(null);
   const [copyFrom, setCopyFrom] = useState("INBOX");
@@ -155,8 +160,22 @@ export function ImapMailboxesManager({
   );
 
   useEffect(() => {
+    if (initialUser) setUser(initialUser);
+  }, [initialUser]);
+
+  useEffect(() => {
     void load();
   }, [load]);
+
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter((m) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (m.subject ?? "").toLowerCase().includes(q) ||
+          (m.from ?? "").toLowerCase().includes(q)
+        );
+      })
+    : messages;
 
   const selfEmail = user ? `${user}@${domain}`.toLowerCase() : "";
 
@@ -306,7 +325,10 @@ export function ImapMailboxesManager({
 
   return (
     <div className="space-y-6">
-      <DomainPageHeader domain={domain} title="IMAP mailboxes" />
+      <DomainPageHeader
+        domain={domain}
+        title={webmailMode ? `Webmail — ${user || "mailbox"}` : "IMAP mailboxes"}
+      />
       <p className="text-sm text-panel-muted">
         Browse folders and read mail via{" "}
         <a
@@ -349,6 +371,14 @@ export function ImapMailboxesManager({
           <Button onClick={load} disabled={loading || !user}>
             {loading ? "Loading…" : "Load folders"}
           </Button>
+          {user && webmailMode ? null : user ? (
+            <a
+              href={`/domains/${enc}/mail/${encodeURIComponent(user)}`}
+              className="text-sm text-panel-accent hover:underline"
+            >
+              Open webmail
+            </a>
+          ) : null}
           {sourceLabel && <Badge>{sourceLabel}</Badge>}
           {authUser && (
             <span className="text-xs text-panel-muted">
@@ -400,6 +430,12 @@ export function ImapMailboxesManager({
             {messagesLoading && (
               <span className="text-sm text-panel-muted">Loading…</span>
             )}
+            <Input
+              className="ml-auto max-w-xs"
+              placeholder="Search subject or from…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <table className="mt-4 w-full text-left text-sm">
             <thead className="text-panel-muted">
@@ -411,7 +447,7 @@ export function ImapMailboxesManager({
               </tr>
             </thead>
             <tbody>
-              {messages.map((msg) => (
+              {filteredMessages.map((msg) => (
                 <tr
                   key={msg.id}
                   className={`cursor-pointer border-t border-panel-border/50 hover:bg-panel-border/20 ${

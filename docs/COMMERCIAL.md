@@ -43,6 +43,14 @@ sudo bash /opt/qadbak/scripts/buy-premium.sh QAD-XXXX-YYYY-ZZZZ-WWWW
 
 Idempotent — safe to re-run if any step fails.
 
+### Moving to a new VPS
+
+On the **old** server: *Server admin → License* → **Other servers using this
+license** → **Remove** the stale row (or **Deactivate** if the old box still
+runs). On the **new** server: paste the same key and **Activate**. If the old
+VPS is unreachable, email [info@omiiba.dev](mailto:info@omiiba.dev) with your
+key to release the slot.
+
 ## Updates
 
 ```bash

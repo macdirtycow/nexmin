@@ -1,12 +1,12 @@
 import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { installFingerprintTag } from "./lib/install-salt";
+import { sessionCookieNames } from "./lib/session";
 import {
   clientRbacEnabled,
   isClientBlockedPath,
 } from "./middleware/client-rbac";
-
-const COOKIE_NAME = "panel_session";
 
 const PUBLIC_EXACT = new Set([
   "/",
@@ -17,6 +17,7 @@ const PUBLIC_EXACT = new Set([
   "/terms",
   "/api/auth/login",
   "/api/health",
+  "/api/branding",
   "/landing.css",
   "/landing.js",
   "/favicon.svg",
@@ -24,6 +25,7 @@ const PUBLIC_EXACT = new Set([
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) return true;
+  if (pathname.startsWith("/api/branding")) return true;
   if (pathname.startsWith("/_next")) return true;
   return false;
 }
@@ -48,10 +50,17 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    const tag = installFingerprintTag();
+    if (tag) res.headers.set("X-QB-Tag", tag);
+    return res;
   }
 
-  const token = request.cookies.get(COOKIE_NAME)?.value;
+  let token: string | undefined;
+  for (const name of sessionCookieNames()) {
+    token = request.cookies.get(name)?.value;
+    if (token) break;
+  }
   const secret = getSecret();
 
   if (!token || !secret) {
@@ -71,7 +80,10 @@ export async function middleware(request: NextRequest) {
     ) {
       return clientForbiddenResponse(request, pathname);
     }
-    return NextResponse.next();
+    const res = NextResponse.next();
+    const tag = installFingerprintTag();
+    if (tag) res.headers.set("X-QB-Tag", tag);
+    return res;
   } catch {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Session expired." }, { status: 401 });

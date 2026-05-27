@@ -120,9 +120,16 @@ fi
 read -rp "Public server IP (for DNS hints) [$DEFAULT_ORIGIN_IP]: " ORIGIN_IP_IN
 ORIGIN_IP="${ORIGIN_IP_IN:-$DEFAULT_ORIGIN_IP}"
 
+INSTALL_SALT="$(openssl rand -hex 8 2>/dev/null || true)"
+if [[ -z "${INSTALL_SALT// }" ]]; then
+  INSTALL_SALT="$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+fi
+
 ENV_FILE="$QADBAK_DIR/.env.local"
 cat >"$ENV_FILE" <<EOF
 SESSION_SECRET=$SECRET
+QADBAK_INSTALL_SALT=$INSTALL_SALT
+NEXT_PUBLIC_QADBAK_API_SALT=$INSTALL_SALT
 QADBAK_INSTALL_MODE=native
 QADBAK_NATIVE_INSTALL=1
 QADBAK_DISABLE_WEBMIN=true

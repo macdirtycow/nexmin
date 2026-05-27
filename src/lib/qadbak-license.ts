@@ -469,6 +469,52 @@ export async function deactivateLicense(): Promise<void> {
   await clearStoredLicense();
 }
 
+export type LicenseActivationRow = {
+  instanceId: string;
+  hostnameHint: string;
+  firstSeenAt: string | null;
+  lastHeartbeatAt: string | null;
+  isCurrent: boolean;
+  status: "active" | "stale";
+};
+
+export async function listLicenseActivations(): Promise<{
+  activations: LicenseActivationRow[];
+  maxServers: number;
+  currentInstanceId: string;
+}> {
+  const stored = await readStoredLicense();
+  if (!stored?.token) {
+    throw new Error("No active license on this panel.");
+  }
+  return postJson(`${licenseServerFetchBase()}/v1/activations`, {
+    token: stored.token,
+  });
+}
+
+export async function removeLicenseActivation(
+  instanceId: string,
+): Promise<void> {
+  const stored = await readStoredLicense();
+  if (!stored?.token) {
+    throw new Error("No active license on this panel.");
+  }
+  const target = instanceId.trim();
+  if (!target) throw new Error("instanceId is required.");
+  const res = await fetch(
+    `${licenseServerFetchBase()}/v1/activations/${encodeURIComponent(target)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: stored.token }),
+    },
+  );
+  const data = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error ?? `License server error (${res.status})`);
+  }
+}
+
 /** Local dev / CI: issue a signed evaluation token without license server. */
 export async function issueDevPremiumToken(
   features: string[],

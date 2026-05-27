@@ -31,6 +31,10 @@ export function BackupsManager({
 }) {
   const router = useRouter();
   const enc = encodeURIComponent(domain);
+
+  function downloadUrl(backupName: string) {
+    return `/api/domains/${enc}/backups/download?name=${encodeURIComponent(backupName)}`;
+  }
   const [scheduled, setScheduled] = useState(initialScheduled);
   const [error, setError] = useState(initialError);
   const [success, setSuccess] = useState("");
@@ -295,6 +299,15 @@ export function BackupsManager({
                   <p className="text-sm text-panel-muted">{s.dest ?? s.id}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {nativeMode && canBackup && (
+                    <a
+                      href={downloadUrl(s.id)}
+                      download
+                      className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-panel-muted transition hover:bg-panel-card hover:text-white ${loading ? "pointer-events-none opacity-50" : ""}`}
+                    >
+                      Download
+                    </a>
+                  )}
                   {nativeMode && canRestore && (
                     <Button
                       variant="ghost"

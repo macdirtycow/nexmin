@@ -267,6 +267,19 @@ export async function backupDelete(domain, name) {
   emit({ ok: true, deleted: fname });
 }
 
+/** Resolve absolute path + size for panel download (path stays server-side until streamed). */
+export async function backupResolveDownload(domain, name) {
+  const fname = safeBackupName(name);
+  const { home } = await resolveDomainUser(domain);
+  const dir = path.resolve(backupsDir(home));
+  const full = path.resolve(path.join(dir, fname));
+  if (!full.startsWith(`${dir}${path.sep}`)) fail("Invalid backup path");
+  if (!(await fileExists(full))) fail(`Backup not found: ${fname}`);
+  const st = await stat(full);
+  if (!st.isFile()) fail("Not a backup file");
+  emit({ ok: true, path: full, fileName: fname, sizeBytes: st.size });
+}
+
 export async function backupRestore(domain, source, testOnly) {
   const d = String(domain).trim().toLowerCase();
   const { user, home } = await resolveDomainUser(d);

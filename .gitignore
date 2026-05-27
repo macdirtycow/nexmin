@@ -5,6 +5,8 @@ dist/
 tsconfig.tsbuildinfo
 .env
 .env.local
+data/branding.json
+data/branding/
 data/users.json
 data/servers.json
 data/native-domains.json

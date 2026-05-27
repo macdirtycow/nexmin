@@ -4,13 +4,27 @@ import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import { PanelFooter } from "@/components/PanelFooter";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [brandName, setBrandName] = useState(APP_NAME);
+  const [tagline, setTagline] = useState(APP_TAGLINE);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/branding")
+      .then((r) => r.json())
+      .then((d: { brandName?: string; tagline?: string; logoUrl?: string }) => {
+        if (d.brandName) setBrandName(d.brandName);
+        if (d.tagline) setTagline(d.tagline);
+        if (d.logoUrl) setLogoUrl(d.logoUrl);
+      })
+      .catch(() => {});
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,8 +63,12 @@ export default function LoginPage() {
             ← Back to home
           </Link>
         </p>
-        <h1 className="text-2xl font-semibold text-white">{APP_NAME}</h1>
-        <p className="mt-1 text-sm text-panel-muted">{APP_TAGLINE}</p>
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="mx-auto mb-4 h-12 w-auto max-w-[200px]" />
+        ) : null}
+        <h1 className="text-2xl font-semibold text-white">{brandName}</h1>
+        <p className="mt-1 text-sm text-panel-muted">{tagline}</p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           {error && <Alert>{error}</Alert>}
           <div>

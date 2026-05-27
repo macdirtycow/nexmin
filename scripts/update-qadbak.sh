@@ -24,6 +24,14 @@ else
   run_as_qadbak "cd '$ROOT' && bash scripts/reset-git-drift-before-pull.sh && bash scripts/git-sync-origin.sh"
 fi
 
+ENV_FILE="$ROOT/.env.local"
+if [[ -f "$ENV_FILE" ]] && ! grep -q '^QADBAK_INSTALL_SALT=' "$ENV_FILE" 2>/dev/null; then
+  SALT="$(openssl rand -hex 8 2>/dev/null || head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  echo "QADBAK_INSTALL_SALT=$SALT" >>"$ENV_FILE"
+  echo "NEXT_PUBLIC_QADBAK_API_SALT=$SALT" >>"$ENV_FILE"
+  echo "==> Added QADBAK_INSTALL_SALT to .env.local (rebuild required)"
+fi
+
 echo "==> Build (as $USER — never npm install/build as root)"
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/fix-qadbak-ownership.sh" ]]; then
   bash "$ROOT/scripts/fix-qadbak-ownership.sh"

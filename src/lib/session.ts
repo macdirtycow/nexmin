@@ -3,7 +3,22 @@ import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 import type { SessionPayload } from "./types";
 
-const COOKIE_NAME = "panel_session";
+import { installSalt } from "./install-salt";
+
+const LEGACY_COOKIE = "panel_session";
+
+export function sessionCookieName(): string {
+  const salt = installSalt();
+  return salt ? `qb-${salt}-session` : LEGACY_COOKIE;
+}
+
+/** Cookie names accepted during session read (salted + legacy). */
+export function sessionCookieNames(): string[] {
+  const primary = sessionCookieName();
+  return primary === LEGACY_COOKIE
+    ? [LEGACY_COOKIE]
+    : [primary, LEGACY_COOKIE];
+}
 
 /**
  * Cookie Secure flag is set per-request to match the actual response
@@ -68,7 +83,11 @@ export async function verifySessionToken(
 
 export async function getSession(): Promise<SessionPayload | null> {
   const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
+  let token: string | undefined;
+  for (const name of sessionCookieNames()) {
+    token = jar.get(name)?.value;
+    if (token) break;
+  }
   if (!token) return null;
   return verifySessionToken(token);
 }
@@ -78,7 +97,7 @@ export function sessionCookieOptions(
   request?: Request | NextRequest,
 ) {
   return {
-    name: COOKIE_NAME,
+    name: sessionCookieName(),
     value: token,
     httpOnly: true,
     secure: sessionCookieSecure(request),
@@ -107,7 +126,7 @@ export function applySessionCookie(
 
 export function clearSessionCookieOptions(request?: Request | NextRequest) {
   return {
-    name: COOKIE_NAME,
+    name: sessionCookieName(),
     value: "",
     httpOnly: true,
     secure: sessionCookieSecure(request),
