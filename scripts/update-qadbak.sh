@@ -25,6 +25,28 @@ else
 fi
 
 ENV_FILE="$ROOT/.env.local"
+# Rename pre-rebrand env keys on existing VPS installs (idempotent).
+if [[ -f "$ENV_FILE" ]]; then
+  migrate_env_key() {
+    local old="$1" new="$2"
+    if grep -q "^${old}=" "$ENV_FILE" 2>/dev/null && ! grep -q "^${new}=" "$ENV_FILE" 2>/dev/null; then
+      sed -i.bak "s/^${old}=/${new}=/" "$ENV_FILE"
+      rm -f "${ENV_FILE}.bak"
+      echo "==> Renamed ${old} → ${new} in .env.local"
+    fi
+  }
+  migrate_env_key VIRTUALMIN_URL QADBAK_LEGACY_API_URL
+  migrate_env_key VIRTUALMIN_USER QADBAK_LEGACY_API_USER
+  migrate_env_key VIRTUALMIN_PASS QADBAK_LEGACY_API_PASS
+  migrate_env_key VIRTUALMIN_MOCK QADBAK_LEGACY_API_MOCK
+  migrate_env_key VIRTUALMIN_UI_URL QADBAK_LEGACY_PANEL_URL
+  migrate_env_key WEBMIN_UI_URL QADBAK_LEGACY_PANEL_URL
+  migrate_env_key USERMIN_UI_URL QADBAK_ACCOUNT_PANEL_UI_URL
+  migrate_env_key QADBAK_VIRTUALMIN_FALLBACK QADBAK_LEGACY_API_FALLBACK
+  migrate_env_key QADBAK_DISABLE_WEBMIN QADBAK_DISABLE_LEGACY_PANEL
+  migrate_env_key QADBAK_WEBMIN_EMBED_BASE QADBAK_LEGACY_PANEL_EMBED_BASE
+  migrate_env_key QADBAK_SHOW_WEBMIN_NAV QADBAK_SHOW_LEGACY_PANEL_NAV
+fi
 # Ensure imap is in native features (webmail + Dovecot folders on existing installs).
 if [[ -f "$ENV_FILE" ]] && grep -q '^QADBAK_NATIVE_FEATURES=' "$ENV_FILE" 2>/dev/null; then
   if ! grep '^QADBAK_NATIVE_FEATURES=' "$ENV_FILE" | grep -qE '(^|,)(imap)(,|$)'; then
