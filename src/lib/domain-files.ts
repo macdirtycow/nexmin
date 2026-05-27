@@ -24,7 +24,7 @@ export interface DomainFileEntry {
 }
 
 export interface DomainFilesListing {
-  mode: "qadbak" | "virtualmin";
+  mode: "qadbak" | "legacy";
   home: string;
   cwd: string;
   breadcrumbs: { label: string; path: string }[];
@@ -374,7 +374,7 @@ export function listDomainFiles(
   };
 
   if (!isPanelFilesMode()) {
-    return { ...base, mode: "virtualmin" };
+    return { ...base, mode: "legacy" };
   }
 
   const entries = (MOCK_TREE[cwd] ?? []).map((e) => enrichEntry({ ...e }));

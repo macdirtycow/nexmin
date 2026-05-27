@@ -303,7 +303,7 @@ function buildIssues(
     );
   } else if (localProbe.servingApacheDefault && !publicProbe.ok) {
     issues.push(
-      "Origin routing may still hit Apache’s default site — use Repair on server (nginx vhosts for every VirtualMin domain).",
+      "Origin routing may still hit Apache’s default site — use Repair on server (nginx vhosts for every hosted domain).",
     );
   } else if (localProbe.servingApacheDefault && publicProbe.ok) {
     issues.push(
@@ -344,7 +344,7 @@ function buildIssues(
   }
 
   if (!validation.valid) {
-    issues.push("VirtualMin reports configuration problems for this domain.");
+    issues.push("The hosting engine reports configuration problems for this domain.");
   }
 
   if (publicProbe.ok) {

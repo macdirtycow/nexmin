@@ -1,4 +1,5 @@
 import { apiPath } from "@/lib/install-salt";
+import { sanitizeUserFacingMessage } from "@/lib/user-facing-errors";
 
 /** Build a panel API URL (respects per-install `/api/x/<salt>` prefix). */
 export function domainApiPath(domain: string, subpath: string): string {
@@ -18,7 +19,11 @@ export async function parseApiJson<T extends { error?: string }>(
     return {} as T;
   }
   try {
-    return JSON.parse(raw) as T;
+    const data = JSON.parse(raw) as T & { error?: string };
+    if (typeof data.error === "string") {
+      return { ...data, error: sanitizeUserFacingMessage(data.error) };
+    }
+    return data as T;
   } catch {
     const preview = raw.replace(/\s+/g, " ").slice(0, 160);
     const html = raw.trimStart().startsWith("<!");

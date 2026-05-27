@@ -14,6 +14,7 @@ import { parseDomainsListRows } from "./virtualmin-api-parse";
 import { VirtualMinError } from "./errors";
 import { virtualMinFetch } from "./virtualmin-http";
 import { rewriteWebminLoginUrlForEmbed } from "./webmin-embed-url";
+import { sanitizeUserFacingMessage } from "./user-facing-errors";
 
 function normalizeFieldKey(key: string): string {
   return key.toLowerCase().replace(/\s+/g, "_");
@@ -225,7 +226,7 @@ function summarizePlainVirtualminError(text: string): string {
         !/^Exit status:/i.test(l) &&
         !/^--\[/i.test(l),
     );
-  return (line ?? text).slice(0, 400);
+  return sanitizeUserFacingMessage((line ?? text).slice(0, 400));
 }
 
 export async function resolveDomainUnixUser(
@@ -373,7 +374,7 @@ export async function virtualMinCall(
   const pass = process.env.VIRTUALMIN_PASS;
   if (!url || !user || !pass) {
     throw new VirtualMinError(
-      "VirtualMin is not configured. Set VIRTUALMIN_URL, VIRTUALMIN_USER, and VIRTUALMIN_PASS in .env.local, or VIRTUALMIN_MOCK=true for development.",
+      "Hosting API is not configured on this server. Check .env.local or enable mock mode for development.",
     );
   }
 
@@ -397,21 +398,21 @@ export async function virtualMinCall(
     if (/Unknown parameter\s+--/i.test(text)) {
       throw new VirtualMinError(
         text.match(/Unknown parameter[^\n]*/i)?.[0] ??
-          "VirtualMin rejected API parameters.",
+          "The server rejected API parameters.",
         exitCode,
         text,
       );
     }
     if (!res.ok) {
       throw new VirtualMinError(
-        `VirtualMin HTTP ${res.status}`,
+        `Hosting API HTTP ${res.status}`,
         exitCode,
         text,
       );
     }
     if (exitCode !== undefined && exitCode !== 0) {
       throw new VirtualMinError(
-        summarizePlainVirtualminError(text) || "VirtualMin command failed.",
+        summarizePlainVirtualminError(text) || "Server command failed.",
         exitCode,
         text,
       );
@@ -427,7 +428,7 @@ export async function virtualMinCall(
 
   if (!res.ok) {
     throw new VirtualMinError(
-      `VirtualMin HTTP ${res.status}`,
+      `Hosting API HTTP ${res.status}`,
       exitCode,
       text,
     );
@@ -441,7 +442,7 @@ export async function virtualMinCall(
         envelope.error ??
           envelope.full_error ??
           envelope.message ??
-          "VirtualMin command failed.",
+          "Server command failed.",
       );
       throw new VirtualMinError(msg, exitCode, text);
     }
@@ -452,7 +453,7 @@ export async function virtualMinCall(
       typeof parsed === "object" && parsed && "error" in parsed
         ? String((parsed as { error: unknown }).error)
         : text.slice(0, 500);
-    throw new VirtualMinError(msg || "VirtualMin command failed.", exitCode, text);
+    throw new VirtualMinError(msg || "Server command failed.", exitCode, text);
   }
 
   return parsed;

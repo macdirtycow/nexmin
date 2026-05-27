@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: Params) {
     const live = liveFilesEnabled();
     if (!isPanelFilesMode() && !live) {
       return jsonError(
-        "File actions on the server are done via the VirtualMin file manager. Open Files in Qadbak.",
+        "Native file access is not enabled on this server. Run configure-domain-fs-sudo.sh and restart Qadbak.",
         501,
       );
     }

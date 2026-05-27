@@ -18,6 +18,7 @@ import {
   type DomainFilesListing,
 } from "@/lib/domain-files";
 import { domainApiFetch, domainApiPath, parseApiJson } from "@/lib/api-fetch";
+import { sanitizeUserFacingMessage } from "@/lib/user-facing-errors";
 import {
   exceedsUploadLimit,
   formatUploadLimit,
@@ -346,7 +347,7 @@ export function FileManager({
         title="Files"
         description={`${listing.home} · document root: public_html`}
       />
-      {error && <Alert>{error}</Alert>}
+      {error && <Alert>{sanitizeUserFacingMessage(error)}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
       <div className="flex flex-wrap gap-2">

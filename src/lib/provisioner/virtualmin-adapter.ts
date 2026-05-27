@@ -5,7 +5,7 @@ import type { Provisioner } from "./types";
 export function createVirtualminProvisioner(): Provisioner {
   return {
     id: "virtualmin",
-    label: "VirtualMin (remote.cgi)",
+    label: "Hosting API (legacy)",
     ...vm,
   };
 }

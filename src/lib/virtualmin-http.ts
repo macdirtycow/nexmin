@@ -24,7 +24,7 @@ export function virtualMinTlsInsecureEnabled(): boolean {
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
     console.warn(
       "[qadbak] NODE_TLS_REJECT_UNAUTHORIZED=0 affects all HTTPS from this process. " +
-        "Prefer VIRTUALMIN_TLS_INSECURE=true in .env.local (VirtualMin API only).",
+        "Prefer VIRTUALMIN_TLS_INSECURE=true in .env.local for the hosting API only.",
     );
     return true;
   }

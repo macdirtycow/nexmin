@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       const mod =
         moduleById(webminModulesForAdmin(), moduleId) ??
         catalogModule(moduleId);
-      if (!mod) return jsonError("Unknown Webmin module.");
+      if (!mod) return jsonError("Unknown server module.");
       redirectPath = mod.path;
     }
 

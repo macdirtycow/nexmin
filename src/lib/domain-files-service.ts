@@ -17,6 +17,7 @@ import {
 } from "./domain-files-live";
 import type { Role } from "./types";
 import { createVirtualMinLoginLink } from "./virtualmin";
+import { sanitizeUserFacingMessage } from "./user-facing-errors";
 
 export async function resolveDomainFilesListing(
   domain: string,
@@ -53,12 +54,14 @@ export async function resolveDomainFilesListing(
         });
       } catch {
         return {
-          listing: { ...base, mode: "virtualmin" },
-          error: `${hint}. Run on the server: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak. Test: sudo -u qadbak sudo -n /opt/qadbak/scripts/run-domain-fs-helper.sh list /home/UNIX_USER`,
+          listing: { ...base, mode: "legacy" },
+          error: sanitizeUserFacingMessage(
+            `${hint}. Run on the server: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak. Test: sudo -u qadbak sudo -n /opt/qadbak/scripts/run-domain-fs-helper.sh list /home/UNIX_USER`,
+          ),
         };
       }
       return {
-        listing: { ...base, mode: "virtualmin", fileManagerUrl },
+        listing: { ...base, mode: "legacy", fileManagerUrl },
         error: "",
       };
     }
@@ -71,13 +74,15 @@ export async function resolveDomainFilesListing(
       redirectUrl: "/filemin/index.cgi",
     });
   } catch (e) {
-    error = e instanceof Error ? e.message : "Could not load file manager.";
+    error = sanitizeUserFacingMessage(
+      e instanceof Error ? e.message : "Could not load file manager.",
+    );
   }
 
   return {
     listing: {
       ...base,
-      mode: "virtualmin",
+      mode: "legacy",
       fileManagerUrl,
     },
     error,

@@ -49,10 +49,10 @@ export function createHybridProvisioner(strictNative = false): Provisioner {
     createVirtualMinLoginLink: async (...args) => {
       if (webminDisabled()) {
         throw new Error(
-          "Webmin/VirtualMin login is disabled (QADBAK_DISABLE_WEBMIN).",
+          "Legacy control-panel login is disabled (QADBAK_DISABLE_WEBMIN).",
         );
       }
-      if (!backend) throw new Error("VirtualMin fallback is not configured.");
+      if (!backend) throw new Error("Hosting API fallback is not configured.");
       return backend.createVirtualMinLoginLink(...args);
     },
   };

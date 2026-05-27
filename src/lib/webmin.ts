@@ -68,14 +68,14 @@ function parseLoginUrl(data: unknown, fallback: string): string {
 export const WEBMIN_ADMIN_MODULES: WebminModule[] = [
   {
     id: "dashboard",
-    label: "Webmin dashboard",
+    label: "Server dashboard",
     description: "System status, disk, and services",
     path: "/",
     category: "System",
   },
   {
     id: "virtualmin",
-    label: "Virtualmin",
+    label: "Hosting",
     description: "All virtual servers and server management",
     path: "/virtual-server/",
     category: "Hosting",
@@ -215,15 +215,15 @@ export const WEBMIN_ADMIN_MODULES: WebminModule[] = [
 export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
   {
     id: "vm-overview",
-    label: "Virtualmin overview",
-    description: "Domain settings in Virtualmin",
+    label: "Domain overview",
+    description: "Domain settings",
     path: "/virtual-server/",
-    category: "Virtualmin",
+    category: "Hosting",
     virtualmin: true,
   },
   {
     id: "vm-files",
-    label: "Virtualmin file manager",
+    label: "Legacy file manager",
     description: "public_html and home directory",
     path: "/filemin/index.cgi",
     category: "Files",
@@ -234,7 +234,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     label: "Email & mailboxes",
     description: "Users and aliases",
     path: "/virtual-server/edit_users.cgi",
-    category: "Virtualmin",
+    category: "Hosting",
     virtualmin: true,
   },
   {
@@ -242,7 +242,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     label: "DNS records",
     description: "DNS for this domain",
     path: "/virtual-server/edit_dns.cgi",
-    category: "Virtualmin",
+    category: "Hosting",
     virtualmin: true,
   },
   {
@@ -250,7 +250,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     label: "SSL certificates",
     description: "Certificates and Let's Encrypt",
     path: "/virtual-server/edit_ssl.cgi",
-    category: "Virtualmin",
+    category: "Hosting",
     virtualmin: true,
   },
   {
@@ -258,13 +258,13 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     label: "Databases",
     description: "MySQL databases for this domain",
     path: "/virtual-server/edit_databases.cgi",
-    category: "Virtualmin",
+    category: "Hosting",
     virtualmin: true,
   },
   {
     id: "vm-terminal",
     label: "Terminal (xterm)",
-    description: "Shell in Webmin for this domain",
+    description: "Shell for this domain",
     path: "/xterm/",
     category: "Tools",
     virtualmin: true,
@@ -279,18 +279,18 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
   },
   {
     id: "usermin-mail",
-    label: "Usermin webmail",
+    label: "Webmail",
     description: "Webmail as domain owner",
     path: "/mail/",
-    category: "Usermin",
+    category: "Mail",
     usermin: true,
   },
   {
     id: "usermin-files",
-    label: "Usermin files",
+    label: "Mailbox files",
     description: "Files as domain owner",
     path: "/filemin/",
-    category: "Usermin",
+    category: "Mail",
     usermin: true,
   },
   {
@@ -298,7 +298,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     label: "Change password",
     description: "Account password",
     path: "/password/",
-    category: "Usermin",
+    category: "Mail",
     usermin: true,
   },
 ];
@@ -338,7 +338,7 @@ export async function createWebminLoginLink(
 ): Promise<string> {
   if (options.target === "root" && actor.role !== "admin") {
     throw new VirtualMinError(
-      "Only administrators may open a Webmin root session.",
+      "Only administrators may open a server admin session.",
     );
   }
 
@@ -347,7 +347,7 @@ export async function createWebminLoginLink(
     params.root = "";
   } else if (options.target === "usermin") {
     if (!options.userminUser?.trim()) {
-      throw new VirtualMinError("Usermin user is missing.");
+      throw new VirtualMinError("Mailbox user is missing.");
     }
     params["usermin-user"] = options.userminUser.trim();
   } else {

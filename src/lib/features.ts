@@ -316,7 +316,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     id: "cron",
     phase: 5,
     label: "Cron",
-    description: "Scheduled tasks (via VirtualMin API)",
+    description: "Scheduled tasks (cron)",
     path: "cron",
     programs: {
       admin: ["list-cron-jobs", "create-cron-job", "delete-cron-job"],

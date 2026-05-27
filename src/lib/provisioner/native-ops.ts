@@ -623,7 +623,7 @@ export async function resendEmailNative(
   _actor: Actor,
 ): Promise<void> {
   throw new Error(
-    `Resend (${messageId}) is not available without VirtualMin. Use your mail client, or requeue from the server with postqueue/postfix.`,
+    `Resend (${messageId}) is not available in native mail mode. Use your mail client, or requeue from the server with postqueue/postfix.`,
   );
 }
 
