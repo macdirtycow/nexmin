@@ -55,6 +55,7 @@ export async function POST(request: Request, { params }: Params) {
       format?: "zip" | "tar.gz";
       items?: string[];
       newName?: string;
+      overwrite?: boolean;
     };
 
     if (body.action === "mkdir") {
