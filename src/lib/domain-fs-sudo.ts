@@ -52,16 +52,19 @@ export function uploadInstallTimeoutMs(fileBytes: number): number {
 export async function runDomainFsInstallUpload(
   destAbs: string,
   tempPath: string,
-  maxBytes: number,
-  options?: { overwrite?: boolean },
+  maxBytes: number | null,
+  options?: { overwrite?: boolean; fileBytes?: number },
 ): Promise<{ sizeBytes: number }> {
+  const unlimited = maxBytes === null;
+  const timeoutBytes = options?.fileBytes ?? maxBytes ?? 100 * 1024 ** 3;
   const payload = JSON.stringify({
     tempPath,
-    maxBytes,
+    maxBytes: unlimited ? 0 : maxBytes,
+    unlimited,
     overwrite: options?.overwrite !== false,
   });
   const stdout = await runDomainFsSudo(["install-upload", destAbs, payload], {
-    timeout: uploadInstallTimeoutMs(maxBytes),
+    timeout: uploadInstallTimeoutMs(timeoutBytes),
     maxBuffer: 1024 * 1024,
   });
   const line = stdout.trim().split("\n").pop() ?? "";

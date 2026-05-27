@@ -14,7 +14,7 @@ import { nativeFeatureEnabled } from "@/lib/provisioner/native-features";
 import { isIndependentMode } from "@/lib/provisioner/native-stub";
 import { runProvisioningHelper } from "@/lib/provisioner/native-exec";
 import { getMaxUploadBytes } from "@/lib/upload-limits-server";
-import { formatUploadLimit } from "@/lib/upload-limits";
+import { exceedsUploadLimit, formatUploadLimit } from "@/lib/upload-limits";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -55,14 +55,14 @@ export async function POST(request: Request, { params }: Params) {
     if (!file.name.toLowerCase().endsWith(".tar.gz")) {
       return jsonError("Backup must be a .tar.gz archive.");
     }
-    if (file.size > maxBytes) {
+    if (exceedsUploadLimit(file.size, maxBytes)) {
       return jsonError(`Backup is larger than ${limitLabel}.`);
     }
 
     const destName = String(form.get("name") ?? "").trim();
     const { tempPath: tmp, size } = await streamFileToTemp(file);
     tempPath = tmp;
-    if (size > maxBytes) {
+    if (exceedsUploadLimit(size, maxBytes)) {
       return jsonError(`Backup is larger than ${limitLabel}.`);
     }
 

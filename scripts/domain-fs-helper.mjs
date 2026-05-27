@@ -348,13 +348,19 @@ async function movePath(srcAbs, payload) {
 
 async function installUpload(absDest, payload) {
   const tempPath = String(payload.tempPath ?? "");
+  const unlimited = payload.unlimited === true;
   const maxBytes = Number(payload.maxBytes ?? 0);
   const overwrite = payload.overwrite !== false;
-  if (!tempPath || !Number.isFinite(maxBytes) || maxBytes <= 0) {
-    fail("tempPath and maxBytes required.");
+  if (!tempPath) {
+    fail("tempPath required.");
   }
-  if (maxBytes > MAX_PANEL_UPLOAD_BYTES) {
-    fail("Upload limit exceeds panel maximum.");
+  if (!unlimited) {
+    if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+      fail("maxBytes required.");
+    }
+    if (maxBytes > MAX_PANEL_UPLOAD_BYTES) {
+      fail("Upload limit exceeds panel maximum.");
+    }
   }
 
   const tmpRoot = await fs.realpath(os.tmpdir());
@@ -369,7 +375,7 @@ async function installUpload(absDest, payload) {
 
   const st = await fs.stat(resolvedTemp);
   if (!st.isFile()) fail("Not a file.");
-  if (st.size > maxBytes) {
+  if (!unlimited && st.size > maxBytes) {
     fail(`File exceeds upload limit (${maxBytes} bytes).`);
   }
 

@@ -125,7 +125,7 @@ write_vhost() {
     echo "    ssl_certificate     /etc/letsencrypt/live/${PANEL_HOST}/fullchain.pem;"
     echo "    ssl_certificate_key /etc/letsencrypt/live/${PANEL_HOST}/privkey.pem;"
     echo ""
-    echo "    client_max_body_size 100g;"
+    echo "    client_max_body_size 0;"
     echo ""
     write_proxy_locations
     echo "}"
@@ -135,7 +135,7 @@ write_vhost() {
     echo "    listen [::]:80;"
     echo "    server_name ${PANEL_HOST};"
     echo ""
-    echo "    client_max_body_size 100g;"
+    echo "    client_max_body_size 0;"
     echo ""
     write_proxy_locations
     echo "}"

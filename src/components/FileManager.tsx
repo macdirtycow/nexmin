@@ -17,7 +17,11 @@ import {
   type DomainFileEntry,
   type DomainFilesListing,
 } from "@/lib/domain-files";
-import { formatUploadLimit } from "@/lib/upload-limits";
+import {
+  exceedsUploadLimit,
+  formatUploadLimit,
+  type UploadByteLimit,
+} from "@/lib/upload-limits";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
@@ -32,7 +36,7 @@ export function FileManager({
   domain: string;
   initialListing: DomainFilesListing;
   initialError: string;
-  maxUploadBytes: number;
+  maxUploadBytes: UploadByteLimit;
   uploadPremium: boolean;
 }) {
   const uploadLimitLabel = formatUploadLimit(maxUploadBytes);
@@ -201,7 +205,7 @@ export function FileManager({
       }
     }
 
-    const tooLarge = files.find((f) => f.size > maxUploadBytes);
+    const tooLarge = files.find((f) => exceedsUploadLimit(f.size, maxUploadBytes));
     if (tooLarge) {
       setError(`${tooLarge.name} is larger than ${uploadLimitLabel}.`);
       return;
@@ -381,8 +385,11 @@ export function FileManager({
                 <div>
                   <p className="font-medium text-white">Upload</p>
                   <p className="text-sm text-panel-muted">
-                    Drag files here or choose from your computer (max. {uploadLimitLabel} per file
-                    {uploadPremium ? ", Premium" : ", Core"}).
+                    Drag files here or choose from your computer (
+                    {uploadPremium
+                      ? "Premium: no panel size limit per file"
+                      : `max. ${uploadLimitLabel} per file`}
+                    ).
                   </p>
                   <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-panel-muted">
                     <input

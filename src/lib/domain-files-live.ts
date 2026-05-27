@@ -185,9 +185,9 @@ export async function uploadDomainFileFromTempLive(
   domain: VirtualMinDomain | string,
   panelPath: string,
   tempPath: string,
-  maxBytes: number,
+  maxBytes: number | null,
   actor: { role: Role; domains: string[] },
-  options?: { overwrite?: boolean },
+  options?: { overwrite?: boolean; fileBytes?: number },
 ): Promise<number> {
   const parent = panelPath.includes("/")
     ? panelPath.replace(/\/[^/]+$/, "")

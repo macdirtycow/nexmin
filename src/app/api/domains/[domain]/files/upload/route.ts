@@ -17,7 +17,7 @@ import {
 import { requireDomainApi } from "@/lib/domain-api";
 import { VirtualMinError } from "@/lib/errors";
 import { getMaxUploadBytes } from "@/lib/upload-limits-server";
-import { formatUploadLimit } from "@/lib/upload-limits";
+import { exceedsUploadLimit, formatUploadLimit } from "@/lib/upload-limits";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -60,24 +60,25 @@ export async function POST(request: Request, { params }: Params) {
       if (!safe) throw new VirtualMinError("Invalid file name.");
       const rel = parentNorm ? `${parentNorm}/${safe}` : safe;
 
-      if (item.size > maxBytes) {
+      if (exceedsUploadLimit(item.size, maxBytes)) {
         return jsonError(`File ${item.name} is larger than ${limitLabel}.`);
       }
 
       if (live) {
         const { tempPath, size } = await streamFileToTemp(item);
         tempPaths.push(tempPath);
-        if (size > maxBytes) {
+        if (exceedsUploadLimit(size, maxBytes)) {
           return jsonError(`File ${item.name} is larger than ${limitLabel}.`);
         }
         await uploadDomainFileFromTempLive(domain, rel, tempPath, maxBytes, session, {
           overwrite,
+          fileBytes: size,
         });
         tempPaths = tempPaths.filter((p) => p !== tempPath);
         await unlink(tempPath).catch(() => {});
       } else {
         const bytes = new Uint8Array(await item.arrayBuffer());
-        if (bytes.byteLength > maxBytes) {
+        if (exceedsUploadLimit(bytes.byteLength, maxBytes)) {
           return jsonError(`File ${item.name} is larger than ${limitLabel}.`);
         }
         uploadDomainFile(dir, item.name, bytes, { overwrite });
