@@ -1,6 +1,6 @@
 # E2E checklist (v1 exit)
 
-Run on a **dedicated test VPS** only (`VIRTUALMIN_MOCK=false`). Not on your live production server or any other production host.
+Run on a **dedicated test VPS** only (`QADBAK_LEGACY_API_MOCK=false`). Not on your live production server or any other production host.
 
 Setup: [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) · Preflight: `npm run preflight`  
 Automated on **install** (real panel): `post-install-verify.sh` — [E2E-PLAYWRIGHT.md](./E2E-PLAYWRIGHT.md)  
@@ -9,11 +9,11 @@ Automated **local** (mock): `npm run test:e2e`
 ## Admin
 
 - [ ] Login at `/login`
-- [ ] Dashboard lists domains matching VirtualMin
+- [ ] Dashboard lists domains matching legacy hosting API
 - [ ] Create primary domain at `/domains/new`
 - [ ] Create sub-server at `/domains/new?type=sub`
 - [ ] Create alias at `/domains/new?type=alias`
-- [ ] `/admin/status` — Webmin dashboard embed loads
+- [ ] `/admin/status` — server admin dashboard embed loads
 - [ ] `/admin/system-menu` → open a module embed
 - [ ] Resellers / plans / cloud / license pages load
 

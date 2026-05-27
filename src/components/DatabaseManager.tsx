@@ -8,7 +8,7 @@ import {
   Input,
   Label,
 } from "@/components/ui";
-import type { VirtualMinDatabase } from "@/lib/types";
+import type { HostedDatabase } from "@/lib/types";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -18,7 +18,7 @@ export function DatabaseManager({
   initialError,
 }: {
   domain: string;
-  initialDatabases: VirtualMinDatabase[];
+  initialDatabases: HostedDatabase[];
   initialError: string;
 }) {
   const enc = encodeURIComponent(domain);

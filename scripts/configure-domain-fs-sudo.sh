@@ -72,8 +72,8 @@ pick_test_home() {
       fi
     fi
   fi
-  if command -v virtualmin &>/dev/null; then
-    td="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+    td="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
     if [[ -n "$td" ]]; then
       u="${td%%.*}"
       if [[ -d "/home/$u" ]]; then

@@ -1,44 +1,45 @@
 import type { Role } from "./types";
 import {
   callCreateLoginLink,
-  createVirtualMinLoginLink,
-  VirtualMinError,
-} from "./virtualmin";
+  createDomainLegacyLoginLink,
+  PanelError,
+} from "./hosting-remote";
+import { LEGACY_UPSTREAM } from "./legacy-upstream-keys";
 
-export type WebminLoginTarget = "root" | "domain" | "usermin";
+export type LegacyPanelLoginTarget = "root" | "domain" | "account-panel";
 
-export interface WebminModule {
+export interface LegacyPanelModule {
   id: string;
   label: string;
   description: string;
   path: string;
   category: string;
-  /** Only for domain-scoped Virtualmin UI */
-  virtualmin?: boolean;
-  /** Opens Usermin (mailbox / domain owner) */
-  usermin?: boolean;
-  /** Admin root Webmin only */
+  /** Only for domain-scoped legacy hosting UI */
+  legacyPanel?: boolean;
+  /** Opens account panel (mailbox / domain owner) */
+  accountPanel?: boolean;
+  /** Admin root server admin only */
   adminOnly?: boolean;
 }
 
-export function webminUiBase(): string {
-  const embed = process.env.QADBAK_WEBMIN_EMBED_BASE?.replace(/\/$/, "");
+export function legacyPanelUiBase(): string {
+  const embed = process.env.QADBAK_LEGACY_PANEL_EMBED_BASE?.replace(/\/$/, "");
   if (embed) return embed;
   const panel = process.env.QADBAK_PANEL_URL?.replace(/\/$/, "");
-  if (panel) return `${panel}/embed/webmin`;
+  if (panel) return `${panel}/embed/legacy-panel`;
   return (
-    process.env.WEBMIN_UI_URL ??
-    process.env.VIRTUALMIN_UI_URL ??
+    process.env.QADBAK_LEGACY_PANEL_URL ??
+    process.env.QADBAK_LEGACY_PANEL_URL ??
     "https://localhost:10000"
   ).replace(/\/$/, "");
 }
 
-export function userminUiBase(): string {
-  const explicit = process.env.USERMIN_UI_URL?.replace(/\/$/, "");
+export function accountPanelUiBase(): string {
+  const explicit = process.env.QADBAK_ACCOUNT_PANEL_UI_URL?.replace(/\/$/, "");
   if (explicit) return explicit;
-  const webmin = webminUiBase();
+  const panelBase = legacyPanelUiBase();
   try {
-    const u = new URL(webmin);
+    const u = new URL(panelBase);
     if (u.port === "10000") {
       u.port = "20000";
       return u.origin;
@@ -64,8 +65,8 @@ function parseLoginUrl(data: unknown, fallback: string): string {
   return fallback;
 }
 
-/** Webmin modules (root / admin). Paths are relative to WEBMIN_UI_URL. */
-export const WEBMIN_ADMIN_MODULES: WebminModule[] = [
+/** server admin modules (root / admin). Paths are relative to QADBAK_LEGACY_PANEL_URL. */
+export const LEGACY_PANEL_ADMIN_MODULES: LegacyPanelModule[] = [
   {
     id: "dashboard",
     label: "Server dashboard",
@@ -74,12 +75,12 @@ export const WEBMIN_ADMIN_MODULES: WebminModule[] = [
     category: "System",
   },
   {
-    id: "virtualmin",
+    id: "legacy-remote",
     label: "Hosting",
     description: "All virtual servers and server management",
     path: "/virtual-server/",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "filemin",
@@ -211,15 +212,15 @@ export const WEBMIN_ADMIN_MODULES: WebminModule[] = [
   },
 ];
 
-/** Per domain: Virtualmin + Usermin (no root Webmin). */
-export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
+/** Per domain: legacy hosting + account panel (no root server admin). */
+export const LEGACY_PANEL_DOMAIN_MODULES: LegacyPanelModule[] = [
   {
     id: "vm-overview",
     label: "Domain overview",
     description: "Domain settings",
     path: "/virtual-server/",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-files",
@@ -227,7 +228,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "public_html and home directory",
     path: "/filemin/index.cgi",
     category: "Files",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-email",
@@ -235,7 +236,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "Users and aliases",
     path: "/virtual-server/edit_users.cgi",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-dns",
@@ -243,7 +244,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "DNS for this domain",
     path: "/virtual-server/edit_dns.cgi",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-ssl",
@@ -251,7 +252,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "Certificates and Let's Encrypt",
     path: "/virtual-server/edit_ssl.cgi",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-databases",
@@ -259,7 +260,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "MySQL databases for this domain",
     path: "/virtual-server/edit_databases.cgi",
     category: "Hosting",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-terminal",
@@ -267,7 +268,7 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "Shell for this domain",
     path: "/xterm/",
     category: "Tools",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
     id: "vm-shell",
@@ -275,51 +276,51 @@ export const WEBMIN_DOMAIN_MODULES: WebminModule[] = [
     description: "Command shell for this domain",
     path: "/shell/",
     category: "Tools",
-    virtualmin: true,
+    legacyPanel: true,
   },
   {
-    id: "usermin-mail",
+    id: "account-panel-mail",
     label: "Webmail",
     description: "Webmail as domain owner",
     path: "/mail/",
     category: "Mail",
-    usermin: true,
+    accountPanel: true,
   },
   {
-    id: "usermin-files",
+    id: "account-panel-files",
     label: "Mailbox files",
     description: "Files as domain owner",
     path: "/filemin/",
     category: "Mail",
-    usermin: true,
+    accountPanel: true,
   },
   {
-    id: "usermin-password",
+    id: "account-panel-password",
     label: "Change password",
     description: "Account password",
     path: "/password/",
     category: "Mail",
-    usermin: true,
+    accountPanel: true,
   },
 ];
 
-export function webminModulesForAdmin(): WebminModule[] {
-  return WEBMIN_ADMIN_MODULES;
+export function legacyPanelModulesForAdmin(): LegacyPanelModule[] {
+  return LEGACY_PANEL_ADMIN_MODULES;
 }
 
-export function webminModulesForDomain(): WebminModule[] {
-  return WEBMIN_DOMAIN_MODULES;
+export function legacyPanelModulesForDomain(): LegacyPanelModule[] {
+  return LEGACY_PANEL_DOMAIN_MODULES;
 }
 
 export function fallbackLoginUrl(
-  target: WebminLoginTarget,
+  target: LegacyPanelLoginTarget,
   opts: { domain?: string; redirectPath?: string },
 ): string {
   const redirect = normalizeRedirect(opts.redirectPath) ?? "/";
-  if (target === "usermin") {
-    return `${userminUiBase()}${redirect}`;
+  if (target === "account-panel") {
+    return `${accountPanelUiBase()}${redirect}`;
   }
-  const base = webminUiBase();
+  const base = legacyPanelUiBase();
   if (target === "domain" && opts.domain) {
     if (opts.redirectPath) return `${base}${redirect}`;
     return `${base}/virtual-server/?domain=${encodeURIComponent(opts.domain)}`;
@@ -327,17 +328,17 @@ export function fallbackLoginUrl(
   return `${base}${redirect}`;
 }
 
-export async function createWebminLoginLink(
+export async function createLegacyPanelLoginLink(
   actor: { role: Role; domains: string[] },
   options: {
-    target: WebminLoginTarget;
+    target: LegacyPanelLoginTarget;
     domain?: string;
-    userminUser?: string;
+    accountPanelUser?: string;
     redirectPath?: string;
   },
 ): Promise<string> {
   if (options.target === "root" && actor.role !== "admin") {
-    throw new VirtualMinError(
+    throw new PanelError(
       "Only administrators may open a server admin session.",
     );
   }
@@ -345,20 +346,20 @@ export async function createWebminLoginLink(
   const params: Record<string, string> = {};
   if (options.target === "root") {
     params.root = "";
-  } else if (options.target === "usermin") {
-    if (!options.userminUser?.trim()) {
-      throw new VirtualMinError("Mailbox user is missing.");
+  } else if (options.target === "account-panel") {
+    if (!options.accountPanelUser?.trim()) {
+      throw new PanelError("Mailbox user is missing.");
     }
-    params["usermin-user"] = options.userminUser.trim();
+    params[LEGACY_UPSTREAM.accountPanelUserParam] = options.accountPanelUser.trim();
   } else {
     if (!options.domain?.trim()) {
-      throw new VirtualMinError("Domain is missing.");
+      throw new PanelError("Domain is missing.");
     }
     params.domain = options.domain.trim();
   }
 
   if (options.target === "domain" && options.domain?.trim()) {
-    const url = await createVirtualMinLoginLink(options.domain.trim(), actor, {
+    const url = await createDomainLegacyLoginLink(options.domain.trim(), actor, {
       redirectUrl: options.redirectPath,
     });
     return parseLoginUrl(
@@ -384,8 +385,8 @@ export async function createWebminLoginLink(
 }
 
 export function moduleById(
-  modules: WebminModule[],
+  modules: LegacyPanelModule[],
   id: string,
-): WebminModule | undefined {
+): LegacyPanelModule | undefined {
   return modules.find((m) => m.id === id);
 }

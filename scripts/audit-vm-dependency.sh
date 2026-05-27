@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Audit native vs VirtualMin dependency — run on the VPS after changing .env.local.
+# Audit native vs legacy hosting API dependency — run on the VPS after changing .env.local.
 set -euo pipefail
 ROOT="${QADBAK_DIR:-/opt/qadbak}"
 ENV_FILE="$ROOT/.env.local"
@@ -7,25 +7,25 @@ ENV_FILE="$ROOT/.env.local"
 source "$ROOT/scripts/lib/read-env-local.sh" 2>/dev/null || true
 
 if [[ -f "$ENV_FILE" ]]; then
-  QADBAK_PROVISIONER="$(read_env_local_key QADBAK_PROVISIONER virtualmin)"
+  QADBAK_PROVISIONER="$(read_env_local_key QADBAK_PROVISIONER legacy-host)"
   QADBAK_NATIVE_FEATURES="$(read_env_local_key QADBAK_NATIVE_FEATURES "")"
-  QADBAK_VIRTUALMIN_FALLBACK="$(read_env_local_key QADBAK_VIRTUALMIN_FALLBACK true)"
-  QADBAK_DISABLE_WEBMIN="$(read_env_local_key QADBAK_DISABLE_WEBMIN false)"
+  QADBAK_LEGACY_API_FALLBACK="$(read_env_local_key QADBAK_LEGACY_API_FALLBACK true)"
+  QADBAK_DISABLE_LEGACY_PANEL="$(read_env_local_key QADBAK_DISABLE_LEGACY_PANEL false)"
   QADBAK_MAIL_BACKEND="$(read_env_local_key QADBAK_MAIL_BACKEND auto)"
 fi
 
 echo "=== Qadbak provisioner audit ==="
-echo "QADBAK_PROVISIONER=${QADBAK_PROVISIONER:-virtualmin}"
+echo "QADBAK_PROVISIONER=${QADBAK_PROVISIONER:-legacy-host}"
 echo "QADBAK_NATIVE_FEATURES=${QADBAK_NATIVE_FEATURES:-<none>}"
-echo "QADBAK_VIRTUALMIN_FALLBACK=${QADBAK_VIRTUALMIN_FALLBACK:-true}"
-echo "QADBAK_DISABLE_WEBMIN=${QADBAK_DISABLE_WEBMIN:-false}"
+echo "QADBAK_LEGACY_API_FALLBACK=${QADBAK_LEGACY_API_FALLBACK:-true}"
+echo "QADBAK_DISABLE_LEGACY_PANEL=${QADBAK_DISABLE_LEGACY_PANEL:-false}"
 echo "QADBAK_MAIL_BACKEND=${QADBAK_MAIL_BACKEND:-auto}"
 echo ""
 
 INDEPENDENT=0
 if [[ "${QADBAK_PROVISIONER:-}" == "native" ]]; then
   INDEPENDENT=1
-elif [[ "${QADBAK_PROVISIONER:-}" == "hybrid" ]] && [[ "${QADBAK_VIRTUALMIN_FALLBACK:-true}" =~ ^(false|0|no)$ ]]; then
+elif [[ "${QADBAK_PROVISIONER:-}" == "hybrid" ]] && [[ "${QADBAK_LEGACY_API_FALLBACK:-true}" =~ ^(false|0|no)$ ]]; then
   INDEPENDENT=1
 fi
 
@@ -45,7 +45,7 @@ for f in "${NATIVE_MODULES[@]}"; do
 done
 echo ""
 
-echo "Always native (no VirtualMin program):"
+echo "Always native (no legacy hosting API program):"
 echo "  [x] domain list — data/native-domains.json"
 echo "  [x] files — domain-fs-helper / live mode"
 echo "  [x] terminal — qadbak-terminal WebSocket"
@@ -65,24 +65,24 @@ if [[ "$INDEPENDENT" -eq 1 ]]; then
   echo "  [x] list-global-features / set-global-feature — data/native-admin-state.json"
   echo "  [x] check-config / config-system — nginx -t + systemctl"
   echo "  [x] list-s3-buckets / files / upload — AWS CLI (aws on PATH)"
-  echo "  [x] vm-status API — native service probe (no VIRTUALMIN_URL)"
+  echo "  [x] vm-status API — native service probe (no QADBAK_LEGACY_API_URL)"
   echo "  [x] listBandwidth / listServerStatuses / restartServer — host-services-helper"
   echo "  [x] php modify-ini / delete-directory — public_html/.user.ini"
   echo "  [x] website-health validateDomain — via getProvisioner()"
-  echo "  [x] admin nodes — no virtualminUrl in independent mode"
+  echo "  [x] admin nodes — no legacyApiUrl in independent mode"
   echo ""
   echo "UI / nginx:"
-  echo "  [x] Webmin tab hidden (QADBAK_DISABLE_WEBMIN or independent)"
-  echo "  [x] Panel nginx templates — no /embed/webmin/ (see deploy/nginx-webmin-embed-snippet.conf)"
+  echo "  [x] server admin tab hidden (QADBAK_DISABLE_LEGACY_PANEL or independent)"
+  echo "  [x] Panel nginx templates — no /embed/legacy-panel/ (see deploy/nginx-legacy-panel-embed-snippet.conf)"
   echo ""
-  echo "Mode: INDEPENDENT — VirtualMin API not used."
-  if dpkg -l webmin usermin 2>/dev/null | awk '/^ii/{print $2}' | grep -q .; then
+  echo "Mode: INDEPENDENT — legacy hosting API API not used."
+  if dpkg -l legacy-panel account-panel 2>/dev/null | awk '/^ii/{print $2}' | grep -q .; then
     echo "  Legacy panel packages still installed (optional cleanup):"
-    echo "    sudo apt-get remove -y --purge webmin usermin 'virtualmin-*'"
+    echo "    sudo apt-get remove -y --purge legacy-panel account-panel 'legacy-host-*'"
     echo "    sudo apt-get autoremove -y"
     echo "    Do NOT purge mariadb-client, unzip, zip, awscli, or proftpd if Qadbak uses them."
   fi
-  echo "  Revert API: QADBAK_PROVISIONER=hybrid + QADBAK_VIRTUALMIN_FALLBACK=true + pm2 restart"
+  echo "  Revert API: QADBAK_PROVISIONER=hybrid + QADBAK_LEGACY_API_FALLBACK=true + pm2 restart"
 else
   echo "Hybrid mode — disabled native flags above may still call remote.cgi."
   echo "  Enable all: sudo bash scripts/apply-phase8-native-enable.sh"

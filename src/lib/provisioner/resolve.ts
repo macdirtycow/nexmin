@@ -1,23 +1,23 @@
 import { createHybridProvisioner } from "./hybrid-adapter";
-import { createVirtualminProvisioner } from "./virtualmin-adapter";
+import { createLegacyRemoteProvisioner } from "./legacy-remote-adapter";
 import type { Provisioner, ProvisionerId } from "./types";
 
 function normalizeProvisionerId(raw: string | undefined): ProvisionerId {
-  const id = (raw ?? "virtualmin").trim().toLowerCase();
-  if (id === "virtualmin" || id === "mock" || id === "native" || id === "hybrid") {
+  const id = (raw ?? "legacy-remote").trim().toLowerCase();
+  if (id === "legacy-remote" || id === "mock" || id === "native" || id === "hybrid") {
     return id;
   }
   console.warn(
-    `[Qadbak] Unknown QADBAK_PROVISIONER="${raw}" — using virtualmin`,
+    `[Qadbak] Unknown QADBAK_PROVISIONER="${raw}" — using legacy-remote provisioner`,
   );
-  return "virtualmin";
+  return "legacy-remote";
 }
 
 function createProvisioner(id: ProvisionerId): Provisioner {
   if (id === "hybrid") return createHybridProvisioner(false);
   if (id === "native") return createHybridProvisioner(true);
-  // mock: virtualmin.ts handles VIRTUALMIN_MOCK inside virtualMinCall
-  return createVirtualminProvisioner();
+  // mock: hosting-remote.ts handles QADBAK_LEGACY_API_MOCK inside hostingRemoteCall
+  return createLegacyRemoteProvisioner();
 }
 
 let cached: Provisioner | null = null;

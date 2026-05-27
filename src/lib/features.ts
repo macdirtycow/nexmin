@@ -1,9 +1,9 @@
 import type { Role } from "./types";
 
-/** Mirrors provisioner/native-stub (no import — keeps client bundles free of virtualmin). */
+/** Mirrors provisioner/native-stub (no import — keeps client bundles free of hosting-remote). */
 function independentHostingFromEnv(): boolean {
   const prov = process.env.QADBAK_PROVISIONER?.trim().toLowerCase();
-  const fb = process.env.QADBAK_VIRTUALMIN_FALLBACK?.trim().toLowerCase();
+  const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
   const fallbackOff = fb === "false" || fb === "0" || fb === "no";
   return prov === "native" || (prov === "hybrid" && fallbackOff);
 }
@@ -27,7 +27,7 @@ export interface DomainFeature {
   hideFromNav?: boolean;
 }
 
-/** All VirtualMin programs used by Qadbak, grouped per feature. */
+/** All legacy hosting API programs used by Qadbak, grouped per feature. */
 export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "mail",
@@ -351,7 +351,7 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   },
 ];
 
-/** Server-wide VirtualMin programs (phase 7, admin only). */
+/** Server-wide legacy hosting API programs (phase 7, admin only). */
 export const ADMIN_SERVER_PROGRAMS = [
   "list-bandwidth",
   "list-server-statuses",
@@ -389,7 +389,7 @@ export const ADMIN_CLOUD_PROGRAMS = [
 
 export const IMPLEMENTED_PHASE: FeaturePhase = 8;
 
-/** Primary server admin — no Webmin embed menus (phase 4). */
+/** Primary server admin — no server admin embed menus (phase 4). */
 export const ADMIN_NAV = [
   { path: "/admin", label: "Overview" },
   { path: "/admin/terminal", label: "Terminal" },

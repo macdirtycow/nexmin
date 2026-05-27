@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Repair Apache after phase 6 on VirtualMin + nginx front (ports 80/443 owned by nginx).
+# Repair Apache after phase 6 on legacy hosting API + nginx front (ports 80/443 owned by nginx).
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
@@ -15,10 +15,10 @@ source "$ROOT/scripts/lib/fix-apache-nginx-ports.sh"
 # shellcheck source=lib/php-fpm-pool.sh
 source "$ROOT/scripts/lib/php-fpm-pool.sh"
 
-echo "==> Apache repair (phase 6 / VirtualMin / nginx front)"
+echo "==> Apache repair (phase 6 / legacy hosting API / nginx front)"
 
 if a2query -M 2>/dev/null | grep -q mpm_prefork; then
-  echo "    Reverting mpm_prefork → mpm_event (VirtualMin uses php-fpm)"
+  echo "    Reverting mpm_prefork → mpm_event (legacy hosting API uses php-fpm)"
   a2dismod mpm_prefork 2>/dev/null || true
   for v in 8.4 8.3 8.2 8.1; do
     a2dismod "php${v}" 2>/dev/null || true

@@ -44,14 +44,14 @@ done
 
 if [[ -f "$QADBAK_DIR/.env.local" ]]; then
   # shellcheck disable=SC1091
-  source <(grep -E '^(QADBAK_PROVISIONER|QADBAK_NATIVE_INSTALL|QADBAK_DISABLE_WEBMIN)=' "$QADBAK_DIR/.env.local" 2>/dev/null | sed 's/^/export /') || true
+  source <(grep -E '^(QADBAK_PROVISIONER|QADBAK_NATIVE_INSTALL|QADBAK_DISABLE_LEGACY_PANEL)=' "$QADBAK_DIR/.env.local" 2>/dev/null | sed 's/^/export /') || true
 fi
-if [[ "${QADBAK_DISABLE_WEBMIN:-}" == "1" || "${QADBAK_DISABLE_WEBMIN:-}" == "true" ]] || [[ "${QADBAK_PROVISIONER:-}" == "native" ]]; then
+if [[ "${QADBAK_DISABLE_LEGACY_PANEL:-}" == "1" || "${QADBAK_DISABLE_LEGACY_PANEL:-}" == "true" ]] || [[ "${QADBAK_PROVISIONER:-}" == "native" ]]; then
   export QADBAK_NATIVE_INSTALL=1
 fi
 
-# shellcheck source=lib/virtualmin-domains.sh
-source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
+# shellcheck source=lib/legacy-host-domains.sh
+source "$ROOT/scripts/lib/legacy-host-domains.sh" 2>/dev/null || true
 DETECT_DOMAIN="${DETECT_DOMAIN:-$(first_panel_domain 2>/dev/null || true)}"
 if [[ -z "$DETECT_DOMAIN" ]]; then
   echo "WARN: No domain in data/native-domains.json — set DETECT_DOMAIN=your.domain" >&2

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Qadbak node agent (phase 7) — local VirtualMin proxy + health for multi-server panel.
+ * Qadbak node agent (phase 7) — local legacy hosting API proxy + health for multi-server panel.
  * Bind 127.0.0.1 only; panel reaches remote nodes via SSH tunnel or private network + firewall.
  */
 import http from "node:http";
@@ -37,9 +37,9 @@ const PORT = Number(process.env.QADBAK_NODE_AGENT_PORT ?? "9100");
 const HOST = process.env.QADBAK_NODE_AGENT_HOST ?? "127.0.0.1";
 const TOKEN = process.env.QADBAK_NODE_AGENT_TOKEN?.trim() ?? "";
 const NODE_ID = process.env.QADBAK_NODE_ID?.trim() || "local";
-const VM_URL = process.env.VIRTUALMIN_URL?.trim();
-const VM_USER = process.env.VIRTUALMIN_USER?.trim();
-const VM_PASS = process.env.VIRTUALMIN_PASS?.trim();
+const VM_URL = process.env.QADBAK_LEGACY_API_URL?.trim();
+const VM_USER = process.env.QADBAK_LEGACY_API_USER?.trim();
+const VM_PASS = process.env.QADBAK_LEGACY_API_PASS?.trim();
 
 function json(res, status, obj) {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -64,7 +64,7 @@ function checkAuth(req, res) {
 }
 
 function vmTlsInsecure(url) {
-  const flag = process.env.VIRTUALMIN_TLS_INSECURE?.trim().toLowerCase();
+  const flag = process.env.QADBAK_LEGACY_API_TLS_INSECURE?.trim().toLowerCase();
   if (flag === "true" || flag === "1" || flag === "yes") return true;
   try {
     const host = new URL(url).hostname;
@@ -74,9 +74,9 @@ function vmTlsInsecure(url) {
   }
 }
 
-async function virtualminCall(program, params = {}) {
+async function legacyApiCall(program, params = {}) {
   if (!VM_URL || !VM_USER || !VM_PASS) {
-    throw new Error("VIRTUALMIN_URL/USER/PASS missing in .env.local");
+    throw new Error("QADBAK_LEGACY_API_URL/USER/PASS missing in .env.local");
   }
   const body = new URLSearchParams({ program, ...params });
   const isList = program.startsWith("list-");
@@ -123,8 +123,8 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         node: NODE_ID,
         agent: "qadbak-node-agent",
-        provisioner: "virtualmin",
-        virtualminConfigured: vmOk,
+        provisioner: "legacy-remote",
+        legacyApiConfigured: vmOk,
       });
       return;
     }
@@ -136,7 +136,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "POST" && url.pathname === "/v1/virtualmin/call") {
+    if (req.method === "POST" && url.pathname === "/v1/legacy-api/call") {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
       const program = String(payload.program ?? "").trim();
@@ -145,7 +145,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const params = payload.params && typeof payload.params === "object" ? payload.params : {};
-      const out = await virtualminCall(program, params);
+      const out = await legacyApiCall(program, params);
       json(res, 200, { ok: true, status: out.status, body: out.text });
       return;
     }

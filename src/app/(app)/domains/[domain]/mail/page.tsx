@@ -1,6 +1,6 @@
 import { requireDomainAccess } from "@/lib/domain-api";
 import { getProvisioner } from "@/lib/provisioner";
-import type { VirtualMinMailbox } from "@/lib/types";
+import type { HostedMailbox } from "@/lib/types";
 import Link from "next/link";
 
 type Props = { params: Promise<{ domain: string }> };
@@ -41,7 +41,7 @@ export default async function MailHubPage({ params }: Props) {
   const isAdmin = session.role === "admin";
   const enc = encodeURIComponent(domain);
   const base = `/domains/${enc}/mail`;
-  let users: VirtualMinMailbox[] = [];
+  let users: HostedMailbox[] = [];
   let error = "";
   try {
     users = await getProvisioner().listMailboxes(domain, session);

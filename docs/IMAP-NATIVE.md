@@ -1,4 +1,4 @@
-# Native IMAP (Dovecot, no VirtualMin)
+# Native IMAP (Dovecot, no legacy hosting API)
 
 The **IMAP** tab lists mail folders, message counts, **reads mail**, and can **send mail** via Postfix using **[Dovecot](https://www.dovecot.org/)** and on-disk **Maildir**.
 

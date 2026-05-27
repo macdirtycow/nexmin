@@ -15,7 +15,7 @@ export interface SessionPayload {
   domains: string[];
 }
 
-export interface VirtualMinDomain {
+export interface HostedDomain {
   name: string;
   disabled?: boolean | string;
   "values.disabled"?: string;
@@ -30,7 +30,7 @@ export interface VirtualMinDomain {
   [key: string]: unknown;
 }
 
-export interface VirtualMinMailbox {
+export interface HostedMailbox {
   name?: string;
   user?: string;
   "values.user"?: string;
@@ -41,7 +41,7 @@ export interface VirtualMinMailbox {
   [key: string]: unknown;
 }
 
-export interface VirtualMinDatabase {
+export interface HostedDatabase {
   name?: string;
   "values.name"?: string;
   type?: string;

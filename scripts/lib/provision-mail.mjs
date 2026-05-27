@@ -14,21 +14,23 @@ import { mailDnsHints } from "./mail-dns.mjs";
 
 const exec = promisify(execFile);
 
-async function virtualminAvailable() {
+async function legacyHostCliAvailable() {
+  const bin = process.env.QADBAK_LEGACY_HOST_BIN?.trim();
+  if (!bin) return false;
   try {
-    await exec("bash", ["-c", "command -v virtualmin"], { timeout: 5000 });
+    await exec("bash", ["-c", `command -v ${JSON.stringify(bin)}`], { timeout: 5000 });
     return true;
   } catch {
     return false;
   }
 }
 
-function useVirtualminCli() {
+function useLegacyHostCli() {
   const mode = process.env.QADBAK_MAIL_BACKEND?.trim().toLowerCase();
   if (mode === "direct" || mode === "postfix" || mode === "dovecot") return false;
-  if (mode === "virtualmin" || mode === "cli") return true;
+  if (mode === "legacy-remote" || mode === "cli") return true;
   const prov = process.env.QADBAK_PROVISIONER?.trim().toLowerCase();
-  const fb = process.env.QADBAK_VIRTUALMIN_FALLBACK?.trim().toLowerCase();
+  const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
   if (prov === "native" || fb === "false" || fb === "0" || fb === "no") {
     return false;
   }
@@ -36,7 +38,9 @@ function useVirtualminCli() {
 }
 
 async function vmCli(args, timeout = 120_000) {
-  const { stdout } = await exec("virtualmin", args, {
+  const bin = process.env.QADBAK_LEGACY_HOST_BIN?.trim();
+  if (!bin) throw new Error("QADBAK_LEGACY_HOST_BIN is not set");
+  const { stdout } = await exec(bin, args, {
     timeout,
     maxBuffer: 4 * 1024 * 1024,
   });
@@ -55,7 +59,7 @@ async function mailListVm(domain) {
       mailboxes.push({ user, real, name: user });
     }
   }
-  emit({ ok: true, mailboxes, source: "virtualmin-cli" });
+  emit({ ok: true, mailboxes, source: "legacy-host-cli" });
 }
 
 async function mailCreateVm(domain, user, pass, real) {
@@ -73,25 +77,25 @@ async function mailCreateVm(domain, user, pass, real) {
   ];
   if (real) args.push("--real", real);
   await vmCli(args);
-  emit({ ok: true, source: "virtualmin-cli" });
+  emit({ ok: true, source: "legacy-host-cli" });
 }
 
 async function mailDeleteVm(domain, user) {
   await resolveDomainUser(domain);
   const { emit } = await import("./provisioning-common.mjs");
   await vmCli(["delete-user", "--domain", domain, "--user", user]);
-  emit({ ok: true, source: "virtualmin-cli" });
+  emit({ ok: true, source: "legacy-host-cli" });
 }
 
 async function mailPassVm(domain, user, pass) {
   await resolveDomainUser(domain);
   const { emit } = await import("./provisioning-common.mjs");
   await vmCli(["modify-user", "--domain", domain, "--user", user, "--pass", pass]);
-  emit({ ok: true, source: "virtualmin-cli" });
+  emit({ ok: true, source: "legacy-host-cli" });
 }
 
 async function runMail(directFn, vmFn, ...args) {
-  if (useVirtualminCli() && (await virtualminAvailable())) {
+  if (useLegacyHostCli() && (await legacyHostCliAvailable())) {
     return vmFn(...args);
   }
   try {
@@ -101,7 +105,7 @@ async function runMail(directFn, vmFn, ...args) {
   }
 }
 
-/** Mail: Postfix/Dovecot direct (default in native/independent), optional virtualmin CLI in hybrid. */
+/** Mail: Postfix/Dovecot direct (default in native/independent), optional legacy host CLI in hybrid. */
 export async function mailList(domain) {
   await runMail(mailListDirect, mailListVm, domain);
 }
@@ -119,14 +123,14 @@ export async function mailPass(domain, user, pass) {
 }
 
 export async function mailSend(domain, localUser, payloadJson) {
-  if (useVirtualminCli() && (await virtualminAvailable())) {
+  if (useLegacyHostCli() && (await legacyHostCliAvailable())) {
     fail("Send from panel is only available in native mail mode (QADBAK_MAIL_BACKEND=direct).");
   }
   await mailSendDirect(domain, localUser, payloadJson);
 }
 
 export async function mailDraftSave(domain, localUser, payloadJson) {
-  if (useVirtualminCli() && (await virtualminAvailable())) {
+  if (useLegacyHostCli() && (await legacyHostCliAvailable())) {
     fail("Drafts are only available in native mail mode (QADBAK_MAIL_BACKEND=direct).");
   }
   await mailDraftSaveDirect(domain, localUser, payloadJson);

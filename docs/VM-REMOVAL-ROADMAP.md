@@ -1,17 +1,17 @@
-# VirtualMin/Webmin verwijderen — wat Qadbak nog nodig heeft
+# legacy hosting API/server admin verwijderen — wat Qadbak nog nodig heeft
 
-Je VPS na **phase 8 independent** (`provisioner: native`, `virtualminFallback: false`):
+Je VPS na **phase 8 independent** (`provisioner: native`, `legacyApiFallback: false`):
 
 | Laag | Status |
 |------|--------|
-| **Panel UI** | Qadbak — geen Webmin-tab |
+| **Panel UI** | Qadbak — geen server admin-tab |
 | **Domeinlijst + hosting** | `native-domains.json` + `provisioning-helper` (geen `remote.cgi`) |
 | **Lifecycle** | Clone, transfer (panel), migrate (backup + handmatige stappen) — native |
 | **Admin** | License, templates, admins, global features, S3, check-config — native |
-| **Nginx panel** | Geen `/embed/webmin/` in standaard templates |
+| **Nginx panel** | Geen `/embed/legacy-panel/` in standaard templates |
 | **Linux-stack** | nginx, Postfix, Dovecot, BIND, MariaDB — **blijft** |
 
-**`apt remove webmin`** is geen functionele blocker meer als `bash scripts/audit-vm-dependency.sh` groen is en je panel-tests slagen. Zie [PHASE-8-INDEPENDENT.md](./PHASE-8-INDEPENDENT.md) voor handmatige apt-stappen.
+**`apt remove legacy-panel`** is geen functionele blocker meer als `bash scripts/audit-vm-dependency.sh` groen is en je panel-tests slagen. Zie [PHASE-8-INDEPENDENT.md](./PHASE-8-INDEPENDENT.md) voor handmatige apt-stappen.
 
 ---
 
@@ -20,9 +20,9 @@ Je VPS na **phase 8 independent** (`provisioner: native`, `virtualminFallback: f
 ```mermaid
 flowchart TB
   subgraph weg [Mag weg na fase 8]
-    WebminUI[Webmin :10000 UI]
-    VMapi[virtualmin remote.cgi]
-    VMPkgs[webmin + virtual-server packages]
+    LegacyPanelUI[server admin :10000 UI]
+    VMapi[legacy-host remote.cgi]
+    VMPkgs[legacy-panel + virtual-server packages]
   end
   subgraph blijft [Blijft]
     Qadbak[Qadbak Next.js panel]
@@ -75,10 +75,10 @@ Zie [PARITY-AUDIT.md](./PARITY-AUDIT.md) voor het volledige menu.
 ## Wat je al hebt (geen tweede “eigen panel” bouwen)
 
 - **Panel** = Qadbak (auth, RBAC, UI) — dat *is* je eigen panel.
-- **Provisioner** = plug-in: `virtualmin` → `hybrid` → `native`.
+- **Provisioner** = plug-in: `legacy-host` → `hybrid` → `native`.
 - **Stack** = bestaande OS-diensten, bestuurd door scripts (fase 5–6).
 
-Je bouwt geen Webmin-kloon; je vervangt **remote.cgi-aanroepen** door **gevalideerde scripts** (zoals Hestia `v-add-domain`).
+Je bouwt geen server admin-kloon; je vervangt **remote.cgi-aanroepen** door **gevalideerde scripts** (zoals Hestia `v-add-domain`).
 
 ---
 
@@ -90,7 +90,7 @@ Je bouwt geen Webmin-kloon; je vervangt **remote.cgi-aanroepen** door **gevalide
 curl -s http://127.0.0.1:3000/api/health
 # provisioner: hybrid
 
-# Panel: Domains, Files, Terminal — zonder Webmin-tab
+# Panel: Domains, Files, Terminal — zonder server admin-tab
 # Mail/DNS/SSL: werken nog via VM API op de achtergrond
 ```
 
@@ -124,8 +124,8 @@ bash scripts/audit-vm-dependency.sh
 ### Pas daarna: pakketten eraf (irreversibel zonder backup)
 
 ```bash
-sudo systemctl stop webmin usermin 2>/dev/null || true
-sudo apt-get remove -y --purge webmin usermin 'virtualmin-*'
+sudo systemctl stop legacy-panel account-panel 2>/dev/null || true
+sudo apt-get remove -y --purge legacy-panel account-panel 'legacy-host-*'
 sudo apt-get autoremove -y
 sudo bash scripts/export-native-domains.sh   # registry backup
 ```
@@ -138,10 +138,10 @@ Backup eerst: `/home`, `/etc/nginx`, `/etc/postfix`, `/etc/bind`, databases.
 
 | Scope | Tijd (indicatie, 1 dev) |
 |-------|-------------------------|
-| Geen Webmin UI (fase 1–8 hybrid) | ✅ op test-VPS |
+| Geen server admin UI (fase 1–8 hybrid) | ✅ op test-VPS |
 | Mail + DNS + SSL native voor 1 domein | 2–4 maanden |
 | Volledige v1-pariteit zonder VM | grotendeels ✅ in repo |
-| `apt remove webmin` veilig op productie | na `audit-vm-dependency` + panel smoke tests |
+| `apt remove legacy-panel` veilig op productie | na `audit-vm-dependency` + panel smoke tests |
 
 ---
 

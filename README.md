@@ -228,7 +228,7 @@ marketing-site/   static HTML for qadbak.com + legal pages
 | [docs/PHASES.md](docs/PHASES.md) | Feature phases |
 | [docs/HOSTING-NGINX.md](docs/HOSTING-NGINX.md) | nginx + Apache for sites |
 | [docs/TERMINAL-NATIVE.md](docs/TERMINAL-NATIVE.md) | In-panel terminal |
-| [docs/MIGRATE-FROM-VIRTUALMIN.md](docs/MIGRATE-FROM-VIRTUALMIN.md) | Migrate from another panel |
+| [docs/MIGRATE-FROM-LEGACY-HOSTING.md](docs/MIGRATE-FROM-LEGACY-HOSTING.md) | Migrate from another panel |
 | [docs/ABOUT-THE-NAME.md](docs/ABOUT-THE-NAME.md) | Why "Qadbak" |
 
 ## Common commands

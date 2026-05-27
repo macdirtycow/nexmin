@@ -10,8 +10,8 @@ import {
   normalizeDir,
   resolveMoveDestination,
 } from "./domain-files";
-import { VirtualMinError } from "./errors";
-import type { VirtualMinDomain } from "./types";
+import { PanelError } from "./errors";
+import type { HostedDomain } from "./types";
 import { getProvisioner } from "./provisioner";
 import type { Role } from "./types";
 
@@ -19,7 +19,7 @@ let liveFsProbe: boolean | null = null;
 
 export function liveFilesEnabled(): boolean {
   return (
-    process.env.VIRTUALMIN_MOCK !== "true" &&
+    process.env.QADBAK_LEGACY_API_MOCK !== "true" &&
     process.env.QADBAK_LIVE_FILES !== "false"
   );
 }
@@ -41,7 +41,7 @@ async function runHelper(
   const line = stdout.trim().split("\n").pop() ?? "";
   const parsed = JSON.parse(line) as Record<string, unknown>;
   if (!parsed.ok) {
-    throw new VirtualMinError(String(parsed.error ?? "Filesystem command failed."));
+    throw new PanelError(String(parsed.error ?? "Filesystem command failed."));
   }
   markLiveFilesystemReady();
   return parsed;
@@ -61,7 +61,7 @@ export async function probeLiveFilesystem(): Promise<boolean> {
 }
 
 async function resolveUnixUser(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
   if (typeof domain !== "string" && domain.user) return domain.user;
@@ -85,7 +85,7 @@ function absFileFromPanel(unixUser: string, panelPath: string): string {
 }
 
 export async function listDomainFilesLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   dir: string,
   actor: { role: Role; domains: string[] },
 ): Promise<DomainFileEntry[]> {
@@ -119,7 +119,7 @@ export async function listDomainFilesLive(
 }
 
 export async function readDomainFileLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   panelPath: string,
   actor: { role: Role; domains: string[] },
 ): Promise<DomainFileContent> {
@@ -141,7 +141,7 @@ export async function readDomainFileLive(
 }
 
 export async function writeDomainFileLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   panelPath: string,
   content: string,
   actor: { role: Role; domains: string[] },
@@ -149,32 +149,32 @@ export async function writeDomainFileLive(
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
   if (!isTextFileName(panelPath.split("/").pop() ?? "")) {
-    throw new VirtualMinError("You cannot edit this file type as text.");
+    throw new PanelError("You cannot edit this file type as text.");
   }
   const parent = panelPath.includes("/")
     ? panelPath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   await runHelper("write", abs, { content });
 }
 
 export async function mkdirDomainLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   parent: string,
   name: string,
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
   const parentNorm = normalizeDir(parent);
   if (!isDirWritable(parentNorm)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const base = absDirFromPanel(unixUser, parentNorm);
   const safe = name.replace(/[/\\]/g, "").trim();
   if (!safe || safe === "." || safe === "..") {
-    throw new VirtualMinError("Invalid directory name.");
+    throw new PanelError("Invalid directory name.");
   }
   const abs = `${base}/${safe}`;
   await runHelper("mkdir", abs);
@@ -182,7 +182,7 @@ export async function mkdirDomainLive(
 }
 
 export async function uploadDomainFileFromTempLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   panelPath: string,
   tempPath: string,
   maxBytes: number | null,
@@ -193,7 +193,7 @@ export async function uploadDomainFileFromTempLive(
     ? panelPath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
@@ -203,7 +203,7 @@ export async function uploadDomainFileFromTempLive(
 }
 
 export async function uploadDomainFileLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   panelPath: string,
   data: Uint8Array,
   actor: { role: Role; domains: string[] },
@@ -211,13 +211,13 @@ export async function uploadDomainFileLive(
 ): Promise<void> {
   const cap = maxBytes ?? 10 * 1024 * 1024;
   if (data.byteLength > cap) {
-    throw new VirtualMinError(`File exceeds upload limit (${cap} bytes).`);
+    throw new PanelError(`File exceeds upload limit (${cap} bytes).`);
   }
   const parent = panelPath.includes("/")
     ? panelPath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
@@ -226,7 +226,7 @@ export async function uploadDomainFileLive(
 }
 
 export async function moveDomainPathLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   sourcePath: string,
   destDir: string,
   newName: string | undefined,
@@ -239,13 +239,13 @@ export async function moveDomainPathLive(
   const destParent = normalizeDir(destDir);
 
   if (!isDirWritable(srcParent)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   if (!isDirWritable(destParent)) {
-    throw new VirtualMinError("Destination folder is read-only.");
+    throw new PanelError("Destination folder is read-only.");
   }
   if (destPanelPath.startsWith(`${srcNorm}/`)) {
-    throw new VirtualMinError("Cannot move a folder into itself or a subfolder.");
+    throw new PanelError("Cannot move a folder into itself or a subfolder.");
   }
 
   const unixUser = await resolveUnixUser(domain, actor);
@@ -259,7 +259,7 @@ export async function moveDomainPathLive(
 }
 
 export async function deleteDomainFileLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   panelPath: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
@@ -267,7 +267,7 @@ export async function deleteDomainFileLive(
     ? panelPath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
-    throw new VirtualMinError("This path is read-only.");
+    throw new PanelError("This path is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const abs = absFileFromPanel(unixUser, panelPath);
@@ -275,7 +275,7 @@ export async function deleteDomainFileLive(
 }
 
 export async function extractArchiveLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   archivePath: string,
   destDir: string,
   actor: { role: Role; domains: string[] },
@@ -284,7 +284,7 @@ export async function extractArchiveLive(
     ? archivePath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const absArchive = absFileFromPanel(unixUser, archivePath);
@@ -308,7 +308,7 @@ export async function extractArchiveLive(
 }
 
 export async function createArchiveLive(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   parent: string,
   opts: {
     format: "zip" | "tar.gz";
@@ -319,7 +319,7 @@ export async function createArchiveLive(
 ): Promise<{ path: string; sizeBytes: number; format: string }> {
   const parentNorm = normalizeDir(parent);
   if (!isDirWritable(parentNorm)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
   const absParent = absDirFromPanel(unixUser, parentNorm);

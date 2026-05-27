@@ -1,4 +1,4 @@
-import type { CronJob, DnsRecord } from "./virtualmin";
+import type { CronJob, DnsRecord } from "./hosting-remote";
 
 function vmField(row: Record<string, unknown>, key: string): string | undefined {
   const dotted = row[`values.${key}`];
@@ -14,12 +14,12 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
-/** Unwrap run-api-command / nested VirtualMin JSON envelopes. */
-export function unwrapVirtualminPayload(data: unknown): unknown {
+/** Unwrap run-api-command / nested legacy hosting API JSON envelopes. */
+export function unwrapHostingPayload(data: unknown): unknown {
   if (Array.isArray(data)) return data;
   if (!data || typeof data !== "object") return data;
   const obj = data as Record<string, unknown>;
-  if (obj.data !== undefined) return unwrapVirtualminPayload(obj.data);
+  if (obj.data !== undefined) return unwrapHostingPayload(obj.data);
   if (typeof obj.output === "string" && obj.output.trim()) {
     try {
       return JSON.parse(obj.output.trim());
@@ -31,7 +31,7 @@ export function unwrapVirtualminPayload(data: unknown): unknown {
 }
 
 export function normalizeApiRows(data: unknown): Record<string, unknown>[] {
-  const payload = unwrapVirtualminPayload(data);
+  const payload = unwrapHostingPayload(data);
   if (Array.isArray(payload)) return payload as Record<string, unknown>[];
   if (payload && typeof payload === "object") {
     const obj = payload as Record<string, unknown>;
@@ -47,7 +47,7 @@ export function normalizeApiRows(data: unknown): Record<string, unknown>[] {
   return [];
 }
 
-/** Parse get-dns --multiline JSON (see virtualmin json-lib.pl). */
+/** Parse get-dns --multiline JSON (legacy host API). */
 export function parseDnsRecords(data: unknown): DnsRecord[] {
   const rows = normalizeApiRows(data);
   const records: DnsRecord[] = [];
@@ -93,7 +93,7 @@ function parseDnsLine(line: string): DnsRecord | null {
   if (
     line.startsWith("Running ") ||
     line.startsWith("..") ||
-    line.startsWith("virtualmin ")
+    line.startsWith("legacy-host ")
   ) {
     return null;
   }
@@ -193,7 +193,7 @@ function parseCronLine(line: string): Omit<CronJob, "id"> | null {
     line.startsWith("#") ||
     line.startsWith("Running ") ||
     line.startsWith("..") ||
-    line.startsWith("virtualmin ") ||
+    line.startsWith("legacy-host ") ||
     line === "no crontab for"
   ) {
     return null;
@@ -218,7 +218,7 @@ function parseCronLine(line: string): Omit<CronJob, "id"> | null {
 
 /** Normalize list-domains JSON (map, array, or nested data). */
 export function parseDomainsListRows(data: unknown): Record<string, unknown>[] {
-  const payload = unwrapVirtualminPayload(data);
+  const payload = unwrapHostingPayload(data);
   if (Array.isArray(payload)) return payload as Record<string, unknown>[];
 
   if (payload && typeof payload === "object") {

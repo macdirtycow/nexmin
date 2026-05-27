@@ -6,11 +6,11 @@ What is **done** in the repo vs what you still do on a **test VPS**.
 
 | Area | Status |
 |------|--------|
-| VirtualMin hosting UI (domains, mail, DNS, SSL, …) | Code complete |
+| legacy hosting API hosting UI (domains, mail, DNS, SSL, …) | Code complete |
 | Admin + client RBAC | Done |
-| Webmin embed menus (v2–v5 interim) | Done |
+| server admin embed menus (v2–v5 interim) | Done |
 | Marketing site + name story | Done |
-| Installer: Node, npm, pm2, VirtualMin, Qadbak, nginx | Done |
+| Installer: Node, npm, pm2, legacy hosting API, Qadbak, nginx | Done |
 | Front door (IP/443 → Qadbak) | nginx template + installer |
 | Docs: test server, E2E, deploy, about the name | Done |
 | Health API `/api/health` | Done |
@@ -27,18 +27,18 @@ What is **done** in the repo vs what you still do on a **test VPS**.
 | Install | `sudo bash install/qadbak-install.sh` |
 | Verify | `sudo bash scripts/post-install-verify.sh` |
 | Optional firewall | `sudo bash scripts/configure-ufw-qadbak.sh` |
-| Create test domain in VirtualMin | Webmin or after first login |
+| Create test domain in legacy hosting API | server admin or after first login |
 | E2E sign-off | [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) |
 
 ## Not in scope for v1 (later)
 
 | Item | Notes |
 |------|--------|
-| Native UI for every Webmin module | Embed strategy until rebuilt |
-| Lock Webmin to localhost only | Optional hardening doc in FRONT-DOOR.md |
+| Native UI for every server admin module | Embed strategy until rebuilt |
+| Lock server admin to localhost only | Optional hardening doc in FRONT-DOOR.md |
 | Production on a host with live client sites | Use isolated test VPS first |
 | Automated CI on GitHub | Future |
-| Multi-server VirtualMin cluster | Gap in parity audit |
+| Multi-server legacy hosting API cluster | Gap in parity audit |
 
 ## After v1 passes
 

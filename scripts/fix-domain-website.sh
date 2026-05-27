@@ -3,7 +3,7 @@
 #
 # Thin wrapper around scripts/ensure-domain-website.sh — keeps the
 # firewall opening, Apache backend bring-up, hosting-nginx refresh,
-# VirtualMin sync, and diagnostic probes (with Cloudflare hints) that
+# legacy hosting API sync, and diagnostic probes (with Cloudflare hints) that
 # operators rely on at repair time, but delegates the actual public_html
 # / vhost / landing / SSL / PHP-FPM work to the new idempotent script
 # so future maintenance only touches one place.
@@ -56,20 +56,20 @@ if [[ -f "$ROOT/scripts/apply-hosting-nginx.sh" ]]; then
   DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/apply-hosting-nginx.sh" || true
 fi
 
-if command -v virtualmin &>/dev/null; then
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
   echo ""
-  echo "==> VirtualMin: Webmin login + web for $DOMAIN (Terminal / embeds)"
-  virtualmin enable-feature --domain "$DOMAIN" --webmin 2>/dev/null || true
-  virtualmin enable-feature --domain "$DOMAIN" --web 2>/dev/null || true
-  virtualmin validate-domains --domain "$DOMAIN" --all-features 2>&1 || true
-  virtualmin modify-web --domain "$DOMAIN" --document-dir public_html --fix-document-dir --fix-options 2>&1 || true
+  echo "==> legacy hosting API: server admin login + web for $DOMAIN (Terminal / embeds)"
+  legacy-host enable-feature --domain "$DOMAIN" --legacy-panel 2>/dev/null || true
+  legacy-host enable-feature --domain "$DOMAIN" --web 2>/dev/null || true
+  legacy-host validate-domains --domain "$DOMAIN" --all-features 2>&1 || true
+  legacy-host modify-web --domain "$DOMAIN" --document-dir public_html --fix-document-dir --fix-options 2>&1 || true
 else
-  echo "virtualmin CLI not found — skip VM steps"
+  echo "legacy host CLI not found — skip VM steps"
 fi
 
 VM_USER=""
-if command -v virtualmin &>/dev/null; then
-  VM_USER="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  VM_USER="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
 fi
 if [[ -z "$VM_USER" && -f "$ROOT/data/native-domains.json" ]]; then
   if command -v jq &>/dev/null; then
@@ -164,7 +164,7 @@ elif [[ "$HTTP_CODE" == "502" ]]; then
   echo "    Run:  sudo bash $ROOT/scripts/apply-hosting-nginx.sh"
   echo "    Logs: tail -30 /var/log/nginx/error.log"
 elif [[ "$HTTP_CODE" =~ ^[0-9]+$ ]] && (( HTTP_CODE > 0 && HTTP_CODE < 500 )); then
-  if grep -qiE 'qadbak.*virtualmin|your hosting panel|sign in at qadbak' "$PROBE_BODY" 2>/dev/null; then
+  if grep -qiE 'qadbak.*legacy-host|your hosting panel|sign in at qadbak' "$PROBE_BODY" 2>/dev/null; then
     echo "    WARN — Host $DOMAIN still serves the Qadbak marketing page (not public_html)"
     echo "    Fix:  sudo bash $ROOT/scripts/apply-hosting-nginx.sh"
   elif grep -qiE 'apache2 ubuntu default|ubuntu default page|debian default page|it works!' "$PROBE_BODY" 2>/dev/null; then
@@ -187,7 +187,7 @@ if [[ "$HTTPS_CODE" =~ ^[0-9]+$ ]] && (( HTTPS_CODE > 0 && HTTPS_CODE < 500 )); 
     echo "    FAIL — HTTPS still hits the license/API backend (JSON Not found), not your site"
     echo "    Fix: sudo ISSUE_SSL=1 bash $ROOT/scripts/apply-domain-nginx.sh $DOMAIN $VM_USER"
     echo "    Then: sudo bash $ROOT/scripts/apply-hosting-nginx.sh"
-  elif grep -qiE 'qadbak.*virtualmin|sign in at qadbak' "$HTTPS_BODY" 2>/dev/null; then
+  elif grep -qiE 'qadbak.*legacy-host|sign in at qadbak' "$HTTPS_BODY" 2>/dev/null; then
     echo "    WARN — HTTPS serves Qadbak panel, not public_html"
   else
     echo "    OK — HTTPS $HTTPS_CODE for Host: $DOMAIN"

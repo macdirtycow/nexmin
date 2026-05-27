@@ -1,4 +1,4 @@
-import { parseCronJobs } from "./virtualmin-api-parse";
+import { parseCronJobs } from "./hosting-api-parse";
 import { getProvisioner } from "./provisioner";
 import type { CronJob } from "./provisioner";
 import type { Role } from "./types";

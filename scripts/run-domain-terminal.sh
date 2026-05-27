@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start an interactive login shell as a VirtualMin domain unix user (root-only entry).
+# Start an interactive login shell as a legacy hosting API domain unix user (root-only entry).
 # Usage: run-domain-terminal.sh UNIX_USER
 set -euo pipefail
 

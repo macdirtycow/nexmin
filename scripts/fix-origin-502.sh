@@ -29,7 +29,7 @@ echo "==> Apply hosting nginx (correct Apache backend)"
 DETECT_DOMAIN="$DOMAIN" bash "$ROOT/scripts/apply-hosting-nginx.sh"
 
 echo ""
-echo "==> VirtualMin + Apache for $DOMAIN"
+echo "==> legacy hosting API + Apache for $DOMAIN"
 bash "$ROOT/scripts/fix-domain-website.sh" "$DOMAIN"
 
 echo ""
@@ -37,8 +37,8 @@ echo "==> Origin test (must not be 502/000)"
 CODE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 8 -H "Host: $DOMAIN" http://127.0.0.1/ 2>/dev/null || echo 000)"
 echo "    http://127.0.0.1/ Host: $DOMAIN → HTTP $CODE"
 if [[ "$CODE" == "502" || "$CODE" == "000" ]]; then
-  echo "    FAIL — fix Apache/VirtualMin web for this domain." >&2
-  echo "    Try: virtualmin validate-domains --domain $DOMAIN" >&2
+  echo "    FAIL — fix Apache/legacy hosting API web for this domain." >&2
+  echo "    Try: legacy-host validate-domains --domain $DOMAIN" >&2
   echo "    Logs: tail -30 /var/log/nginx/error.log" >&2
   exit 1
 fi

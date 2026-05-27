@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { VirtualMinError } from "./virtualmin";
+import { PanelError } from "./hosting-remote";
 import { sanitizeUserFacingMessage } from "./user-facing-errors";
 
 export function jsonOk<T>(data: T, status = 200) {
@@ -20,7 +20,7 @@ export function handleApiError(err: unknown) {
   ) {
     return jsonError(err.message, 403);
   }
-  if (err instanceof VirtualMinError) {
+  if (err instanceof PanelError) {
     return jsonError(err.message, 502);
   }
   if (err instanceof Error) {

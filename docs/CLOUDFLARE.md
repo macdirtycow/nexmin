@@ -1,4 +1,4 @@
-# Cloudflare + Qadbak / VirtualMin
+# Cloudflare + Qadbak / legacy hosting API
 
 ## Error 523 — Origin is unreachable
 

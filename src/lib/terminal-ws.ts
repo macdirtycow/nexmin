@@ -63,7 +63,7 @@ export function terminalWsUrl(request: Request, token: string): string {
 
 export function terminalAvailable(): boolean {
   if (process.env.QADBAK_NATIVE_TERMINAL === "false") return false;
-  if (process.env.VIRTUALMIN_MOCK === "true") return true;
+  if (process.env.QADBAK_LEGACY_API_MOCK === "true") return true;
   return process.env.QADBAK_TERMINAL_WS_PORT !== "off";
 }
 
@@ -76,7 +76,7 @@ function terminalWsPort(): number {
 /** True when the pm2 qadbak-terminal process is listening (HTTP 426 on /). */
 export async function terminalBackendReady(): Promise<boolean> {
   if (!terminalAvailable()) return false;
-  if (process.env.VIRTUALMIN_MOCK === "true") return true;
+  if (process.env.QADBAK_LEGACY_API_MOCK === "true") return true;
   const host = process.env.QADBAK_TERMINAL_WS_HOST || "127.0.0.1";
   const port = terminalWsPort();
   try {

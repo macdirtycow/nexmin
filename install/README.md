@@ -35,7 +35,7 @@ Installer writes `/opt/qadbak/.env.local` with `QADBAK_PROVISIONER=native` and f
 
 ## Migrating from another control panel
 
-The installer targets **fresh VPS** setups. If an old GPL panel is still on the box, switch to native mode first (`apply-phase8-independent.sh`), verify the panel, then remove packages manually — see [docs/MIGRATE-FROM-VIRTUALMIN.md](../docs/MIGRATE-FROM-VIRTUALMIN.md).
+The installer targets **fresh VPS** setups. If an old GPL panel is still on the box, switch to native mode first (`apply-phase8-independent.sh`), verify the panel, then remove packages manually — see [docs/MIGRATE-FROM-LEGACY-HOSTING.md](../docs/MIGRATE-FROM-LEGACY-HOSTING.md).
 
 ## Resume a failed install
 

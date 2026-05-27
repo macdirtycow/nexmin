@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Allow Qadbak to spawn domain shells for the native terminal (no Webmin).
+# Allow Qadbak to spawn domain shells for the native terminal (no server admin).
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"

@@ -4,11 +4,11 @@ import { isIndependentMode } from "@/lib/provisioner/native-stub";
 import { getNativeServerStatus } from "@/lib/provisioner/independent-ops";
 import { getProvisioner } from "@/lib/provisioner";
 import {
-  virtualMinFetch,
-  virtualMinTlsInsecureEnabled,
-} from "@/lib/virtualmin-http";
+  hostingRemoteFetch,
+  legacyApiTlsInsecureEnabled,
+} from "@/lib/hosting-remote-http";
 
-/** Admin-only: server / provisioner health (native or legacy VirtualMin probe). */
+/** Admin-only: server / provisioner health (native or legacy remote API probe). */
 export async function GET() {
   try {
     await requireAdmin();
@@ -22,8 +22,8 @@ export async function GET() {
       return jsonOk({
         mode: "native",
         provisioner: "native",
-        virtualminConfigured: false,
-        virtualminUrl: "",
+        legacyApiConfigured: false,
+        legacyApiUrl: "",
         tlsInsecure: false,
         mock: false,
         probeStatus: 0,
@@ -36,9 +36,9 @@ export async function GET() {
       });
     }
 
-    const url = process.env.VIRTUALMIN_URL ?? "";
-    const user = process.env.VIRTUALMIN_USER ?? "";
-    const pass = process.env.VIRTUALMIN_PASS ?? "";
+    const url = process.env.QADBAK_LEGACY_API_URL ?? "";
+    const user = process.env.QADBAK_LEGACY_API_USER ?? "";
+    const pass = process.env.QADBAK_LEGACY_API_PASS ?? "";
     let probeStatus = 0;
     let probeBytes = 0;
     let probePreview = "";
@@ -49,7 +49,7 @@ export async function GET() {
         multiline: "",
       });
       const auth = Buffer.from(`${user}:${pass}`).toString("base64");
-      const res = await virtualMinFetch(url, {
+      const res = await hostingRemoteFetch(url, {
         method: "POST",
         headers: {
           Authorization: `Basic ${auth}`,
@@ -68,9 +68,9 @@ export async function GET() {
     });
     return jsonOk({
       mode: "hybrid",
-      virtualminUrl: url,
-      tlsInsecure: virtualMinTlsInsecureEnabled(),
-      mock: process.env.VIRTUALMIN_MOCK === "true",
+      legacyApiUrl: url,
+      tlsInsecure: legacyApiTlsInsecureEnabled(),
+      mock: process.env.QADBAK_LEGACY_API_MOCK === "true",
       probeStatus,
       probeBytes,
       probePreview,

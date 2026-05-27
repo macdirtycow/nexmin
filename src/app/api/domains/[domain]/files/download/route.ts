@@ -5,7 +5,7 @@ import {
   readDomainFileLive,
 } from "@/lib/domain-files-service";
 import { requireDomainApi } from "@/lib/domain-api";
-import { VirtualMinError } from "@/lib/errors";
+import { PanelError } from "@/lib/errors";
 import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
@@ -44,7 +44,7 @@ export async function GET(request: Request, { params }: Params) {
       },
     });
   } catch (err) {
-    if (err instanceof VirtualMinError) {
+    if (err instanceof PanelError) {
       return jsonError(err.message, 400);
     }
     return handleApiError(err);

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Parse VirtualMin remote API JSON (multiline arrays) into a primary domain name.
+# Parse legacy hosting API remote API JSON (multiline arrays) into a primary domain name.
 
 extract_domain_from_vm_json() {
   local file="$1"

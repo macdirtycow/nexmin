@@ -14,8 +14,8 @@ export function AdminServerView({
   initialBandwidth: BandwidthRow[];
   initialServices: ServerService[];
   initialError: string;
-  servicesSource?: "native" | "virtualmin";
-  bandwidthSource?: "native" | "virtualmin";
+  servicesSource?: "native" | "legacy";
+  bandwidthSource?: "native" | "legacy";
 }) {
   const [bandwidth] = useState(initialBandwidth);
   const [services, setServices] = useState(initialServices);

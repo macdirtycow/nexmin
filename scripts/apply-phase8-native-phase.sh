@@ -3,7 +3,7 @@
 set -euo pipefail
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
 FEATURES="${1:?features comma-separated, e.g. ssl,dns,mail}"
-# Second arg "independent" → native provisioner, no VirtualMin API fallback (default: hybrid + fallback).
+# Second arg "independent" → native provisioner, no legacy hosting API API fallback (default: hybrid + fallback).
 MODE="${2:-hybrid}"
 [[ "$(id -u)" -eq 0 ]] || { echo "Run as root" >&2; exit 1; }
 
@@ -20,18 +20,18 @@ set_env() {
     echo "${k}=${v}" >>"$QADBAK_DIR/.env.local"
 }
 
-set_env QADBAK_DISABLE_WEBMIN true
+set_env QADBAK_DISABLE_LEGACY_PANEL true
 set_env QADBAK_NATIVE_FEATURES "$FEATURES"
 if [[ "$MODE" == "independent" ]]; then
   echo "==> Mode: INDEPENDENT (no remote.cgi)"
   set_env QADBAK_PROVISIONER native
-  set_env QADBAK_VIRTUALMIN_FALLBACK false
+  set_env QADBAK_LEGACY_API_FALLBACK false
   set_env QADBAK_MAIL_BACKEND direct
   set_env QADBAK_INDEPENDENCE_PHASE 8-independent
 else
-  echo "==> Mode: HYBRID (VirtualMin API fallback for non-native tabs)"
+  echo "==> Mode: HYBRID (legacy hosting API API fallback for non-native tabs)"
   set_env QADBAK_PROVISIONER hybrid
-  set_env QADBAK_VIRTUALMIN_FALLBACK true
+  set_env QADBAK_LEGACY_API_FALLBACK true
 fi
 
 bash "$QADBAK_DIR/scripts/configure-provisioning-helper-sudo.sh"

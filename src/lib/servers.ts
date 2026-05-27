@@ -9,9 +9,19 @@ export type QadbakNode = {
   name: string;
   roles: NodeRole[];
   agentUrl?: string;
-  virtualminUrl?: string;
+  /** Legacy hosting remote.cgi URL (hybrid nodes only). */
+  legacyApiUrl?: string;
   isDefault?: boolean;
 };
+
+/** Accept old servers.json field names without exposing them in API responses. */
+export function normalizeNodeRecord(
+  raw: QadbakNode & { legacyApiUrl?: string },
+): QadbakNode {
+  const legacyApiUrl = raw.legacyApiUrl ?? raw.legacyApiUrl;
+  const { legacyApiUrl: _legacy, ...node } = raw;
+  return legacyApiUrl ? { ...node, legacyApiUrl } : node;
+}
 
 const SERVERS_FILE = path.join(process.cwd(), "data", "servers.json");
 
@@ -26,28 +36,28 @@ function defaultLocalNode(): QadbakNode {
     isDefault: true,
   };
   if (!isIndependentMode()) {
-    node.virtualminUrl =
-      process.env.VIRTUALMIN_URL?.trim() ||
+    node.legacyApiUrl =
+      process.env.QADBAK_LEGACY_API_URL?.trim() ||
       "https://127.0.0.1:10000/virtual-server/remote.cgi";
   }
   return node;
 }
 
-/** Hide legacy VirtualMin URL when running without VM API. */
+/** Hide legacy remote API URL in independent mode. */
 export function sanitizeNodeForDisplay(node: QadbakNode): QadbakNode {
-  if (!isIndependentMode() || !node.virtualminUrl) return node;
-  const { virtualminUrl: _removed, ...rest } = node;
+  if (!isIndependentMode() || !node.legacyApiUrl) return node;
+  const { legacyApiUrl: _removed, ...rest } = node;
   return rest;
 }
 
 export async function loadNodes(): Promise<QadbakNode[]> {
   try {
     const raw = await fs.readFile(SERVERS_FILE, "utf8");
-    const parsed = JSON.parse(raw) as QadbakNode[];
+    const parsed = JSON.parse(raw) as (QadbakNode & { legacyApiUrl?: string })[];
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return [sanitizeNodeForDisplay(defaultLocalNode())];
     }
-    return parsed.map(sanitizeNodeForDisplay);
+    return parsed.map((n) => sanitizeNodeForDisplay(normalizeNodeRecord(n)));
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return [sanitizeNodeForDisplay(defaultLocalNode())];

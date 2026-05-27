@@ -1,6 +1,6 @@
 # Stack helpers (phase 5)
 
-Sensitive server operations run through **validated scripts** instead of Webmin server modules (Apache, nginx, Postfix, BIND, firewall).
+Sensitive server operations run through **validated scripts** instead of server admin server modules (Apache, nginx, Postfix, BIND, firewall).
 
 ## Setup (VPS)
 

@@ -54,7 +54,7 @@ known placeholder (`Hello` / `OK`), or a landing it wrote itself.
 `scripts/fix-domain-website.sh` and `scripts/repair-all-websites.sh`
 both delegate to `ensure-domain-website.sh` for the actual website
 work; they add firewall opening, Apache backend bring-up,
-hosting-nginx refresh, VirtualMin sync, and Cloudflare-aware probes
+hosting-nginx refresh, legacy hosting API sync, and Cloudflare-aware probes
 on top.
 
 ## Apply on an existing VPS
@@ -77,7 +77,7 @@ curl -sI -H 'Host: example.com' http://127.0.0.1/ | head -5
 # Should NOT return Next.js / Qadbak HTML
 ```
 
-Upload the site via Qadbak **Files** → `public_html` (or VirtualMin).
+Upload the site via Qadbak **Files** → `public_html` (or legacy hosting API).
 
 If visitors still see **Apache2 Ubuntu Default Page** (`/var/www/html`), Apache has no vhost for your domain on the backend port (usually `8080`). Diagnose and fix:
 

@@ -16,7 +16,7 @@ import {
   writeDomainFileLive,
 } from "./domain-files-live";
 import type { Role } from "./types";
-import { createVirtualMinLoginLink } from "./virtualmin";
+import { createDomainLegacyLoginLink } from "./hosting-remote";
 import { sanitizeUserFacingMessage } from "./user-facing-errors";
 
 export async function resolveDomainFilesListing(
@@ -49,7 +49,7 @@ export async function resolveDomainFilesListing(
         nativeErr instanceof Error ? nativeErr.message : "Native files unavailable";
       let fileManagerUrl: string | undefined;
       try {
-        fileManagerUrl = await createVirtualMinLoginLink(domain, actor, {
+        fileManagerUrl = await createDomainLegacyLoginLink(domain, actor, {
           redirectUrl: "/filemin/index.cgi",
         });
       } catch {
@@ -70,7 +70,7 @@ export async function resolveDomainFilesListing(
   let fileManagerUrl: string | undefined;
   let error = "";
   try {
-    fileManagerUrl = await createVirtualMinLoginLink(domain, actor, {
+    fileManagerUrl = await createDomainLegacyLoginLink(domain, actor, {
       redirectUrl: "/filemin/index.cgi",
     });
   } catch (e) {

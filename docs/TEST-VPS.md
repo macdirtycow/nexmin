@@ -5,41 +5,41 @@ Use a **dedicated test server** (e.g. rent one for a month). **Never** use your 
 **Start here:** [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) (full step-by-step).  
 **Status:** [STATUS.md](./STATUS.md).
 
-## Option A — Qadbak + VirtualMin on one test VPS (recommended to start)
+## Option A — Qadbak + legacy hosting API on one test VPS (recommended to start)
 
-1. VPS with Ubuntu, install VirtualMin.
-2. Create a test domain in VirtualMin.
+1. VPS with Ubuntu, install legacy hosting API.
+2. Create a test domain in legacy hosting API.
 3. Run Qadbak on the same machine:
 
 ```env
-VIRTUALMIN_MOCK=false
-VIRTUALMIN_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
-WEBMIN_UI_URL=https://<your-test-host>:10000
-USERMIN_UI_URL=https://<your-test-host>:20000
+QADBAK_LEGACY_API_MOCK=false
+QADBAK_LEGACY_API_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
+QADBAK_LEGACY_PANEL_URL=https://<your-test-host>:10000
+QADBAK_ACCOUNT_PANEL_UI_URL=https://<your-test-host>:20000
 ```
 
 4. `npm run test-api` → JSON from `list-domains` should appear.
 5. Nginx: [deploy/nginx-qadbak.conf](../deploy/nginx-qadbak.conf).
 
-## Option B — Qadbak on a different machine than VirtualMin
+## Option B — Qadbak on a different machine than legacy hosting API
 
 - Firewall: only the Qadbak host IP may reach ports 10000/20000 on the test VPS.
-- `VIRTUALMIN_URL` points to the **external** URL of the test VPS.
+- `QADBAK_LEGACY_API_URL` points to the **external** URL of the test VPS.
 
 ## Post-install checklist
 
-- [ ] `VIRTUALMIN_MOCK=false`
+- [ ] `QADBAK_LEGACY_API_MOCK=false`
 - [ ] `SESSION_SECRET` unique and long
 - [ ] Default passwords in `data/users.json` changed
 - [ ] `npm run test-api` succeeds
-- [ ] Sign in to Qadbak; domain list matches VirtualMin
-- [ ] Webmin tab opens login link
+- [ ] Sign in to Qadbak; domain list matches legacy hosting API
+- [ ] server admin tab opens login link
 - [ ] Client account with limited `domains` tested
 
 ## Mock vs live
 
-| Feature | Mock (`VIRTUALMIN_MOCK=true`) | Live server |
+| Feature | Mock (`QADBAK_LEGACY_API_MOCK=true`) | Live server |
 |---------|-------------------------------|-------------|
 | Domains, mail, DNS, … | Simulated | Via `remote.cgi` |
-| Files in Qadbak | Full browser | Link to Webmin file manager |
-| Webmin modules | Test URLs | `create-login-link` |
+| Files in Qadbak | Full browser | Link to server admin file manager |
+| server admin modules | Test URLs | `create-login-link` |

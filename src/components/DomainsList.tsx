@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Button, Card } from "@/components/ui";
-import type { VirtualMinDomain } from "@/lib/types";
+import type { HostedDomain } from "@/lib/types";
 import { isDomainDisabled } from "@/lib/domain-utils";
 import { formatDomainDisk } from "@/lib/format-quota";
 import Link from "next/link";
@@ -13,7 +13,7 @@ export function DomainsList({
   initialError,
   isAdmin,
 }: {
-  initialDomains: VirtualMinDomain[];
+  initialDomains: HostedDomain[];
   initialError: string;
   isAdmin: boolean;
 }) {

@@ -5,7 +5,7 @@
 | Layer | Where | Panel port |
 |-------|--------|------------|
 | **Cloud** | Contabo → Network Services → Firewall | Inbound **TCP 11000 Accept** (and 22, 80, 443) **before** “Block all” |
-| **VPS OS** | iptables / firewalld / UFW (VirtualMin often sets iptables) | `sudo bash /opt/qadbak/scripts/open-host-firewall-port.sh 11000` |
+| **VPS OS** | iptables / firewalld / UFW (legacy hosting API often sets iptables) | `sudo bash /opt/qadbak/scripts/open-host-firewall-port.sh 11000` |
 
 Both must allow the port. SSH (22) from your Mac works → cloud firewall is linked to the VPS; add **11000** the same way.
 

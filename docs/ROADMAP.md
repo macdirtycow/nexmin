@@ -1,8 +1,8 @@
 # Qadbak product roadmap
 
-Full UI replacement of Webmin/Virtualmin. Product name: **Qadbak** (repo: `macdirtycow/qadbak`, local folder: `~/Projects/qadbak`).
+Full UI replacement of server admin/legacy hosting. Product name: **Qadbak** (repo: `macdirtycow/qadbak`, local folder: `~/Projects/qadbak`).
 
-**Independence plan (8 phases, Dutch):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — how Qadbak stands alone without Webmin in daily use, and eventually without VirtualMin on the server.
+**Independence plan (8 phases, Dutch):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — how Qadbak stands alone without server admin in daily use, and eventually without legacy hosting API on the server.
 
 See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 
@@ -10,9 +10,9 @@ See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 
 | Phase | Goal | User-visible outcome |
 |-------|------|----------------------|
-| **0** | Deploy baseline | Panel live on VPS with real VirtualMin API |
+| **0** | Deploy baseline | Panel live on VPS with real legacy hosting API API |
 | **1** | Parity docs | Checklist for every menu item |
-| **2** | **v1** Virtualmin native | Hosting without leaving panel for VM tasks |
+| **2** | **v1** legacy hosting native | Hosting without leaving panel for VM tasks |
 | **3** | Rebrand | Product name Qadbak everywhere |
 | **4** | Installer | `install/qadbak-install.sh` on Ubuntu 22.04 |
 | **5** | **v2** System | Dashboard + System menu in panel |
@@ -23,14 +23,14 @@ See [PARITY-AUDIT.md](./PARITY-AUDIT.md) for per-menu status.
 
 | Phase | Summary |
 |-------|---------|
-| **I1** | No Webmin UI for customers — native files, terminal, API screens |
+| **I1** | No server admin UI for customers — native files, terminal, API screens |
 | **I2** | Provisioner abstraction ✅ — [PROVISIONER.md](./PROVISIONER.md) |
 | **I3** | Full hosting UI; VM API headless only |
-| **I4** | Server/reseller admin without Webmin |
+| **I4** | Server/reseller admin without server admin |
 | **I5** | Config via scripts/helpers (Hestia-style) |
-| **I6** | Install without VirtualMin installer |
+| **I6** | Install without legacy hosting API installer |
 | **I7** | Multi-server (optional) |
-| **I8** | Remove VirtualMin package |
+| **I8** | Remove legacy hosting API package |
 
 Details: [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md).
 
@@ -39,12 +39,12 @@ Details: [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md).
 Native or in-panel for:
 
 - All [DOMAIN_FEATURES](../src/lib/features.ts) routes
-- Virtualmin sidebar items (summary, sub/alias create, files, terminal, scripts)
+- legacy hosting sidebar items (summary, sub/alias create, files, terminal, scripts)
 - Admin: server, resellers, plans, system, cloud, license
 
 ## v2+ strategy
 
-Until each Webmin module has a rebuilt form, use **in-panel embed** (`WebminEmbed`) with `create-login-link` — same chrome as Qadbak, no password in browser. Replace with native UI module-by-module.
+Until each server admin module has a rebuilt form, use **in-panel embed** (`LegacyPanelEmbed`) with `create-login-link` — same chrome as Qadbak, no password in browser. Replace with native UI module-by-module.
 
 ## Timeline (estimate)
 
@@ -64,4 +64,4 @@ Until each Webmin module has a rebuilt form, use **in-panel embed** (`WebminEmbe
 - [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) — v1 sign-off
 - [DEPLOY.md](./DEPLOY.md) — production setup (after test VPS passes)
 - [TEST-VPS.md](./TEST-VPS.md) — short test server notes
-- [PHASES.md](./PHASES.md) — VirtualMin API integration phases
+- [PHASES.md](./PHASES.md) — legacy hosting API API integration phases

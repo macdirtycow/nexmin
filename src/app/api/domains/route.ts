@@ -11,7 +11,7 @@ import {
 import { PremiumRequiredError } from "@/lib/premium/types";
 import { isPremiumFeatureEnabled } from "@/lib/premium/server";
 import { requireSession } from "@/lib/session";
-import { VirtualMinError } from "@/lib/errors";
+import { PanelError } from "@/lib/errors";
 import { getProvisioner } from "@/lib/provisioner";
 import {
   consumeLastJournalSteps,
@@ -93,7 +93,7 @@ async function doCreateDomain(request: Request) {
     } catch (err) {
       journal.captureFromHelper(consumeLastJournalSteps());
       if (
-        err instanceof VirtualMinError &&
+        err instanceof PanelError &&
         /already exists|already been created|already in use/i.test(err.message)
       ) {
         const existing = await getProvisioner().findDomainByName(domainName, session);

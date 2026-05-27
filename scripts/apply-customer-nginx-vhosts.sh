@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nginx vhost per customer domain → public_html (native + VirtualMin).
+# Nginx vhost per customer domain → public_html (native + legacy hosting API).
 # More specific server_name wins over Qadbak default_server on port 80/443.
 set -euo pipefail
 
@@ -26,7 +26,7 @@ nginx_customer_conf_remove_all
 
 mapfile -t ROWS < <(list_customer_domains_tsv | sort -u)
 if [[ ${#ROWS[@]} -eq 0 ]]; then
-  echo "No customer domains found (native-domains.json, VirtualMin, or /home/*/.qadbak-domain)." >&2
+  echo "No customer domains found (native-domains.json, legacy hosting API, or /home/*/.qadbak-domain)." >&2
   exit 1
 fi
 

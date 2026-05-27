@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks before enabling phase 8 independent (no VirtualMin API fallback).
+# Checks before enabling phase 8 independent (no legacy hosting API API fallback).
 set -euo pipefail
 ROOT="${QADBAK_DIR:-/opt/qadbak}"
 cd "$ROOT"

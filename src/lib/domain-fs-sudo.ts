@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { VirtualMinError } from "./errors";
+import { PanelError } from "./errors";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,23 +37,23 @@ export async function runDomainFsSudo(
       const line = stdout.split("\n").pop() ?? "";
       try {
         const parsed = JSON.parse(line) as { error?: string };
-        if (parsed.error) throw new VirtualMinError(parsed.error);
+        if (parsed.error) throw new PanelError(parsed.error);
       } catch (parseErr) {
-        if (parseErr instanceof VirtualMinError) throw parseErr;
+        if (parseErr instanceof PanelError) throw parseErr;
       }
     }
     const stderr = String(execErr.stderr ?? "").trim();
     if (stderr) {
       const line = stderr.split("\n").filter(Boolean).pop() ?? stderr;
-      throw new VirtualMinError(line);
+      throw new PanelError(line);
     }
     const msg = execErr.message ?? String(err);
     if (/password is required|a password is required/i.test(msg)) {
-      throw new VirtualMinError(
+      throw new PanelError(
         "Native file access needs sudo. On the server run: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak.",
       );
     }
-    throw new VirtualMinError(
+    throw new PanelError(
       "Native file helper failed. On the server run: sudo bash /opt/qadbak/scripts/configure-domain-fs-sudo.sh then pm2 restart qadbak.",
     );
   }
@@ -88,7 +88,7 @@ export async function runDomainFsInstallUpload(
   const line = stdout.trim().split("\n").pop() ?? "";
   const parsed = JSON.parse(line) as { ok?: boolean; sizeBytes?: number; error?: string };
   if (!parsed.ok) {
-    throw new VirtualMinError(String(parsed.error ?? "Upload install failed."));
+    throw new PanelError(String(parsed.error ?? "Upload install failed."));
   }
   return { sizeBytes: Number(parsed.sizeBytes ?? 0) };
 }

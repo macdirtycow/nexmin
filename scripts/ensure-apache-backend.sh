@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start Apache (VirtualMin backend behind nginx). Exit 1 with diagnostics if it cannot run.
+# Start Apache (legacy hosting API backend behind nginx). Exit 1 with diagnostics if it cannot run.
 set -euo pipefail
 
 APACHE_SVC=""
@@ -73,6 +73,6 @@ elif ss -ltn 2>/dev/null | grep -qE '127\.0\.0\.1:(8180|81|8000)'; then
   echo "    OK — $APACHE_SVC active (non-8080 loopback port — detect-web-backend will find it)"
 else
   echo "    WARN — $APACHE_SVC is active but no loopback backend port seen (expected :8080)" >&2
-  echo "    Check $PORTS_CONF and VirtualMin web settings." >&2
+  echo "    Check $PORTS_CONF and legacy hosting API web settings." >&2
   exit 1
 fi

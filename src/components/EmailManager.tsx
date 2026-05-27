@@ -9,7 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import { formatMailboxUsedMb } from "@/lib/format-quota";
-import type { VirtualMinMailbox } from "@/lib/types";
+import type { HostedMailbox } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,7 +20,7 @@ export function EmailManager({
   initialError,
 }: {
   domain: string;
-  initialUsers: VirtualMinMailbox[];
+  initialUsers: HostedMailbox[];
   initialError: string;
 }) {
   const router = useRouter();

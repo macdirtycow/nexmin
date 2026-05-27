@@ -1,6 +1,6 @@
-# Native terminal (no Webmin)
+# Native terminal (no server admin)
 
-The **Terminal** tab runs **bash** as the domain’s unix user (`/home/USER`), inside Qadbak. No Webmin login, no `:10000` iframe.
+The **Terminal** tab runs **bash** as the domain’s unix user (`/home/USER`), inside Qadbak. No server admin login, no `:10000` iframe.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ Browser (xterm.js) ←WebSocket→ nginx /ws/domain-terminal → qadbak-terminal
                                             /bin/bash -l in /home/USER
 ```
 
-The unix user comes from `data/native-domains.json` (or `/home/*/.qadbak-domain`) via `resolveDomainUnixUser` — works in **independent** mode without VirtualMin.
+The unix user comes from `data/native-domains.json` (or `/home/*/.qadbak-domain`) via `resolveDomainUnixUser` — works in **independent** mode without legacy hosting API.
 
 ## Two terminals
 
@@ -59,9 +59,9 @@ sudo -u qadbak sudo -n /opt/qadbak/scripts/run-domain-terminal.sh YOUR_UNIX_USER
 ## Security
 
 - Only users with Qadbak access to the domain get a short-lived WS token (2 minutes).
-- Shell runs as the VirtualMin domain unix user, home under `/home/`.
+- Shell runs as the legacy hosting API domain unix user, home under `/home/`.
 - Sudo rule allows only `run-domain-terminal.sh <user>`.
 
 ## Local dev
 
-With `VIRTUALMIN_MOCK=true`, the WS server spawns a local bash (no sudo).
+With `QADBAK_LEGACY_API_MOCK=true`, the WS server spawns a local bash (no sudo).

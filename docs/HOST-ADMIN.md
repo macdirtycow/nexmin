@@ -1,6 +1,6 @@
 # Host admin (phase 4)
 
-Server admins manage the VPS from **Qadbak** — not the Webmin dashboard on port 10000.
+Server admins manage the VPS from **Qadbak** — not the server admin dashboard on port 10000.
 
 ## Screens
 
@@ -8,7 +8,7 @@ Server admins manage the VPS from **Qadbak** — not the Webmin dashboard on por
 |-------|------|
 | `/admin/status` | CPU, RAM, disk, firewall (`/proc`, `df`, `ufw`) + services |
 | `/admin/server` | Start / stop / restart allowlisted systemd units |
-| `/admin/resellers`, `/admin/plans`, … | VirtualMin API via `getProvisioner()` |
+| `/admin/resellers`, `/admin/plans`, … | legacy hosting API API via `getProvisioner()` |
 
 ## Native service control
 
@@ -30,12 +30,12 @@ Or use one command: `sudo bash /opt/qadbak/scripts/update-qadbak.sh`
 
 Allowlisted units: `nginx`, `apache2`/`httpd`, `postfix`, `dovecot`, `named`/`bind9`, `mariadb`, PHP-FPM.
 
-Without sudo, service list/restart falls back to VirtualMin `list-server-statuses` / `restart-server`.
+Without sudo, service list/restart falls back to legacy hosting API `list-server-statuses` / `restart-server`.
 
-## Break-glass Webmin
+## Break-glass server admin
 
-- `/admin/webmin` and embed routes still work.
-- Main nav hides Webmin module menus unless `QADBAK_SHOW_WEBMIN_NAV=true` in `.env.local`.
-- Overview card links to the Webmin hub for emergencies.
+- `/admin/legacy-panel` and embed routes still work.
+- Main nav hides server admin module menus unless `QADBAK_SHOW_LEGACY_PANEL_NAV=true` in `.env.local`.
+- Overview card links to the server admin hub for emergencies.
 
 See [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) phase 4 · [STACK-HELPERS.md](./STACK-HELPERS.md) phase 5.

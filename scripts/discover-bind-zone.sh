@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Find BIND zone file for a domain (VirtualMin / Debian). Updates native-domains.json zoneFile.
+# Find BIND zone file for a domain (legacy hosting API / Debian). Updates native-domains.json zoneFile.
 set -euo pipefail
 DOMAIN="${1:?domain}"
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
@@ -20,8 +20,8 @@ for p in \
   fi
 done
 
-if [[ -z "$ZONE" ]] && command -v virtualmin &>/dev/null; then
-  ZONE="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null \
+if [[ -z "$ZONE" ]] && command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  ZONE="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$DOMAIN" --multiline 2>/dev/null \
     | awk -F': *' '/^(DNS zone file|Zone file|Master file):/ {print $2; exit}')"
 fi
 
@@ -32,7 +32,7 @@ fi
 
 if [[ -z "$ZONE" || ! -f "$ZONE" ]]; then
   echo "FAIL: no zone file found for $DOMAIN" >&2
-  echo "  Check: named -v, virtualmin list-domains --domain $DOMAIN --multiline" >&2
+  echo "  Check: named -v, "${QADBAK_LEGACY_HOST_BIN}" list-domains --domain $DOMAIN --multiline" >&2
   exit 1
 fi
 

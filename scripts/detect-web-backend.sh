@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Find where VirtualMin/Apache answers HTTP for hosted domains (for nginx proxy_pass).
+# Find where legacy hosting API/Apache answers HTTP for hosted domains (for nginx proxy_pass).
 set -euo pipefail
 
 DOMAIN="${DETECT_DOMAIN:-}"
-if [[ -z "$DOMAIN" ]] && command -v virtualmin &>/dev/null; then
-  DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
+if [[ -z "$DOMAIN" ]] && command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  DOMAIN="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
 fi
 DOMAIN="${DOMAIN:-localhost}"
 DEFAULT="127.0.0.1:8080"
-# Panel / Webmin / terminal — never use as PHP site backend
+# Panel / server admin / terminal — never use as PHP site backend
 SKIP_RE='^(3000|3001|10000|20000)$'
 
 probe() {

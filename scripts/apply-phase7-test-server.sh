@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Phase 7 on test VPS: node agent + servers registry (multi-server foundation).
-# Keeps VirtualMin on this host; panel + agent on same machine until you add a second VPS.
+# Keeps legacy hosting API on this host; panel + agent on same machine until you add a second VPS.
 #
 # Usage: sudo bash /opt/qadbak/scripts/apply-phase7-test-server.sh
 set -euo pipefail
@@ -43,7 +43,7 @@ fi
 
 FQDN="$(hostname -f 2>/dev/null || hostname)"
 PANEL_HOST="${QADBAK_PUBLIC_HOST:-$FQDN}"
-VM_URL="${VIRTUALMIN_URL:-https://127.0.0.1:10000/virtual-server/remote.cgi}"
+VM_URL="${QADBAK_LEGACY_API_URL:-https://127.0.0.1:10000/virtual-server/remote.cgi}"
 
 set_env_key "QADBAK_MULTI_SERVER" "true"
 set_env_key "QADBAK_INDEPENDENCE_PHASE" "7"
@@ -61,7 +61,7 @@ if [[ ! -f "$SERVERS_FILE" ]]; then
     "name": "${PANEL_HOST}",
     "roles": ["panel", "provisioner"],
     "agentUrl": "http://127.0.0.1:${AGENT_PORT}",
-    "virtualminUrl": "${VM_URL}",
+    "legacyApiUrl": "${VM_URL}",
     "isDefault": true
   }
 ]

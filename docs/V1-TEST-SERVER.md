@@ -2,9 +2,9 @@
 
 Use a **dedicated** VPS. Do **not** install Qadbak on your live production server or any host with live customer sites.
 
-**Goal:** prove v1 on Ubuntu 22.04 + VirtualMin 8 with `VIRTUALMIN_MOCK=false`, then sign off [E2E-CHECKLIST.md](./E2E-CHECKLIST.md).
+**Goal:** prove v1 on Ubuntu 22.04 + legacy hosting API 8 with `QADBAK_LEGACY_API_MOCK=false`, then sign off [E2E-CHECKLIST.md](./E2E-CHECKLIST.md).
 
-**Time:** ~1–2 hours first time (VirtualMin install is slow).
+**Time:** ~1–2 hours first time (legacy hosting API install is slow).
 
 ---
 
@@ -19,7 +19,7 @@ Use a **dedicated** VPS. Do **not** install Qadbak on your live production serve
 Pick:
 
 - `PANEL_HOST` = your test subdomain (e.g. `panel-test.yourdomain.com`)
-- `TEST_DOMAIN` = one **fake** domain you create in VirtualMin (e.g. `v1test.example.com`)
+- `TEST_DOMAIN` = one **fake** domain you create in legacy hosting API (e.g. `v1test.example.com`)
 
 ---
 
@@ -46,11 +46,11 @@ When prompted:
 |--------|----------------|
 | Panel hostname | `panel-test.yourdomain.com` (your test subdomain) |
 | Also HTTPS for server FQDN? | **Y** (hostname from `hostname -f`) |
-| Webmin root password | New or existing root password for **this test box only** |
+| server admin root password | New or existing root password for **this test box only** |
 | Qadbak admin user/password | e.g. `admin` + strong password |
 | Certbot email | Your email |
 
-Wait until the script finishes. VirtualMin install can take 15–40 minutes.
+Wait until the script finishes. legacy hosting API install can take 15–40 minutes.
 
 The installer also installs **Node.js 20, npm, and pm2** — you do not need to run `apt install npm` separately.
 
@@ -73,22 +73,22 @@ grep NODE_TLS /opt/qadbak/.env.local
 
 ---
 
-## Step 4 — Front door (Qadbak, not Webmin)
+## Step 4 — Front door (Qadbak, not server admin)
 
 On your laptop browser:
 
 | URL | Expected |
 |-----|----------|
-| `http://VPS_IP/` | Qadbak marketing / home (not Webmin) |
+| `http://VPS_IP/` | Qadbak marketing / home (not server admin) |
 | `https://PANEL_HOST/` | Same |
 | `https://PANEL_HOST/login` | Qadbak login page |
-| `https://PANEL_HOST:10000` | Classic Webmin (engine only — do not give to clients) |
+| `https://PANEL_HOST:10000` | Classic server admin (engine only — do not give to clients) |
 
 If `http://VPS_IP` shows Apache/default: re-run nginx step from [FRONT-DOOR.md](./FRONT-DOOR.md).
 
 ### Provider firewall blocks port 80?
 
-Use an extra panel port (default **11000** — not Webmin’s **10000**):
+Use an extra panel port (default **11000** — not server admin’s **10000**):
 
 ```bash
 sudo bash /opt/qadbak/scripts/enable-panel-port.sh 11000
@@ -112,7 +112,7 @@ Fix anything marked FAIL before continuing.
 
 ## Step 6 — Create a test virtual server
 
-In VirtualMin (via `https://PANEL_HOST:10000` **only for this step**, or embed after login):
+In legacy hosting API (via `https://PANEL_HOST:10000` **only for this step**, or embed after login):
 
 1. Create domain `v1test.example.com` (or your `TEST_DOMAIN`).
 2. Note the exact domain name.
@@ -140,7 +140,7 @@ TEST_DOMAIN=v1test.example.com
 
 1. Open `https://PANEL_HOST/login`
 2. Log in with installer admin credentials.
-3. Dashboard → **Domains** list must match VirtualMin (including `v1test.example.com`).
+3. Dashboard → **Domains** list must match legacy hosting API (including `v1test.example.com`).
 
 ---
 
@@ -197,7 +197,7 @@ Mark [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) complete in git or project wiki when
 
 When Steps 7–10 pass:
 
-- **v1 code** is validated for real VirtualMin.
+- **v1 code** is validated for real legacy hosting API.
 - Safe to plan production panel host (still **not** your live production server unless you migrate deliberately).
 - v2+ (native System/Servers UI) can continue in repo; not required for v1 exit.
 
@@ -207,11 +207,11 @@ When Steps 7–10 pass:
 
 | Problem | Fix |
 |---------|-----|
-| `test-api` 401 | Wrong `VIRTUALMIN_PASS` in `.env.local` |
-| Empty domain list in Qadbak but domains in VM | Restart `pm2 restart qadbak`; check `VIRTUALMIN_URL` |
-| Embed blank | `WEBMIN_UI_URL` must be reachable from **your browser** (use `https://PANEL_HOST:10000` or server FQDN) |
+| `test-api` 401 | Wrong `QADBAK_LEGACY_API_PASS` in `.env.local` |
+| Empty domain list in Qadbak but domains in VM | Restart `pm2 restart qadbak`; check `QADBAK_LEGACY_API_URL` |
+| Embed blank | `QADBAK_LEGACY_PANEL_URL` must be reachable from **your browser** (use `https://PANEL_HOST:10000` or server FQDN) |
 | Login 500 | `SESSION_SECRET` set; `data/users.json` exists |
-| Still land on Webmin at port 80 | nginx default site; see [FRONT-DOOR.md](./FRONT-DOOR.md) |
+| Still land on server admin at port 80 | nginx default site; see [FRONT-DOOR.md](./FRONT-DOOR.md) |
 
 ---
 
@@ -221,7 +221,7 @@ For UI work only:
 
 ```bash
 cp .env.example .env.local
-# VIRTUALMIN_MOCK=true
+# QADBAK_LEGACY_API_MOCK=true
 npm install && npm run dev
 ```
 

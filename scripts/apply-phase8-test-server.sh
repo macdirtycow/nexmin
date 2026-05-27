@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Phase 8 on test VPS: hybrid provisioner, no Webmin UI, native domain registry.
-# VirtualMin may stay installed for mail/DNS until fully replaced — not required for panel login.
+# Phase 8 on test VPS: hybrid provisioner, no server admin UI, native domain registry.
+# legacy hosting API may stay installed for mail/DNS until fully replaced — not required for panel login.
 #
 # Usage: sudo bash /opt/qadbak/scripts/apply-phase8-test-server.sh
 set -euo pipefail
@@ -14,7 +14,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 cd "$QADBAK_DIR"
-echo "==> Phase 8 test-server apply (path to no Webmin UI)"
+echo "==> Phase 8 test-server apply (path to no server admin UI)"
 
 bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
 git pull --ff-only
@@ -30,13 +30,13 @@ set_env_key() {
   fi
 }
 
-echo "==> Export native domain registry (from VirtualMin while available)"
+echo "==> Export native domain registry (from legacy hosting API while available)"
 bash "$QADBAK_DIR/scripts/export-native-domains.sh"
 
 echo "==> .env.local phase 8"
 set_env_key "QADBAK_PROVISIONER" "hybrid"
-set_env_key "QADBAK_DISABLE_WEBMIN" "true"
-set_env_key "QADBAK_VIRTUALMIN_FALLBACK" "true"
+set_env_key "QADBAK_DISABLE_LEGACY_PANEL" "true"
+set_env_key "QADBAK_LEGACY_API_FALLBACK" "true"
 set_env_key "QADBAK_INDEPENDENCE_PHASE" "8"
 set_env_key "QADBAK_NATIVE_INSTALL" "1"
 # Keep TEST_DOMAIN for scripts
@@ -50,7 +50,7 @@ fi
 chown "$QADBAK_USER:$QADBAK_USER" "$QADBAK_DIR/.env.local"
 chmod 600 "$QADBAK_DIR/.env.local"
 
-echo "==> Sudo helpers + hosting (no Webmin embed)"
+echo "==> Sudo helpers + hosting (no server admin embed)"
 for helper in \
   configure-domain-fs-sudo.sh \
   configure-domain-repair-sudo.sh \
@@ -60,7 +60,7 @@ for helper in \
   bash "$QADBAK_DIR/scripts/$helper" || echo "    WARN: $helper" >&2
 done
 export QADBAK_NATIVE_INSTALL=1
-export QADBAK_DISABLE_WEBMIN=1
+export QADBAK_DISABLE_LEGACY_PANEL=1
 bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 echo "==> Build + pm2"
@@ -84,8 +84,8 @@ echo ""
 
 echo ""
 echo "Done — phase 8 hybrid on this VPS."
-echo "  Panel lists domains from data/native-domains.json (no Webmin UI)."
-echo "  Mail/DNS/etc. still use VirtualMin API until native replacements exist."
+echo "  Panel lists domains from data/native-domains.json (no server admin UI)."
+echo "  Mail/DNS/etc. still use legacy hosting API API until native replacements exist."
 echo "  Enable native modules: sudo bash scripts/apply-phase8-native-enable.sh"
 echo "  Or stepwise: sudo bash scripts/apply-phase8-native-phase.sh ssl,dns"
 echo "  Audit: bash scripts/audit-vm-dependency.sh"

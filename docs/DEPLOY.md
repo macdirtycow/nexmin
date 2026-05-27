@@ -1,13 +1,13 @@
 # Production deploy (Fase 0)
 
-Deploy Qadbak on the same VPS as VirtualMin. **Qadbak must be the front door on ports 80/443** (IP and hostname). VirtualMin/Webmin stays on **:10000** for the API and embeds — not as the page users see first.
+Deploy Qadbak on the same VPS as legacy hosting API. **Qadbak must be the front door on ports 80/443** (IP and hostname). legacy hosting API/server admin stays on **:10000** for the API and embeds — not as the page users see first.
 
 **First deploy:** use a [dedicated test VPS](V1-TEST-SERVER.md), not production.  
 See [FRONT-DOOR.md](FRONT-DOOR.md) · [STATUS.md](STATUS.md).
 
 ## Prerequisites
 
-- Ubuntu 22.04 with VirtualMin 8.x and Remote API enabled
+- Ubuntu 22.04 with legacy hosting API 8.x and Remote API enabled
 - Node.js 20+
 - nginx, certbot, pm2 (`npm install -g pm2`)
 - DNS for panel hostname → server IP
@@ -24,20 +24,20 @@ Edit `.env.local`:
 
 ```env
 SESSION_SECRET=<openssl rand -base64 32>
-VIRTUALMIN_MOCK=false
-VIRTUALMIN_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
-VIRTUALMIN_USER=root
-VIRTUALMIN_PASS=<webmin-root-password>
-WEBMIN_UI_URL=https://panel-test.yourdomain.com:10000
-USERMIN_UI_URL=https://panel-test.yourdomain.com:20000
-VIRTUALMIN_UI_URL=https://panel-test.yourdomain.com:10000
+QADBAK_LEGACY_API_MOCK=false
+QADBAK_LEGACY_API_URL=https://127.0.0.1:10000/virtual-server/remote.cgi
+QADBAK_LEGACY_API_USER=root
+QADBAK_LEGACY_API_PASS=<legacy-panel-root-password>
+QADBAK_LEGACY_PANEL_URL=https://panel-test.yourdomain.com:10000
+QADBAK_ACCOUNT_PANEL_UI_URL=https://panel-test.yourdomain.com:20000
+QADBAK_LEGACY_PANEL_URL=https://panel-test.yourdomain.com:10000
 PORT=3000
 ```
 
-If self-signed TLS on 10000 (VirtualMin API only — not global):
+If self-signed TLS on 10000 (legacy hosting API API only — not global):
 
 ```env
-VIRTUALMIN_TLS_INSECURE=true
+QADBAK_LEGACY_API_TLS_INSECURE=true
 ```
 
 Do **not** set `NODE_TLS_REJECT_UNAUTHORIZED=0` (disables TLS for the entire Node process). See `docs/PRODUCTION-HARDENING.md`.
@@ -71,7 +71,7 @@ pm2 save
 pm2 startup
 ```
 
-## 5. nginx + TLS (IP → Qadbak, not VirtualMin)
+## 5. nginx + TLS (IP → Qadbak, not legacy hosting API)
 
 ```bash
 PANEL=qadbak.com          # or your server FQDN, e.g. your-server.com
@@ -88,7 +88,7 @@ sudo certbot --nginx -d "$PANEL" -d "$FQDN"
 - `http://customer-domain/` → Apache / `public_html` (nginx `default_server` → Apache backend)
 - `https://panel-host/` → Qadbak
 - `https://$PANEL/login` → Qadbak
-- `https://$FQDN:10000` → Webmin only (do not use as client entry URL)
+- `https://$FQDN:10000` → server admin only (do not use as client entry URL)
 
 Remove any static `index.html` in `public_html` that blocks the proxy.
 
@@ -99,7 +99,7 @@ Remove any static `index.html` in `public_html` that blocks the proxy.
 | Marketing | `https://<panel>/` |
 | Login | `https://<panel>/login` |
 | API | `npm run test-api` |
-| Domains | Login → Domains list matches VirtualMin |
+| Domains | Login → Domains list matches legacy hosting API |
 
 ## Update
 

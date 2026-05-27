@@ -1,11 +1,11 @@
-import type { Role, VirtualMinDatabase, VirtualMinMailbox } from "../types";
+import type { Role, HostedDatabase, HostedMailbox } from "../types";
 import type {
   CronJob,
   DnsRecord,
   ScheduledBackup,
   SslCert,
   CreateDomainInput,
-} from "../virtualmin";
+} from "../hosting-remote";
 import { runProvisioningHelper } from "./native-exec";
 
 type Actor = { role: Role; domains: string[] };
@@ -53,7 +53,7 @@ export async function deleteDnsRecordNative(
 export async function listMailboxesNative(
   domain: string,
   _actor: Actor,
-): Promise<VirtualMinMailbox[]> {
+): Promise<HostedMailbox[]> {
   const r = await runProvisioningHelper("mail-list", domain);
   return (
     (r.mailboxes as { user: string; real?: string; quota?: string; quotaUsedMb?: string }[]) ??
@@ -64,7 +64,7 @@ export async function listMailboxesNative(
     real: m.real,
     quota: m.quotaUsedMb ?? m.quota ?? "0",
     quotaUsedMb: m.quotaUsedMb ?? m.quota,
-  })) as VirtualMinMailbox[];
+  })) as HostedMailbox[];
 }
 
 export async function createMailboxNative(
@@ -103,9 +103,9 @@ export async function deleteMailboxNative(
 export async function listDatabasesNative(
   domain: string,
   _actor: Actor,
-): Promise<VirtualMinDatabase[]> {
+): Promise<HostedDatabase[]> {
   const r = await runProvisioningHelper("db-list", domain);
-  return (r.databases as VirtualMinDatabase[]) ?? [];
+  return (r.databases as HostedDatabase[]) ?? [];
 }
 
 export async function createDatabaseNative(

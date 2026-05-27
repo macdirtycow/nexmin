@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { Role } from "../types";
-import type { VirtualMinDomain } from "../types";
+import type { HostedDomain } from "../types";
 
 const execFileAsync = promisify(execFile);
 
@@ -109,7 +109,7 @@ async function homeDiskUsedMb(unixUser: string): Promise<string> {
   }
 }
 
-async function enrichDomainDisk(row: NativeDomainRecord): Promise<VirtualMinDomain> {
+async function enrichDomainDisk(row: NativeDomainRecord): Promise<HostedDomain> {
   const used = await homeDiskUsedMb(row.user);
   const limit =
     (await diskLimitForDomain(row.name)) ?? row.disk_limit?.trim() ?? undefined;
@@ -126,7 +126,7 @@ async function enrichDomainDisk(row: NativeDomainRecord): Promise<VirtualMinDoma
 export async function listDomainsNative(actor: {
   role: Role;
   domains: string[];
-}): Promise<VirtualMinDomain[]> {
+}): Promise<HostedDomain[]> {
   let rows = await loadNativeDomainRegistry();
   if (rows.length === 0) rows = await scanHomeDomains();
 
@@ -142,20 +142,20 @@ export async function listDomainsNative(actor: {
 export async function findDomainByNameNative(
   domainName: string,
   actor: { role: Role; domains: string[] },
-): Promise<VirtualMinDomain | undefined> {
+): Promise<HostedDomain | undefined> {
   const want = domainName.trim().toLowerCase();
   const domains = await listDomainsNative(actor);
   return domains.find((d) => d.name.toLowerCase() === want);
 }
 
-/** Same convention as VirtualMin — first label of domain, sanitized. */
+/** Same convention as legacy hosting API — first label of domain, sanitized. */
 export function defaultDomainUnixUser(domain: string): string {
   const base = domain.split(".")[0] ?? "site";
   const safe = base.toLowerCase().replace(/[^a-z0-9_-]/g, "");
   return (safe || "site").slice(0, 32);
 }
 
-/** Unix user for domain shell / terminal (registry or home scan — no VirtualMin API). */
+/** Unix user for domain shell / terminal (registry or home scan — no legacy hosting API API). */
 export async function resolveDomainUnixUserNative(
   domain: string,
   actor: { role: Role; domains: string[] },

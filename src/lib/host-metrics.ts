@@ -63,7 +63,7 @@ async function readFirewallSummary(): Promise<HostMetrics["firewall"] | undefine
   }
 }
 
-/** Host CPU/RAM/disk from /proc and df (no Webmin). Server-only. */
+/** Host CPU/RAM/disk from /proc and df (no server admin). Server-only. */
 export async function getHostMetrics(): Promise<HostMetrics> {
   const [memRaw, loadRaw, uptimeRaw, dfRaw] = await Promise.all([
     fs.readFile("/proc/meminfo", "utf8"),

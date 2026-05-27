@@ -146,7 +146,7 @@ export async function domainMigrate(domain, destHost) {
     "1) Copy backup + Maildir/DNS zone to the target server",
     "2) On target: domain-create + restore files",
     "3) Update DNS A/AAAA to the new host",
-    "VirtualMin migrate-domain is not used in native mode.",
+    "legacy hosting API migrate-domain is not used in native mode.",
   ];
   emit({
     ok: true,

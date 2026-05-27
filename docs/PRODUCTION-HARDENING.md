@@ -41,7 +41,7 @@ Migration steps:
 
 Until then: treat `users.json` as **infrastructure config** (edit on server, backup with VPS).
 
-## 2. TLS to VirtualMin (`:10000`)
+## 2. TLS to legacy hosting API (`:10000`)
 
 ### Problem
 
@@ -52,17 +52,17 @@ Until then: treat `users.json` as **infrastructure config** (edit on server, bac
 Qadbak uses a **scoped** opt-in:
 
 ```env
-# Only for self-signed Webmin on 127.0.0.1:10000 — not global TLS disable
-# (auto-enabled when VIRTUALMIN_URL uses localhost / 127.0.0.1)
-VIRTUALMIN_TLS_INSECURE=true
+# Only for self-signed server admin on 127.0.0.1:10000 — not global TLS disable
+# (auto-enabled when QADBAK_LEGACY_API_URL uses localhost / 127.0.0.1)
+QADBAK_LEGACY_API_TLS_INSECURE=true
 ```
 
-Implementation: `src/lib/virtualmin-http.ts` passes an Undici `Agent` with `rejectUnauthorized: false` only to `virtualMinFetch()` (remote.cgi).
+Implementation: `src/lib/legacy-host-http.ts` passes an Undici `Agent` with `rejectUnauthorized: false` only to `hostingRemoteFetch()` (remote.cgi).
 
 ### Better long-term
 
-1. **Let's Encrypt on Webmin** for the server FQDN (or internal CA), then remove `VIRTUALMIN_TLS_INSECURE`.
-2. Or set `VIRTUALMIN_URL=https://127.0.0.1:10000/...` with a pinned CA file (future: `VIRTUALMIN_CA_FILE`).
+1. **Let's Encrypt on server admin** for the server FQDN (or internal CA), then remove `QADBAK_LEGACY_API_TLS_INSECURE`.
+2. Or set `QADBAK_LEGACY_API_URL=https://127.0.0.1:10000/...` with a pinned CA file (future: `QADBAK_LEGACY_API_CA_FILE`).
 
 ### Install / upgrade
 
@@ -70,7 +70,7 @@ Replace in `.env.local`:
 
 ```diff
 -NODE_TLS_REJECT_UNAUTHORIZED=0
-+VIRTUALMIN_TLS_INSECURE=true
++QADBAK_LEGACY_API_TLS_INSECURE=true
 ```
 
 New installs should not set the global variable.
@@ -78,7 +78,7 @@ New installs should not set the global variable.
 ## Checklist before production
 
 - [ ] Change default passwords; rotate `SESSION_SECRET`
-- [ ] `VIRTUALMIN_TLS_INSECURE` only if needed; plan proper Webmin TLS
-- [ ] Bind Webmin to `127.0.0.1` if the panel is the only public UI
+- [ ] `QADBAK_LEGACY_API_TLS_INSECURE` only if needed; plan proper server admin TLS
+- [ ] Bind server admin to `127.0.0.1` if the panel is the only public UI
 - [ ] Plan SQLite when adding user management in the UI
-- [ ] Backups: `data/users.json` (or future `.db`), `.env.local`, VirtualMin config
+- [ ] Backups: `data/users.json` (or future `.db`), `.env.local`, legacy hosting API config

@@ -15,7 +15,7 @@ import {
   uploadDomainFileLive,
 } from "@/lib/domain-files-service";
 import { requireDomainApi } from "@/lib/domain-api";
-import { VirtualMinError } from "@/lib/errors";
+import { PanelError } from "@/lib/errors";
 import { getMaxUploadBytes } from "@/lib/upload-limits-server";
 import { exceedsUploadLimit, formatUploadLimit } from "@/lib/upload-limits";
 
@@ -57,7 +57,7 @@ export async function POST(request: Request, { params }: Params) {
       if (!(item instanceof File)) continue;
 
       const safe = item.name.replace(/[/\\]/g, "").trim();
-      if (!safe) throw new VirtualMinError("Invalid file name.");
+      if (!safe) throw new PanelError("Invalid file name.");
       const rel = parentNorm ? `${parentNorm}/${safe}` : safe;
 
       if (exceedsUploadLimit(item.size, maxBytes)) {

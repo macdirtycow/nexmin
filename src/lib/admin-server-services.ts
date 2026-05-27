@@ -1,6 +1,6 @@
 import { isIndependentMode } from "./provisioner/native-stub";
 import type { Role } from "./types";
-import type { BandwidthRow, ServerService } from "./virtualmin";
+import type { BandwidthRow, ServerService } from "./hosting-remote";
 import {
   controlNativeServerService,
   listNativeBandwidth,
@@ -14,7 +14,7 @@ const HOST_SERVICES_HINT =
 export async function listAdminServerServices(_actor: {
   role: Role;
   domains: string[];
-}): Promise<{ services: ServerService[]; source: "native" | "virtualmin" }> {
+}): Promise<{ services: ServerService[]; source: "native" | "legacy" }> {
   if (await probeHostServicesSudo()) {
     try {
       const services = await listNativeServerServices();
@@ -36,13 +36,13 @@ export async function listAdminServerServices(_actor: {
 
   const { getProvisioner } = await import("./provisioner");
   const services = await getProvisioner().listServerStatuses(_actor);
-  return { services, source: "virtualmin" };
+  return { services, source: "legacy" };
 }
 
 export async function listAdminBandwidth(_actor: {
   role: Role;
   domains: string[];
-}): Promise<{ rows: BandwidthRow[]; source: "native" | "virtualmin" }> {
+}): Promise<{ rows: BandwidthRow[]; source: "native" | "legacy" }> {
   if (await probeHostServicesSudo()) {
     try {
       const rows = await listNativeBandwidth();
@@ -64,14 +64,14 @@ export async function listAdminBandwidth(_actor: {
 
   const { getProvisioner } = await import("./provisioner");
   const rows = await getProvisioner().listBandwidth(_actor);
-  return { rows, source: "virtualmin" };
+  return { rows, source: "legacy" };
 }
 
 export async function controlAdminServerService(
   service: string,
   action: "start" | "stop" | "restart",
   actor: { role: Role; domains: string[] },
-): Promise<{ source: "native" | "virtualmin" }> {
+): Promise<{ source: "native" | "legacy" }> {
   if (await probeHostServicesSudo()) {
     try {
       await controlNativeServerService(service, action);
@@ -101,5 +101,5 @@ export async function controlAdminServerService(
   }
   const { getProvisioner } = await import("./provisioner");
   await getProvisioner().restartServer(service, actor);
-  return { source: "virtualmin" };
+  return { source: "legacy" };
 }

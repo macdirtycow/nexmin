@@ -1,9 +1,9 @@
-import type { VirtualMinMailbox } from "@/lib/types";
+import type { HostedMailbox } from "@/lib/types";
 
 /** Mailbox Maildir usage shown in the accounts table (MB). */
-export function formatMailboxUsedMb(mailbox: VirtualMinMailbox): string {
+export function formatMailboxUsedMb(mailbox: HostedMailbox): string {
   const raw =
-    (mailbox as VirtualMinMailbox & { quotaUsedMb?: string }).quotaUsedMb ??
+    (mailbox as HostedMailbox & { quotaUsedMb?: string }).quotaUsedMb ??
     mailbox.quota ??
     mailbox["values.quota"];
   const s = String(raw ?? "").trim();

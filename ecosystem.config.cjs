@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-/** Load .env.local so pm2 always has VIRTUALMIN_* (Next.js also reads it, but pm2 env must match). */
+/** Load .env.local so pm2 always has QADBAK_LEGACY_API_* (Next.js also reads it, but pm2 env must match). */
 function loadEnvFile(filePath) {
   const root = path.join(__dirname);
   const env = {

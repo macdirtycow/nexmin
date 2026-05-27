@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build data/native-domains.json from VirtualMin (one-time / after new domain in VM).
+# Build data/native-domains.json from legacy hosting API (one-time / after new domain in VM).
 # Used when moving to QADBAK_PROVISIONER=hybrid|native on an existing server.
 set -euo pipefail
 
@@ -47,8 +47,8 @@ scan_home_domains() {
   echo "]"
 }
 
-if ! command -v virtualmin &>/dev/null; then
-  echo "==> virtualmin not found — scan /home/*/.qadbak-domain → $OUT"
+if ! command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  echo "==> legacy-host not found — scan /home/*/.qadbak-domain → $OUT"
   scan_home_domains >"$TMP"
   mv "$TMP" "$OUT"
   chown "$QADBAK_USER:$QADBAK_USER" "$OUT"
@@ -64,11 +64,11 @@ echo "==> Export domains → $OUT"
   first=1
   while read -r domain; do
     [[ -z "$domain" ]] && continue
-    user="$(virtualmin list-domains --domain "$domain" --multiline 2>/dev/null \
+    user="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$domain" --multiline 2>/dev/null \
       | awk -F': *' '/^Unix username:/ {print $2; exit}')"
     user="${user:-${domain%%.*}}"
     disabled="false"
-    if virtualmin list-domains --domain "$domain" --multiline 2>/dev/null | grep -qi 'Disabled.*Yes'; then
+    if "${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$domain" --multiline 2>/dev/null | grep -qi 'Disabled.*Yes'; then
       disabled="true"
     fi
     [[ "$first" -eq 1 ]] || echo ","
@@ -81,7 +81,7 @@ echo "==> Export domains → $OUT"
     elif [[ -f "/var/lib/bind/${domain}" ]]; then
       zone_file="/var/lib/bind/${domain}"
     else
-      zone_file="$(virtualmin list-domains --domain "$domain" --multiline 2>/dev/null \
+      zone_file="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$domain" --multiline 2>/dev/null \
         | awk -F': *' '/^(DNS zone file|Zone file|Master file):/ {print $2; exit}')"
       [[ -n "$zone_file" && -f "$zone_file" ]] || zone_file=""
     fi
@@ -97,7 +97,7 @@ echo "==> Export domains → $OUT"
       echo "$domain" >"/home/$user/.qadbak-domain"
       chown "$user:$user" "/home/$user/.qadbak-domain" 2>/dev/null || true
     fi
-  done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+  done < <("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
   echo ""
   echo "]"
 } >"$TMP"

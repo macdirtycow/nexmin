@@ -1,6 +1,6 @@
 # Qadbak native integration roadmap
 
-Goal: manage hosting from **Qadbak only** — VirtualMin/Webmin run on the server, but users rarely need `:10000`.
+Goal: manage hosting from **Qadbak only** — legacy hosting API/server admin run on the server, but users rarely need `:10000`.
 
 ## Done
 
@@ -20,7 +20,7 @@ Goal: manage hosting from **Qadbak only** — VirtualMin/Webmin run on the serve
 | Cron | `run-api-command` + `list-cron` flags; fallback `crontab -l` via helper |
 | Mail | `create-user` with `mail=1` |
 
-Still **no Webmin UI** for these tabs.
+Still **no server admin UI** for these tabs.
 
 ## Phase B — Next
 
@@ -37,7 +37,7 @@ Still **no Webmin UI** for these tabs.
 | Current embed | Target |
 |---------------|--------|
 | Terminal | **Done** — native shell in panel (`docs/TERMINAL-NATIVE.md`) |
-| Webmin module browser | Retire per-module as API coverage completes |
+| server admin module browser | Retire per-module as API coverage completes |
 
 ## Server setup after pull
 

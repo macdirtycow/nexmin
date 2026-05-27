@@ -50,9 +50,7 @@ function looksLikeQadbakLanding(body: string, headers: Headers): boolean {
   const sample = body.slice(0, 12000).toLowerCase();
   return (
     sample.includes("qadbak") &&
-    (sample.includes("virtualmin") ||
-      sample.includes("your hosting panel") ||
-      sample.includes("sign in at qadbak"))
+    (sample.includes("your hosting panel") || sample.includes("sign in at qadbak"))
   );
 }
 

@@ -70,7 +70,7 @@ if [[ "$(id -u)" -eq 0 ]]; then
     fi
   done
   echo "==> Hosting stack (nginx, Apache)"
-  QADBAK_NATIVE_INSTALL=1 QADBAK_DISABLE_WEBMIN=true \
+  QADBAK_NATIVE_INSTALL=1 QADBAK_DISABLE_LEGACY_PANEL=true \
     bash "$ROOT/scripts/install-hosting-stack.sh" || echo "    WARN: install-hosting-stack.sh failed" >&2
 fi
 

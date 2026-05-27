@@ -1,15 +1,15 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { webminUiEnabled } from "@/lib/independent-mode";
+import { legacyPanelUiEnabled } from "@/lib/independent-mode";
 import { requireSession } from "@/lib/session";
-import { virtualminEmbedPath } from "@/lib/virtualmin-embed";
+import { legacyPanelEmbedPath } from "@/lib/legacy-panel-embed";
 import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    if (!webminUiEnabled()) {
+    if (!legacyPanelUiEnabled()) {
       return jsonError("Legacy panel login links are disabled.", 410);
     }
     const session = await requireSession();
@@ -25,8 +25,8 @@ export async function GET(request: Request, { params }: Params) {
         ? path.startsWith("/")
           ? path
           : `/${path}`
-        : virtualminEmbedPath(dest, unixUser);
-    const url = await getProvisioner().createVirtualMinLoginLink(domain, session, { redirectUrl });
+        : legacyPanelEmbedPath(dest, unixUser);
+    const url = await getProvisioner().createDomainLegacyLoginLink(domain, session, { redirectUrl });
     await auditLog(session.username, "create-login-link", domain);
     return jsonOk({ url });
   } catch (err) {

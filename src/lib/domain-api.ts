@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSession, requireSession } from "./session";
-import type { VirtualMinDomain } from "./types";
+import type { HostedDomain } from "./types";
 import { getProvisioner } from "./provisioner";
 
 async function resolveDomain(
@@ -9,7 +9,7 @@ async function resolveDomain(
 ): Promise<{
   session: Awaited<ReturnType<typeof requireSession>>;
   domain: string;
-  domainInfo: VirtualMinDomain;
+  domainInfo: HostedDomain;
 }> {
   const session = await requireSession();
   const domainName = decodeURIComponent(encodedDomain);

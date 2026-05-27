@@ -1,22 +1,22 @@
 /**
  * Hosting provisioner abstraction (phase 2).
- * UI and API should call getProvisioner() — not import virtualmin.ts directly.
+ * UI and API should call getProvisioner() — not import hosting-remote.ts directly.
  */
 export {
   getProvisioner,
   getProvisionerId,
   resetProvisioner,
 } from "./resolve";
-export { createVirtualminProvisioner } from "./virtualmin-adapter";
+export { createLegacyRemoteProvisioner } from "./legacy-remote-adapter";
 export { createHybridProvisioner } from "./hybrid-adapter";
 export type { Provisioner, ProvisionerActor, ProvisionerId } from "./types";
 
-/** @deprecated Import types from @/lib/provisioner or @/lib/virtualmin during migration */
-export { VirtualMinError } from "../errors";
+/** @deprecated Import types from @/lib/provisioner or @/lib/hosting-remote during migration */
+export { PanelError } from "../errors";
 export type {
-  VirtualMinDomain,
-  VirtualMinMailbox,
-  VirtualMinDatabase,
+  HostedDomain,
+  HostedMailbox,
+  HostedDatabase,
 } from "../types";
 export type {
   CreateDomainInput,
@@ -50,4 +50,4 @@ export type {
   AvailableScript,
   InstalledScript,
   ProxyRoute,
-} from "../virtualmin";
+} from "../hosting-remote";

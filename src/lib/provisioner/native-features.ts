@@ -1,6 +1,6 @@
 import { isIndependentMode } from "./native-stub";
 
-/** Which native provisioning modules replace VirtualMin API (phase 8 sub-phases). */
+/** Which native provisioning modules replace legacy hosting API API (phase 8 sub-phases). */
 const ALL = [
   "ssl",
   "dns",
@@ -44,13 +44,13 @@ export function listEnabledNativeFeatures(): NativeFeature[] {
   return ALL.filter((f) => nativeFeatureEnabled(f));
 }
 
-/** Panel mail uses Postfix/Dovecot on disk (not VirtualMin remote.cgi). */
+/** Panel mail uses Postfix/Dovecot on disk (not legacy hosting API remote.cgi). */
 export function nativeMailUsesDirectBackend(): boolean {
   const mode = process.env.QADBAK_MAIL_BACKEND?.trim().toLowerCase() ?? "";
   if (mode === "direct" || mode === "postfix" || mode === "dovecot") {
     return true;
   }
-  if (mode === "virtualmin" || mode === "cli") return false;
+  if (mode === "legacy-remote" || mode === "cli") return false;
   return isIndependentMode();
 }
 

@@ -7,8 +7,8 @@ Fresh Ubuntu VPS **without** a legacy GPL control panel on the same machine.
 | Scenario | Installer |
 |----------|-----------|
 | New VPS, Qadbak-first | `sudo bash install/qadbak-install.sh` |
-| Existing VPS with legacy panel | [MIGRATE-FROM-VIRTUALMIN.md](./MIGRATE-FROM-VIRTUALMIN.md) |
-| Import domains from remote API | Set `VIRTUALMIN_URL` in `.env.local` (hybrid only) |
+| Existing VPS with legacy panel | [MIGRATE-FROM-LEGACY-HOSTING.md](./MIGRATE-FROM-LEGACY-HOSTING.md) |
+| Import domains from remote API | Set `QADBAK_LEGACY_API_URL` in `.env.local` (hybrid only) |
 
 ## Install
 
@@ -29,7 +29,7 @@ The installer asks for:
 - nginx, Apache (127.0.0.1:8080), MariaDB, Postfix, Dovecot, BIND9, PHP-FPM
 - Qadbak panel + pm2 + native provisioning (send **and receive** mail)
 - Postfix virtual domains + Maildir delivery + Dovecot IMAP
-- **No** Webmin on port 10000
+- **No** server admin on port 10000
 
 ## Mail (send + receive)
 
@@ -68,4 +68,4 @@ sudo bash scripts/apply-all-php-fpm-pools.sh   # existing domains
 
 New domains: pool + nginx vhost are applied on create. Change PHP version in the panel → pool and vhost refresh automatically.
 
-See [IMAP-NATIVE.md](./IMAP-NATIVE.md) and [MIGRATE-FROM-VIRTUALMIN.md](./MIGRATE-FROM-VIRTUALMIN.md).
+See [IMAP-NATIVE.md](./IMAP-NATIVE.md) and [MIGRATE-FROM-LEGACY-HOSTING.md](./MIGRATE-FROM-LEGACY-HOSTING.md).

@@ -1,8 +1,10 @@
-/** Full Webmin module catalog (legacy hybrid parity reference). */
+import { LEGACY_UPSTREAM } from "./legacy-upstream-keys";
 
-export type WebminCatalogCategory =
+/** Legacy server-admin module catalog (hybrid parity reference; labels are neutral). */
+
+export type LegacyPanelCatalogCategory =
   | "dashboard"
-  | "webmin"
+  | "panel-admin"
   | "system"
   | "servers"
   | "tools"
@@ -10,24 +12,42 @@ export type WebminCatalogCategory =
   | "hardware"
   | "cluster";
 
-export interface WebminCatalogModule {
+export interface LegacyPanelCatalogModule {
   id: string;
   label: string;
   path: string;
-  category: WebminCatalogCategory;
+  category: LegacyPanelCatalogCategory;
   phase: "v2" | "v3" | "v4" | "v5";
   adminOnly?: boolean;
 }
 
-export const WEBMIN_CATALOG: WebminCatalogModule[] = [
-  { id: "dashboard", label: "Webmin Dashboard", path: "/", category: "dashboard", phase: "v2" },
-  { id: "backup-config", label: "Backup Configuration Files", path: "/backup-config/", category: "webmin", phase: "v2" },
-  { id: "settings", label: "Change Language and Theme", path: "/settings/", category: "webmin", phase: "v2" },
-  { id: "usermin", label: "Usermin Configuration", path: "/usermin/", category: "webmin", phase: "v2" },
-  { id: "webminlog", label: "Webmin Actions Log", path: "/webminlog/", category: "webmin", phase: "v2" },
-  { id: "config", label: "Webmin Configuration", path: "/config/", category: "webmin", phase: "v2" },
-  { id: "servers", label: "Webmin Servers Index", path: "/servers/", category: "webmin", phase: "v2" },
-  { id: "webminusers", label: "Webmin Users", path: "/webminusers/", category: "webmin", phase: "v2" },
+export const LEGACY_PANEL_CATALOG: LegacyPanelCatalogModule[] = [
+  { id: "dashboard", label: "Server dashboard", path: "/", category: "dashboard", phase: "v2" },
+  { id: "backup-config", label: "Backup Configuration Files", path: "/backup-config/", category: "panel-admin", phase: "v2" },
+  { id: "settings", label: "Change Language and Theme", path: "/settings/", category: "panel-admin", phase: "v2" },
+  {
+    id: "account-panel-config",
+    label: "Account panel configuration",
+    path: LEGACY_UPSTREAM.paths.accountPanelConfig,
+    category: "panel-admin",
+    phase: "v2",
+  },
+  {
+    id: "admin-actions-log",
+    label: "Admin actions log",
+    path: LEGACY_UPSTREAM.paths.adminActionsLog,
+    category: "panel-admin",
+    phase: "v2",
+  },
+  { id: "config", label: "Server admin configuration", path: "/config/", category: "panel-admin", phase: "v2" },
+  { id: "servers", label: "Server index", path: "/servers/", category: "panel-admin", phase: "v2" },
+  {
+    id: "admin-users",
+    label: "Admin users",
+    path: LEGACY_UPSTREAM.paths.adminUsers,
+    category: "panel-admin",
+    phase: "v2",
+  },
   { id: "init", label: "Bootup and Shutdown", path: "/init/", category: "system", phase: "v2" },
   { id: "passwd", label: "Change Passwords", path: "/passwd/", category: "system", phase: "v2" },
   { id: "mount", label: "Disk and Network Filesystems", path: "/mount/", category: "system", phase: "v2" },
@@ -85,29 +105,29 @@ export const WEBMIN_CATALOG: WebminCatalogModule[] = [
   { id: "cluster-cron", label: "Cluster Cron Jobs", path: "/cluster-cron/", category: "cluster", phase: "v5" },
   { id: "cluster-shell", label: "Cluster Shell Commands", path: "/cluster-shell/", category: "cluster", phase: "v5" },
   { id: "cluster-software", label: "Cluster Software Packages", path: "/cluster-software/", category: "cluster", phase: "v5" },
-  { id: "cluster-usermin", label: "Cluster Usermin Servers", path: "/cluster-usermin/", category: "cluster", phase: "v5" },
+  { id: "cluster-account-panel", label: "Cluster account panel Servers", path: "/cluster-account-panel/", category: "cluster", phase: "v5" },
   { id: "cluster-useradmin", label: "Cluster Users and Groups", path: "/cluster-useradmin/", category: "cluster", phase: "v5" },
-  { id: "cluster-webmin", label: "Cluster Webmin Servers", path: "/cluster-webmin/", category: "cluster", phase: "v5" },
+  { id: "cluster-legacy-panel", label: "Cluster server admin Servers", path: "/cluster-legacy-panel/", category: "cluster", phase: "v5" },
 ];
 
 export function catalogByCategory(
-  category: WebminCatalogCategory,
-): WebminCatalogModule[] {
-  return WEBMIN_CATALOG.filter((m) => m.category === category);
+  category: LegacyPanelCatalogCategory,
+): LegacyPanelCatalogModule[] {
+  return LEGACY_PANEL_CATALOG.filter((m) => m.category === category);
 }
 
-export function catalogModule(id: string): WebminCatalogModule | undefined {
-  return WEBMIN_CATALOG.find((m) => m.id === id);
+export function catalogModule(id: string): LegacyPanelCatalogModule | undefined {
+  return LEGACY_PANEL_CATALOG.find((m) => m.id === id);
 }
 
-export function catalogMenuPath(category: WebminCatalogCategory): string {
+export function catalogMenuPath(category: LegacyPanelCatalogCategory): string {
   if (category === "dashboard") return "/admin/status";
   return `/admin/${category}-menu`;
 }
 
-export const CATALOG_CATEGORY_LABELS: Record<WebminCatalogCategory, string> = {
+export const CATALOG_CATEGORY_LABELS: Record<LegacyPanelCatalogCategory, string> = {
   dashboard: "Dashboard",
-  webmin: "Webmin",
+  "panel-admin": "server admin",
   system: "System",
   servers: "Servers",
   tools: "Tools",

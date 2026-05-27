@@ -6,7 +6,7 @@ import { fileExists } from "./provisioning-common.mjs";
 
 const exec = promisify(execFile);
 
-/** Qadbak-owned Postfix maps (hash format — avoids VirtualMin path conflicts). */
+/** Qadbak-owned Postfix maps (hash format — avoids legacy hosting API path conflicts). */
 export const QADBAK_POSTFIX_VIRTUAL = "/etc/postfix/qadbak-virtual";
 export const QADBAK_POSTFIX_DOMAINS = "/etc/postfix/qadbak-domains";
 export const QADBAK_POSTFIX_VMAILBOX = "/etc/postfix/qadbak-vmailbox";

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Allow Webmin in panel iframes + subdirectory proxy (/embed/webmin/) for auto-login links.
+# Allow server admin in panel iframes + subdirectory proxy (/embed/legacy-panel/) for auto-login links.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WEBMIN_CONFIG="/etc/webmin/config"
-MINISERV_CONF="/etc/webmin/miniserv.conf"
+QADBAK_LEGACY_PANEL_CONFIG="/etc/legacy-host/config"
+MINISERV_CONF="/etc/legacy-host/miniserv.conf"
 ENV_FILE="${QADBAK_DIR:-$ROOT}/.env.local"
-EMBED_PREFIX="/embed/webmin"
+EMBED_PREFIX="/embed/legacy-panel"
 
 set_config_key() {
   local file="$1" key="$2" val="$3"
@@ -18,12 +18,12 @@ set_config_key() {
 }
 
 if [[ "$(id -u)" -ne 0 ]]; then
-  echo "Run as root: sudo bash scripts/configure-webmin-embed.sh" >&2
+  echo "Run as root: sudo bash scripts/configure-legacy-panel-embed.sh" >&2
   exit 1
 fi
 
-if [[ ! -f "$WEBMIN_CONFIG" ]]; then
-  echo "Webmin not installed ($WEBMIN_CONFIG missing) — skip." >&2
+if [[ ! -f "$QADBAK_LEGACY_PANEL_CONFIG" ]]; then
+  echo "server admin not installed ($QADBAK_LEGACY_PANEL_CONFIG missing) — skip." >&2
   exit 0
 fi
 
@@ -54,11 +54,11 @@ if [[ -z "$REDIRECT_HOST" ]]; then
   REFERERS="$REDIRECT_HOST"
 fi
 
-echo "==> Webmin: iframe + proxy prefix $EMBED_PREFIX (host: $REFERERS)"
-set_config_key "$WEBMIN_CONFIG" "no_frame_options" "1"
-set_config_key "$WEBMIN_CONFIG" "webprefix" "$EMBED_PREFIX"
-set_config_key "$WEBMIN_CONFIG" "webprefixnoredir" "1"
-set_config_key "$WEBMIN_CONFIG" "referers" "$REFERERS"
+echo "==> server admin: iframe + proxy prefix $EMBED_PREFIX (host: $REFERERS)"
+set_config_key "$QADBAK_LEGACY_PANEL_CONFIG" "no_frame_options" "1"
+set_config_key "$QADBAK_LEGACY_PANEL_CONFIG" "webprefix" "$EMBED_PREFIX"
+set_config_key "$QADBAK_LEGACY_PANEL_CONFIG" "webprefixnoredir" "1"
+set_config_key "$QADBAK_LEGACY_PANEL_CONFIG" "referers" "$REFERERS"
 
 if [[ -f "$MINISERV_CONF" ]]; then
   set_config_key "$MINISERV_CONF" "redirect_prefix" "$EMBED_PREFIX"
@@ -71,15 +71,15 @@ if [[ -f "$MINISERV_CONF" ]]; then
   fi
 fi
 
-if systemctl is-active webmin &>/dev/null; then
-  systemctl restart webmin
-  echo "    webmin restarted"
+if systemctl is-active legacy-panel &>/dev/null; then
+  systemctl restart legacy-panel
+  echo "    legacy-panel restarted"
 else
-  echo "    WARN: webmin not running — start with: systemctl start webmin" >&2
+  echo "    WARN: legacy-panel not running — start with: systemctl start legacy-panel" >&2
 fi
 
-if [[ -f "$ROOT/scripts/sync-webmin-embed-env.sh" ]]; then
-  bash "$ROOT/scripts/sync-webmin-embed-env.sh" || true
+if [[ -f "$ROOT/scripts/sync-legacy-panel-embed-env.sh" ]]; then
+  bash "$ROOT/scripts/sync-legacy-panel-embed-env.sh" || true
 fi
 
-echo "==> Webmin embed config applied (login links should auto-login, no Webmin password in panel)"
+echo "==> server admin embed config applied (login links should auto-login, no server admin password in panel)"

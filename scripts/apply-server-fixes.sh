@@ -17,7 +17,7 @@ bash "$QADBAK_DIR/scripts/git-sync-origin.sh"
 
 if [[ -f "$QADBAK_DIR/.env.local" ]] && grep -q '^NODE_TLS_REJECT_UNAUTHORIZED=' "$QADBAK_DIR/.env.local" 2>/dev/null; then
   sed -i '/^NODE_TLS_REJECT_UNAUTHORIZED=/d' "$QADBAK_DIR/.env.local"
-  grep -q '^VIRTUALMIN_TLS_INSECURE=' "$QADBAK_DIR/.env.local" || echo 'VIRTUALMIN_TLS_INSECURE=true' >>"$QADBAK_DIR/.env.local"
+  grep -q '^QADBAK_LEGACY_API_TLS_INSECURE=' "$QADBAK_DIR/.env.local" || echo 'QADBAK_LEGACY_API_TLS_INSECURE=true' >>"$QADBAK_DIR/.env.local"
   echo "    Removed NODE_TLS_REJECT_UNAUTHORIZED from .env.local"
 fi
 
@@ -33,7 +33,7 @@ bash "$QADBAK_DIR/scripts/configure-admin-terminal-sudo.sh"
 bash "$QADBAK_DIR/scripts/configure-host-services-sudo.sh"
 bash "$QADBAK_DIR/scripts/configure-stack-helper-sudo.sh"
 
-echo "==> Hosting stack (nginx, public_html, Webmin login)"
+echo "==> Hosting stack (nginx, public_html, server admin login)"
 bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 PANEL_PORT=""
@@ -55,11 +55,11 @@ sudo -u "$QADBAK_USER" sudo -n "$FS_WRAP" list "$FS_TEST_HOME" 2>/dev/null | gre
 }
 
 FIRST_DOMAIN=""
-if command -v virtualmin &>/dev/null; then
-  FIRST_DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  FIRST_DOMAIN="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | head -1)"
 fi
 if [[ -n "$FIRST_DOMAIN" ]]; then
-  echo "==> Test VirtualMin login link ($FIRST_DOMAIN)"
+  echo "==> Test legacy hosting API login link ($FIRST_DOMAIN)"
   sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && bash scripts/test-login-link.sh '$FIRST_DOMAIN'" || true
 fi
 
@@ -78,14 +78,14 @@ echo "==> Build + restart"
 sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && npm run build"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"
 
-echo "==> Website repair (all VirtualMin domains)"
-if command -v virtualmin &>/dev/null; then
+echo "==> Website repair (all legacy hosting API domains)"
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
   while read -r d; do
     [[ -z "$d" ]] && continue
     bash "$QADBAK_DIR/scripts/fix-domain-website.sh" "$d" || true
-  done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d')
+  done < <("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d')
 else
-  echo "    virtualmin not found — skip per-domain repair"
+  echo "    legacy-host not found — skip per-domain repair"
 fi
 
 echo ""

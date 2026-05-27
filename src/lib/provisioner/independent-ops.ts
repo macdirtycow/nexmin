@@ -7,7 +7,7 @@ import type {
   S3Bucket,
   S3File,
   ServerService,
-} from "../virtualmin";
+} from "../hosting-remote";
 import {
   controlNativeServerService,
   listNativeBandwidth,
@@ -157,7 +157,7 @@ export async function uploadS3FileIndependent(
 export type NativeServerStatus = {
   mode: string;
   provisioner: string;
-  virtualminConfigured: boolean;
+  legacyApiConfigured: boolean;
   domainCount: number;
   domains: string[];
   services: { name: string; status: string }[];
@@ -200,7 +200,7 @@ export async function getNativeServerStatus(): Promise<NativeServerStatus> {
   return {
     mode: String(r.mode ?? "native"),
     provisioner: String(r.provisioner ?? "native"),
-    virtualminConfigured: Boolean(r.virtualminConfigured),
+    legacyApiConfigured: Boolean(r.legacyApiConfigured ?? r.legacyApiConfigured),
     domainCount: Number(r.domainCount ?? 0),
     domains: (r.domains as string[]) ?? [],
     services: (r.services as { name: string; status: string }[]) ?? [],

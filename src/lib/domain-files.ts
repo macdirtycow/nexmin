@@ -1,5 +1,5 @@
-import type { VirtualMinDomain } from "./types";
-import { VirtualMinError } from "./errors";
+import type { HostedDomain } from "./types";
+import { PanelError } from "./errors";
 import {
   detectArchiveFormat,
   isArchiveFileName,
@@ -208,14 +208,14 @@ const MOCK_TEXT: Record<string, string> = {
 /** base64 payload for binary mock files */
 const MOCK_BINARY: Record<string, { mime: string; base64: string }> = {};
 
-export function domainUnixUser(domain: VirtualMinDomain | string): string {
+export function domainUnixUser(domain: HostedDomain | string): string {
   if (typeof domain === "string") {
     return domain.split(".")[0];
   }
   return domain.user ?? domain.name.split(".")[0];
 }
 
-export function domainHomePath(domain: VirtualMinDomain | string): string {
+export function domainHomePath(domain: HostedDomain | string): string {
   return `/home/${domainUnixUser(domain)}`;
 }
 
@@ -226,7 +226,7 @@ export function normalizeDir(dir: string): string {
 function safeFileName(name: string): string {
   const base = name.replace(/[/\\]/g, "").trim();
   if (!base || base === "." || base === "..") {
-    throw new VirtualMinError("Invalid file name.");
+    throw new PanelError("Invalid file name.");
   }
   return base;
 }
@@ -306,7 +306,7 @@ export function isDirWritable(cwd: string): boolean {
 
 function assertWritableDir(cwd: string): void {
   if (!isDirWritable(cwd)) {
-    throw new VirtualMinError("This directory is read-only.");
+    throw new PanelError("This directory is read-only.");
   }
 }
 
@@ -357,11 +357,11 @@ function touchEntry(path: string, sizeBytes: number, text = true): void {
 }
 
 export function isPanelFilesMode(): boolean {
-  return process.env.VIRTUALMIN_MOCK === "true";
+  return process.env.QADBAK_LEGACY_API_MOCK === "true";
 }
 
 export function listDomainFiles(
-  domain: VirtualMinDomain | string,
+  domain: HostedDomain | string,
   dir: string,
 ): DomainFilesListing {
   const home = domainHomePath(domain);
@@ -383,8 +383,8 @@ export function listDomainFiles(
 
 export function getDomainFile(path: string): DomainFileContent {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError(
-      "File content is only available in Qadbak with VIRTUALMIN_MOCK=true.",
+    throw new PanelError(
+      "File content is only available in Qadbak with QADBAK_LEGACY_API_MOCK=true.",
     );
   }
   const name = path.split("/").pop() ?? path;
@@ -400,7 +400,7 @@ export function getDomainFile(path: string): DomainFileContent {
   }
   const text = MOCK_TEXT[path];
   if (text === undefined) {
-    throw new VirtualMinError("File not found.");
+    throw new PanelError("File not found.");
   }
   const parent = path.includes("/") ? path.replace(/\/[^/]+$/, "") : "";
   const entry = MOCK_TREE[parent]?.find((e) => e.path === path);
@@ -416,7 +416,7 @@ export function getDomainFile(path: string): DomainFileContent {
 
 export function saveDomainFileContent(path: string, content: string): void {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError(
+    throw new PanelError(
       "Saving in Qadbak is not available on the live server.",
     );
   }
@@ -424,7 +424,7 @@ export function saveDomainFileContent(path: string, content: string): void {
   assertWritableDir(parent);
   const name = path.split("/").pop() ?? path;
   if (!isTextFileName(name)) {
-    throw new VirtualMinError("You cannot edit this file type as text.");
+    throw new PanelError("You cannot edit this file type as text.");
   }
   MOCK_TEXT[path] = content;
   delete MOCK_BINARY[path];
@@ -452,18 +452,18 @@ export function createDomainFile(
   options?: DomainFileWriteOptions,
 ): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Creating files is not available on the live server.");
+    throw new PanelError("Creating files is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
   const safe = safeFileName(name);
   if (!isTextFileName(safe)) {
-    throw new VirtualMinError("You can only create text files here. Upload other types.");
+    throw new PanelError("You can only create text files here. Upload other types.");
   }
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   const overwrite = options?.overwrite !== false;
   if (mockFileExists(path) && !overwrite) {
-    throw new VirtualMinError("File already exists.");
+    throw new PanelError("File already exists.");
   }
   if (mockFileExists(path)) clearMockFile(path);
   MOCK_TEXT[path] = content;
@@ -478,7 +478,7 @@ export function uploadDomainFile(
   options?: DomainFileWriteOptions,
 ): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Upload is not available on the live server.");
+    throw new PanelError("Upload is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
@@ -486,7 +486,7 @@ export function uploadDomainFile(
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   const overwrite = options?.overwrite !== false;
   if (mockFileExists(path) && !overwrite) {
-    throw new VirtualMinError(`File ${safe} already exists. Enable overwrite or rename.`);
+    throw new PanelError(`File ${safe} already exists. Enable overwrite or rename.`);
   }
   if (mockFileExists(path)) clearMockFile(path);
 
@@ -510,7 +510,7 @@ export function getDomainFileDownload(
   path: string,
 ): { body: Uint8Array; mime: string; filename: string } {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Download is not available on the live server.");
+    throw new PanelError("Download is not available on the live server.");
   }
   const name = path.split("/").pop() ?? "download";
   const binary = MOCK_BINARY[path];
@@ -523,7 +523,7 @@ export function getDomainFileDownload(
   }
   const text = MOCK_TEXT[path];
   if (text === undefined) {
-    throw new VirtualMinError("File not found.");
+    throw new PanelError("File not found.");
   }
   return {
     body: new TextEncoder().encode(text),
@@ -534,10 +534,10 @@ export function getDomainFileDownload(
 
 function assertMoveAllowed(sourcePath: string, destPath: string): void {
   if (sourcePath === destPath) {
-    throw new VirtualMinError("Source and destination are the same.");
+    throw new PanelError("Source and destination are the same.");
   }
   if (destPath.startsWith(`${sourcePath}/`)) {
-    throw new VirtualMinError("Cannot move a folder into itself or a subfolder.");
+    throw new PanelError("Cannot move a folder into itself or a subfolder.");
   }
 }
 
@@ -579,7 +579,7 @@ export function resolveMoveDestination(
     .replace(/[/\\]/g, "")
     .trim();
   if (!safeName || safeName === "." || safeName === "..") {
-    throw new VirtualMinError("Invalid name.");
+    throw new PanelError("Invalid name.");
   }
   const destNorm = normalizeDir(destDir);
   return destNorm ? `${destNorm}/${safeName}` : safeName;
@@ -592,7 +592,7 @@ export function moveDomainPath(
   options?: DomainFileWriteOptions,
 ): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Move is not available on the live server.");
+    throw new PanelError("Move is not available on the live server.");
   }
   const srcNorm = sourcePath.replace(/^\/+/, "");
   const destPath = resolveMoveDestination(srcNorm, destDir, newName);
@@ -604,25 +604,25 @@ export function moveDomainPath(
 
   const list = MOCK_TREE[srcParent];
   const idx = list?.findIndex((e) => e.path === srcNorm) ?? -1;
-  if (!list || idx < 0) throw new VirtualMinError("File or folder not found.");
+  if (!list || idx < 0) throw new PanelError("File or folder not found.");
   const entry = list[idx]!;
   if (entry.editable === false) {
-    throw new VirtualMinError("This item is read-only and cannot be moved.");
+    throw new PanelError("This item is read-only and cannot be moved.");
   }
   const finalName = destPath.split("/").pop() ?? entry.name;
   const overwrite = options?.overwrite === true;
   const existing = MOCK_TREE[destParent]?.find((e) => e.name === finalName);
   if (existing) {
     if (!overwrite) {
-      throw new VirtualMinError(
+      throw new PanelError(
         "An item with that name already exists in the destination folder. Enable replace or choose another name.",
       );
     }
     if (existing.type !== entry.type) {
-      throw new VirtualMinError("Cannot replace a file with a folder (or the reverse).");
+      throw new PanelError("Cannot replace a file with a folder (or the reverse).");
     }
     if (existing.editable === false) {
-      throw new VirtualMinError("The existing destination item is read-only and cannot be replaced.");
+      throw new PanelError("The existing destination item is read-only and cannot be replaced.");
     }
     deleteDomainFilePath(existing.path);
   }
@@ -651,12 +651,12 @@ export function moveDomainPath(
 
 export function deleteDomainFilePath(path: string): void {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Deleting in Qadbak is not available on the live server.");
+    throw new PanelError("Deleting in Qadbak is not available on the live server.");
   }
   const parent = path.includes("/") ? path.replace(/\/[^/]+$/, "") : "";
   const entry = MOCK_TREE[parent]?.find((e) => e.path === path);
   if (entry?.editable === false) {
-    throw new VirtualMinError("This file is read-only and cannot be deleted.");
+    throw new PanelError("This file is read-only and cannot be deleted.");
   }
   assertWritableDir(parent);
   delete MOCK_TEXT[path];
@@ -670,7 +670,7 @@ export function deleteDomainFilePath(path: string): void {
 
 export function createDomainDirectory(parent: string, name: string): string {
   if (!isPanelFilesMode()) {
-    throw new VirtualMinError("Creating directories in Qadbak is not available on the live server.");
+    throw new PanelError("Creating directories in Qadbak is not available on the live server.");
   }
   const parentNorm = normalizeDir(parent);
   assertWritableDir(parentNorm);
@@ -678,7 +678,7 @@ export function createDomainDirectory(parent: string, name: string): string {
   const path = parentNorm ? `${parentNorm}/${safe}` : safe;
   if (!MOCK_TREE[parentNorm]) MOCK_TREE[parentNorm] = [];
   if (MOCK_TREE[parentNorm].some((e) => e.name === safe)) {
-    throw new VirtualMinError("Directory already exists.");
+    throw new PanelError("Directory already exists.");
   }
   MOCK_TREE[parentNorm].push({ name: safe, path, type: "dir" });
   MOCK_TREE[path] = [];

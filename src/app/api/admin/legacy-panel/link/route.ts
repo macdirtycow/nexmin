@@ -1,17 +1,17 @@
 import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { catalogModule } from "@/lib/webmin-catalog";
+import { catalogModule } from "@/lib/legacy-panel-catalog";
 import {
-  createWebminLoginLink,
+  createLegacyPanelLoginLink,
   moduleById,
-  webminModulesForAdmin,
-} from "@/lib/webmin";
-import { webminUiEnabled } from "@/lib/independent-mode";
+  legacyPanelModulesForAdmin,
+} from "@/lib/legacy-panel";
+import { legacyPanelUiEnabled } from "@/lib/independent-mode";
 
 export async function GET(request: Request) {
   try {
-    if (!webminUiEnabled()) {
+    if (!legacyPanelUiEnabled()) {
       return jsonError("Legacy panel login links are disabled.", 410);
     }
     const session = await requireAdmin();
@@ -22,17 +22,17 @@ export async function GET(request: Request) {
     let redirectPath = redirect ?? undefined;
     if (moduleId) {
       const mod =
-        moduleById(webminModulesForAdmin(), moduleId) ??
+        moduleById(legacyPanelModulesForAdmin(), moduleId) ??
         catalogModule(moduleId);
       if (!mod) return jsonError("Unknown server module.");
       redirectPath = mod.path;
     }
 
-    const link = await createWebminLoginLink(session, {
+    const link = await createLegacyPanelLoginLink(session, {
       target: "root",
       redirectPath,
     });
-    await auditLog(session.username, "webmin-login", undefined, moduleId ?? "root");
+    await auditLog(session.username, "legacy-panel-login", undefined, moduleId ?? "root");
     return jsonOk({ url: link });
   } catch (err) {
     return handleApiError(err);

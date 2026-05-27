@@ -1,11 +1,11 @@
-import * as vm from "../virtualmin";
+import * as vm from "../hosting-remote";
 import type { Provisioner } from "./types";
 
 const MSG =
   "Not available in independent mode (QADBAK_PROVISIONER=native, fallback off). " +
-  "Use hybrid + QADBAK_VIRTUALMIN_FALLBACK=true, or add a native module.";
+  "Use hybrid + QADBAK_LEGACY_API_FALLBACK=true, or add a native module.";
 
-/** VM API surface with every method rejecting — used when VirtualMin fallback is disabled. */
+/** VM API surface with every method rejecting — used when legacy hosting API fallback is disabled. */
 export function createUnimplementedProvisioner(): typeof vm {
   const stub: Record<string, unknown> = {};
   for (const key of Object.keys(vm)) {
@@ -20,7 +20,7 @@ export function createUnimplementedProvisioner(): typeof vm {
 
 export function isIndependentMode(): boolean {
   const prov = process.env.QADBAK_PROVISIONER?.trim().toLowerCase();
-  const fb = process.env.QADBAK_VIRTUALMIN_FALLBACK?.trim().toLowerCase();
+  const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
   const fallbackOff = fb === "false" || fb === "0" || fb === "no";
   return prov === "native" || (prov === "hybrid" && fallbackOff);
 }

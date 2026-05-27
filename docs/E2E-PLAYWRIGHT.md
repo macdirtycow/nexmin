@@ -24,13 +24,13 @@ Uses `.install-test.env` (written by installer, gitignored).
 
 ## 2. Local / CI (mock)
 
-Fast regression without VirtualMin:
+Fast regression without legacy hosting API:
 
 ```bash
 npm run test:e2e
 ```
 
-Starts a temporary app on port **3099** with `VIRTUALMIN_MOCK=true` and runs `e2e/smoke.spec.ts`.
+Starts a temporary app on port **3099** with `QADBAK_LEGACY_API_MOCK=true` and runs `e2e/smoke.spec.ts`.
 
 ## Optional manual VPS from your laptop
 
@@ -44,4 +44,4 @@ npx playwright test e2e/install-verify.spec.ts
 
 ## After automated E2E
 
-Use [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) for VirtualMin-specific actions (create domain, mailbox, DNS record) — those need data on the server.
+Use [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) for legacy hosting API-specific actions (create domain, mailbox, DNS record) — those need data on the server.

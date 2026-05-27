@@ -9,8 +9,8 @@ export default async function AdminServerPage() {
   const session = await requireAdminPage();
   let bandwidth: Awaited<ReturnType<typeof listAdminBandwidth>>["rows"] = [];
   let services: Awaited<ReturnType<typeof listAdminServerServices>>["services"] = [];
-  let servicesSource: "native" | "virtualmin" = "native";
-  let bandwidthSource: "native" | "virtualmin" = "native";
+  let servicesSource: "native" | "legacy" = "native";
+  let bandwidthSource: "native" | "legacy" = "native";
   let error = "";
   try {
     const [bw, svc] = await Promise.all([

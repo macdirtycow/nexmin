@@ -1,6 +1,6 @@
-# VirtualMin API — MVP command reference
+# legacy hosting API API — MVP command reference
 
-Qadbak calls go through `src/lib/virtualmin.ts` with RBAC. Direct `remote.cgi` access is server-side only.
+Qadbak calls go through `src/lib/legacy-host.ts` with RBAC. Direct `remote.cgi` access is server-side only.
 
 ## Domains
 
@@ -10,7 +10,7 @@ Qadbak calls go through `src/lib/virtualmin.ts` with RBAC. Direct `remote.cgi` a
 | Detail | `list-domains` | filter client-side on `name` |
 | Disable | `disable-domain` | `domain` |
 | Enable | `enable-domain` | `domain` |
-| VirtualMin link | `create-login-link` | `domain`, `user` (optional) |
+| legacy hosting API link | `create-login-link` | `domain`, `user` (optional) |
 
 Help: `get-command` + `name=<program>`
 

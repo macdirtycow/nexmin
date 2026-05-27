@@ -32,7 +32,7 @@ echo ""
 echo "Enable in QADBAK_NATIVE_FEATURES when not using apply-phase8-independent.sh:"
 echo "  php, ftp, proxies, protected, scripts, limits, lifecycle, mail-settings, …"
 
-if [[ "${QADBAK_PROVISIONER:-}" == "native" && "${QADBAK_VIRTUALMIN_FALLBACK:-}" == "false" ]]; then
+if [[ "${QADBAK_PROVISIONER:-}" == "native" && "${QADBAK_LEGACY_API_FALLBACK:-}" == "false" ]]; then
   echo ""
   echo "Mode: INDEPENDENT — no remote.cgi."
 else

@@ -34,7 +34,7 @@ fix_apache_vhost_for_domain() {
   local has_vhost=0
   if grep -rq "ServerName[[:space:]].*${domain}" /etc/apache2/sites-available/ 2>/dev/null; then
     has_vhost=1
-    echo "    VirtualMin/Apache site file(s):"
+    echo "    legacy hosting API/Apache site file(s):"
     grep -l "ServerName[[:space:]].*${domain}" /etc/apache2/sites-available/* 2>/dev/null | sed 's/^/      /' || true
     grep -h "DocumentRoot" /etc/apache2/sites-available/*"${domain}"* 2>/dev/null | sed 's/^/      /' || \
       grep -h "DocumentRoot" /etc/apache2/sites-available/* 2>/dev/null | grep -i "$user" | sed 's/^/      /' || true
@@ -44,11 +44,11 @@ fix_apache_vhost_for_domain() {
     done
   fi
 
-  if command -v virtualmin &>/dev/null && [[ "$has_vhost" -eq 0 ]]; then
-    echo "    Recreating web feature in VirtualMin (no Apache vhost found)"
-    virtualmin disable-feature --domain "$domain" --web 2>/dev/null || true
-    virtualmin enable-feature --domain "$domain" --web
-    virtualmin modify-web --domain "$domain" --document-dir public_html --fix-document-dir --fix-options 2>&1 || true
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null && [[ "$has_vhost" -eq 0 ]]; then
+    echo "    Recreating web feature in legacy hosting API (no Apache vhost found)"
+    legacy-host disable-feature --domain "$domain" --web 2>/dev/null || true
+    legacy-host enable-feature --domain "$domain" --web
+    legacy-host modify-web --domain "$domain" --document-dir public_html --fix-document-dir --fix-options 2>&1 || true
     if grep -rq "ServerName[[:space:]].*${domain}" /etc/apache2/sites-available/ 2>/dev/null; then
       has_vhost=1
     fi
@@ -102,7 +102,7 @@ probe_web_root() {
   code="$(curl -sS --max-time 8 -o "$body" -w '%{http_code}' -H "Host: ${domain}" "http://${backend}/" 2>/dev/null || echo 000)"
   if grep -qiE 'apache2 ubuntu default|/var/www/html|debian default page' "$body" 2>/dev/null; then
     echo "ubuntu-default"
-  elif grep -qiE 'qadbak.*virtualmin|your hosting panel' "$body" 2>/dev/null; then
+  elif grep -qiE 'qadbak.*legacy-host|your hosting panel' "$body" 2>/dev/null; then
     echo "qadbak-landing"
   elif [[ "$code" =~ ^[0-9]+$ ]] && (( code >= 200 && code < 500 )); then
     echo "ok"

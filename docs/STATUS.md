@@ -2,7 +2,7 @@
 
 **Last updated:** for isolated v1 test server workflow.
 
-**Independence (8 phases):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — Qadbak standalone without Webmin UI; VirtualMin engine phased out later.
+**Independence (8 phases):** [QADBAK-INDEPENDENCE-8-PHASES.md](./QADBAK-INDEPENDENCE-8-PHASES.md) — Qadbak standalone without server admin UI; legacy hosting API engine phased out later.
 
 ## Do not use production hosts for Qadbak testing
 
@@ -17,10 +17,10 @@
 |-------|-------|--------|
 | **Product** | 0 — Deploy + front door on test VPS | **Next** — you run [V1-TEST-SERVER.md](./V1-TEST-SERVER.md) |
 | **Product** | 1 — Parity docs | Done |
-| **Product** | 2 — v1 Virtualmin hosting UI | Code complete; **E2E not signed off** until test VPS passes checklist |
+| **Product** | 2 — v1 legacy hosting hosting UI | Code complete; **E2E not signed off** until test VPS passes checklist |
 | **Product** | 3 — Rebrand Qadbak | Done |
 | **Product** | 4 — Installer | Done |
-| **Product** | 5–7 — Webmin menus (embed) | Interim routes exist; not v1 exit criteria |
+| **Product** | 5–7 — server admin menus (embed) | Interim routes exist; not v1 exit criteria |
 | **Code** | Integration phases 1–8 (`IMPLEMENTED_PHASE`) | Wired in repo |
 | **Live proof** | [E2E-CHECKLIST.md](./E2E-CHECKLIST.md) | Pending on **your** test server |
 

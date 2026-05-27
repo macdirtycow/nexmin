@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Validated stack operations (phase 5) — nginx/apache/mail/firewall without Webmin modules.
+ * Validated stack operations (phase 5) — nginx/apache/mail/firewall without server admin modules.
  * Usage: stack-helper.mjs <command> [args...]
  */
 import { execFile } from "node:child_process";
@@ -177,7 +177,7 @@ async function resolveDomainUser(domain) {
   }
   try {
     const { stdout } = await exec(
-      "virtualmin",
+      "legacy-remote",
       ["list-domains", "--domain", domain, "--multiline"],
       { timeout: 15_000 },
     );

@@ -51,7 +51,7 @@ if [[ ! -f "$QADBAK_DIR/data/users.json" ]]; then
 fi
 
 export PANEL_HOST SERVER_FQDN="${SERVER_FQDN:-$(hostname -f)}"
-export QADBAK_NATIVE_INSTALL=1 QADBAK_DISABLE_WEBMIN=true
+export QADBAK_NATIVE_INSTALL=1 QADBAK_DISABLE_LEGACY_PANEL=true
 bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 echo "==> nginx default-deny (block unknown hostnames)"

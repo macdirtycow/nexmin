@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # List customer domains as TSV: domain<TAB>unix_user
-# Sources: data/native-domains.json, VirtualMin, /home/*/.qadbak-domain markers.
+# Sources: data/native-domains.json, legacy hosting API, /home/*/.qadbak-domain markers.
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
@@ -12,8 +12,8 @@ _is_valid_domain() {
 _resolve_user_for_domain() {
   local domain="$1"
   local user=""
-  if command -v virtualmin &>/dev/null; then
-    user="$(virtualmin list-domains --domain "$domain" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+    user="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$domain" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
   fi
   if [[ -z "$user" ]]; then
     user="${domain%%.*}"
@@ -88,14 +88,14 @@ list_customer_domains_tsv() {
     fi
   fi
 
-  if command -v virtualmin &>/dev/null; then
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
     local d
     while read -r d; do
       [[ -z "$d" ]] && continue
       [[ -n "${SEEN[$d]:-}" ]] && continue
       SEEN[$d]=1
       _emit_row "$d" "$(_resolve_user_for_domain "$d")"
-    done < <(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d')
+    done < <("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d')
   fi
 
   local hint domain user home

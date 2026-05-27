@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Phase 6 on an EXISTING VirtualMin VPS (hybrid: keep VM, add native stack + helpers).
-# Keeps VirtualMin as provisioning engine; adds native stack packages + all helpers.
-# Does NOT run virtualmin-install.sh or remove Webmin.
+# Phase 6 on an EXISTING legacy hosting API VPS (hybrid: keep VM, add native stack + helpers).
+# Keeps legacy hosting API as provisioning engine; adds native stack packages + all helpers.
+# Does NOT run legacy-host-install.sh or remove server admin.
 #
 # Usage: sudo bash /opt/qadbak/scripts/apply-phase6-test-server.sh
 set -euo pipefail
@@ -16,7 +16,7 @@ fi
 
 cd "$QADBAK_DIR"
 echo "==> Phase 6 test-server apply ($QADBAK_DIR)"
-echo "    Keeps VirtualMin; idempotent stack + helpers + nginx for customer domains."
+echo "    Keeps legacy hosting API; idempotent stack + helpers + nginx for customer domains."
 
 if [[ -f "$QADBAK_DIR/.env.local" ]]; then
   # shellcheck disable=SC1091
@@ -79,13 +79,13 @@ fi
 chown "$QADBAK_USER:$QADBAK_USER" "$QADBAK_DIR/.env.local"
 chmod 600 "$QADBAK_DIR/.env.local"
 
-echo "==> Hosting stack + customer vhosts (VirtualMin stays)"
+echo "==> Hosting stack + customer vhosts (legacy hosting API stays)"
 unset QADBAK_NATIVE_INSTALL
 bash "$QADBAK_DIR/scripts/install-hosting-stack.sh"
 
 FIRST_DOMAIN=""
-if command -v virtualmin &>/dev/null; then
-  FIRST_DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  FIRST_DOMAIN="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
 fi
 if [[ -n "$FIRST_DOMAIN" ]]; then
   echo "==> Website probe: $FIRST_DOMAIN"
@@ -100,7 +100,7 @@ echo "==> Preflight"
 sudo -u "$QADBAK_USER" bash "$QADBAK_DIR/scripts/v1-test-preflight.sh" || true
 
 echo ""
-echo "Done — phase 6 applied on this test VPS (VirtualMin + native helpers)."
+echo "Done — phase 6 applied on this test VPS (legacy hosting API + native helpers)."
 echo "  Panel: check Server admin → Stack config, Status, Services"
-echo "  Domain: open Domains in the panel (first VirtualMin or native domain)"
-echo "  Webmin :10000 remains break-glass only — daily work in Qadbak."
+echo "  Domain: open Domains in the panel (first legacy hosting API or native domain)"
+echo "  server admin :10000 remains break-glass only — daily work in Qadbak."

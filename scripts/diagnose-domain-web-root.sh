@@ -15,8 +15,8 @@ fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VM_USER="${DOMAIN%%.*}"
-if command -v virtualmin &>/dev/null; then
-  u="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  u="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$DOMAIN" --multiline 2>/dev/null | awk -F': *' '/^Unix username:/ {print $2; exit}')"
   [[ -n "$u" ]] && VM_USER="$u"
 fi
 PUB="/home/$VM_USER/public_html"

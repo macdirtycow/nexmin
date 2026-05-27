@@ -5,7 +5,7 @@ import { DomainQuickLinks } from "@/components/DomainQuickLinks";
 import { formatDomainDisk } from "@/lib/format-quota";
 import { WebsiteHealthCard } from "@/components/WebsiteHealthCard";
 import { Badge, Button, Card } from "@/components/ui";
-import type { VirtualMinDomain } from "@/lib/types";
+import type { HostedDomain } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,7 +16,7 @@ export function DomainDetail({
   isAdmin,
   premiumPanelClient = false,
 }: {
-  domain: VirtualMinDomain;
+  domain: HostedDomain;
   disabled: boolean;
   isAdmin: boolean;
   premiumPanelClient?: boolean;

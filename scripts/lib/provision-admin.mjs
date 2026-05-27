@@ -369,7 +369,7 @@ export async function adminServerStatus() {
     ok: true,
     mode: "native",
     provisioner: "native",
-    virtualminConfigured: false,
+    legacyApiConfigured: false,
     domainCount: rows.length,
     domains: rows.map((r) => r.name),
     services,

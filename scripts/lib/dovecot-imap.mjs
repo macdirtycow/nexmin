@@ -1,5 +1,5 @@
 /**
- * Native IMAP via Dovecot (doveadm) — no VirtualMin.
+ * Native IMAP via Dovecot (doveadm) — no legacy hosting API.
  * @see https://doc.dovecot.org/latest/core/man/doveadm.1.html
  */
 import { execFile } from "node:child_process";
@@ -33,7 +33,7 @@ function formatBytes(n) {
   return `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Dovecot auth user candidates (email, unix, VirtualMin-style). */
+/** Dovecot auth user candidates (email, unix, legacy hosting API-style). */
 export function authUserCandidates(domain, localPart, owner, layoutUsers = []) {
   const d = String(domain).toLowerCase();
   const local = String(localPart || "").trim().toLowerCase();

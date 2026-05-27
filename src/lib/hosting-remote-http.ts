@@ -1,8 +1,8 @@
 import http from "node:http";
 import https from "node:https";
 
-function virtualMinUrlIsLocal(): boolean {
-  const url = process.env.VIRTUALMIN_URL?.trim();
+function legacyApiUrlIsLocal(): boolean {
+  const url = process.env.QADBAK_LEGACY_API_URL?.trim();
   if (!url) return false;
   try {
     const host = new URL(url).hostname;
@@ -13,23 +13,23 @@ function virtualMinUrlIsLocal(): boolean {
 }
 
 /**
- * When true, VirtualMin fetch skips TLS verification (localhost self-signed Webmin only).
- * Auto-enabled for VIRTUALMIN_URL on 127.0.0.1/localhost unless VIRTUALMIN_TLS_INSECURE=false.
+ * When true, legacy hosting API fetch skips TLS verification (localhost self-signed server admin only).
+ * Auto-enabled for QADBAK_LEGACY_API_URL on 127.0.0.1/localhost unless QADBAK_LEGACY_API_TLS_INSECURE=false.
  */
-export function virtualMinTlsInsecureEnabled(): boolean {
-  const flag = process.env.VIRTUALMIN_TLS_INSECURE?.trim().toLowerCase();
+export function legacyApiTlsInsecureEnabled(): boolean {
+  const flag = process.env.QADBAK_LEGACY_API_TLS_INSECURE?.trim().toLowerCase();
   if (flag === "false" || flag === "0" || flag === "no") return false;
   if (flag === "true" || flag === "1" || flag === "yes") return true;
 
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
     console.warn(
       "[qadbak] NODE_TLS_REJECT_UNAUTHORIZED=0 affects all HTTPS from this process. " +
-        "Prefer VIRTUALMIN_TLS_INSECURE=true in .env.local for the hosting API only.",
+        "Prefer QADBAK_LEGACY_API_TLS_INSECURE=true in .env.local for the hosting API only.",
     );
     return true;
   }
 
-  return virtualMinUrlIsLocal();
+  return legacyApiUrlIsLocal();
 }
 
 const insecureHttpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -110,12 +110,12 @@ function nodeRequest(
 }
 
 /** POST to remote.cgi — strict TLS by default; opt-in insecure for localhost self-signed. */
-export async function virtualMinFetch(
+export async function hostingRemoteFetch(
   url: string,
   init: RequestInit,
 ): Promise<Response> {
   const target = new URL(url);
-  const insecure = virtualMinTlsInsecureEnabled();
+  const insecure = legacyApiTlsInsecureEnabled();
 
   if (!insecure) {
     return fetch(url, init);

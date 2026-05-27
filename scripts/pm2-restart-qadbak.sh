@@ -28,8 +28,8 @@ if [[ ! -f "$ROOT/.next/BUILD_ID" ]]; then
 fi
 
 PROV="$(grep -E '^QADBAK_PROVISIONER=' "$ROOT/.env.local" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)"
-if [[ "$PROV" != "native" ]] && ! grep -q '^VIRTUALMIN_TLS_INSECURE=' "$ROOT/.env.local"; then
-  echo 'VIRTUALMIN_TLS_INSECURE=true' >>"$ROOT/.env.local"
+if [[ "$PROV" != "native" ]] && ! grep -q '^QADBAK_LEGACY_API_TLS_INSECURE=' "$ROOT/.env.local"; then
+  echo 'QADBAK_LEGACY_API_TLS_INSECURE=true' >>"$ROOT/.env.local"
   chown "$USER:$USER" "$ROOT/.env.local" 2>/dev/null || true
 fi
 

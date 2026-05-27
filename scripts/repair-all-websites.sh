@@ -1,6 +1,6 @@
 #!/bin/bash
 # Backfill / repair every Qadbak-managed website on this VPS.
-# Iterates virtualmin domains (preferred) then data/native-domains.json,
+# Iterates legacy-host domains (preferred) then data/native-domains.json,
 # de-duplicates, and runs scripts/fix-domain-website.sh per domain.
 #
 # Operator one-liner:
@@ -23,7 +23,7 @@ Usage: sudo bash scripts/repair-all-websites.sh [--dry-run]
 
 Repairs every Qadbak-managed domain by invoking
 scripts/fix-domain-website.sh per domain. Domains are collected
-from virtualmin (when installed) and from data/native-domains.json
+from legacy-host (when installed) and from data/native-domains.json
 as a fallback.
 
 Options:
@@ -55,10 +55,10 @@ fi
 
 declare -a DOMAINS=()
 
-if command -v virtualmin &>/dev/null; then
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
   while IFS= read -r d; do
     [[ -n "$d" ]] && DOMAINS+=("$d")
-  done < <(virtualmin list-domains --multiline 2>/dev/null \
+  done < <("${QADBAK_LEGACY_HOST_BIN}" list-domains --multiline 2>/dev/null \
             | awk -F': *' '/^Domain name:/ {print $2}')
 fi
 
@@ -97,7 +97,7 @@ done
 
 TOTAL="${#UNIQUE[@]}"
 if [[ "$TOTAL" -eq 0 ]]; then
-  echo "No domains found from virtualmin or data/native-domains.json — nothing to do." >&2
+  echo "No domains found from legacy-host or data/native-domains.json — nothing to do." >&2
   exit 0
 fi
 
@@ -115,8 +115,8 @@ fi
 resolve_user_for_domain() {
   local domain="$1"
   local u=""
-  if command -v virtualmin &>/dev/null; then
-    u="$(virtualmin list-domains --domain "$domain" --multiline 2>/dev/null \
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+    u="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$domain" --multiline 2>/dev/null \
           | awk -F': *' '/^Unix username:/ {print $2; exit}')"
   fi
   if [[ -z "$u" && -f "$ROOT/data/native-domains.json" ]]; then

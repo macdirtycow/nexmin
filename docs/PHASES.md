@@ -1,6 +1,6 @@
 # Integration phases — Qadbak
 
-Full VirtualMin coverage is delivered in phases. Each phase adds API programs to RBAC (`src/lib/features.ts`) and UI under `/domains/[domain]/…`.
+Full legacy hosting API coverage is delivered in phases. Each phase adds API programs to RBAC (`src/lib/features.ts`) and UI under `/domains/[domain]/…`.
 
 **Status:** Phases 1–8 ✅
 
@@ -8,13 +8,13 @@ Full VirtualMin coverage is delivered in phases. Each phase adds API programs to
 
 ## Phase 1 — Core (complete)
 
-| Area | VirtualMin API | Qadbak route |
+| Area | legacy hosting API API | Qadbak route |
 |------|----------------|-------------|
 | Domain overview | `list-domains` | `/domains` |
 | Enable / disable domain | `enable-domain`, `disable-domain` | detail |
 | Email mailboxes | `list-users`, `create-user`, `modify-user`, `delete-user` | `/domains/…/email` |
 | Databases | `list-databases`, `create-database`, `modify-database-pass` | `/domains/…/databases` |
-| VirtualMin deep link | `create-login-link` | detail |
+| legacy hosting API deep link | `create-login-link` | detail |
 
 ---
 
@@ -40,10 +40,10 @@ Full VirtualMin coverage is delivered in phases. Each phase adds API programs to
 
 1. **Remote API:** `simple-multiline` on non-`list-*` calls (fixes `Unknown parameter --multiline` on `create-login-link` and embeds).
 2. **Native browser:** `scripts/domain-fs-helper.mjs` + sudoers (`configure-domain-fs-sudo.sh`) lists/edits files under `/home/`.
-3. **Fallback:** Webmin filemin embed when sudo helper is unavailable.
+3. **Fallback:** server admin filemin embed when sudo helper is unavailable.
 
 ---
-| Webmin & Usermin | `create-login-link` (root / domain / usermin-user) | `/admin/webmin`, `/domains/…/webmin` |
+| server admin & account panel | `create-login-link` (root / domain / account-panel-user) | `/admin/legacy-panel`, `/domains/…/legacy-panel` |
 | Website logs | `get-logs` | `/domains/…/logs` |
 | PHP per directory | `list-php-versions`, `list-php-directories`, `set-php-directory`, `delete-php-directory` | `/domains/…/php` |
 | PHP.ini | `list-php-ini`, `modify-php-ini` | `/domains/…/php` |
@@ -100,7 +100,7 @@ Full VirtualMin coverage is delivered in phases. Each phase adds API programs to
 | Extra admins | `list-admins`, `create-admin`, `delete-admin` | `/admin/admins` |
 | License | `license-info` | `/admin/license` |
 
-`modify-reseller`, `modify-plan`, `modify-template`, and `setup-repos` are in RBAC; changes via VirtualMin or a future UI.
+`modify-reseller`, `modify-plan`, `modify-template`, and `setup-repos` are in RBAC; changes via legacy hosting API or a future UI.
 
 ---
 
@@ -123,7 +123,7 @@ Full VirtualMin coverage is delivered in phases. Each phase adds API programs to
 
 1. **No direct `remote.cgi` in the browser** — everything goes through the Qadbak API + RBAC.
 2. **Client = domain-scoped** — same UI, fewer programs in the allowlist.
-3. **Unknown / complex actions** — “Open in VirtualMin” button.
-4. **Mock mode** — each phase gets mock data in `virtualmin.ts` for local UI development.
+3. **Unknown / complex actions** — “Open in legacy hosting API” button.
+4. **Mock mode** — each phase gets mock data in `legacy-host.ts` for local UI development.
 
 See also [API.md](./API.md) for parameters per MVP command.

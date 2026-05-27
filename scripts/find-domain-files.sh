@@ -35,11 +35,11 @@ for hint in /home/*/.qadbak-domain; do
   fi
 done
 
-if command -v virtualmin &>/dev/null; then
-  vu="$(virtualmin list-domains --domain "$DOMAIN" --multiline 2>/dev/null \
+if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  vu="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --domain "$DOMAIN" --multiline 2>/dev/null \
     | awk -F': *' '/^Unix username:/ {print $2; exit}')"
   if [[ -n "$vu" ]]; then
-    echo "virtualmin → user: $vu"
+    echo "legacy-host → user: $vu"
     [[ -z "$USER" ]] && USER="$vu"
   fi
 fi

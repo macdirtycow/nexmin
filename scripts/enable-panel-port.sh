@@ -17,7 +17,7 @@ if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [[ "$PORT" -lt 1024 ]] || [[ "$PORT" -gt 65535
 fi
 
 if [[ "$PORT" == "10000" ]]; then
-  echo "Port 10000 is Webmin. Use 11000 (or another port) for the Qadbak panel." >&2
+  echo "Port 10000 is server admin. Use 11000 (or another port) for the Qadbak panel." >&2
   exit 1
 fi
 
@@ -59,31 +59,31 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 
 PUBLIC_IP="$(curl -fsS --max-time 3 ifconfig.me 2>/dev/null || true)"
-WEBMIN_EMBED=0
+QADBAK_LEGACY_PANEL_EMBED=0
 if [[ -f "$ROOT/.env.local" ]]; then
   # shellcheck source=scripts/lib/read-env-local.sh
   source "$ROOT/scripts/lib/read-env-local.sh"
-  DISABLE_WM="$(read_env_local_key QADBAK_DISABLE_WEBMIN false)"
-  VM_FB="$(read_env_local_key QADBAK_VIRTUALMIN_FALLBACK true)"
+  DISABLE_WM="$(read_env_local_key QADBAK_DISABLE_LEGACY_PANEL false)"
+  VM_FB="$(read_env_local_key QADBAK_LEGACY_API_FALLBACK true)"
   PROV="$(read_env_local_key QADBAK_PROVISIONER hybrid)"
   if [[ "$DISABLE_WM" =~ ^(true|1|yes)$ ]] || [[ "$PROV" == "native" ]] || [[ "$VM_FB" =~ ^(false|0|no)$ ]]; then
-    WEBMIN_EMBED=0
+    QADBAK_LEGACY_PANEL_EMBED=0
   else
-    WEBMIN_EMBED=1
+    QADBAK_LEGACY_PANEL_EMBED=1
   fi
 fi
 
-if [[ -n "$PUBLIC_IP" ]] && [[ "$WEBMIN_EMBED" -eq 1 ]]; then
+if [[ -n "$PUBLIC_IP" ]] && [[ "$QADBAK_LEGACY_PANEL_EMBED" -eq 1 ]]; then
   export QADBAK_PANEL_URL="http://${PUBLIC_IP}:${PORT}"
   export QADBAK_PANEL_PORT="$PORT"
-  bash "$ROOT/scripts/sync-webmin-embed-env.sh" 2>/dev/null || true
+  bash "$ROOT/scripts/sync-legacy-panel-embed-env.sh" 2>/dev/null || true
 fi
 
 if [[ "${QADBAK_NGINX_ONLY:-}" == "1" ]]; then
-  if [[ "$WEBMIN_EMBED" -eq 1 ]]; then
-    echo "    Panel port :$PORT nginx refreshed (optional Webmin: nginx-webmin-embed-snippet.conf)"
+  if [[ "$QADBAK_LEGACY_PANEL_EMBED" -eq 1 ]]; then
+    echo "    Panel port :$PORT nginx refreshed (optional server admin: nginx-legacy-panel-embed-snippet.conf)"
   else
-    echo "    Panel port :$PORT nginx refreshed (no Webmin embed — independent mode)"
+    echo "    Panel port :$PORT nginx refreshed (no server admin embed — independent mode)"
   fi
   exit 0
 fi

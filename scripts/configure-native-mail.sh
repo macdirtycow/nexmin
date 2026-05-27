@@ -50,7 +50,7 @@ touch "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_U
 chmod 640 "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_UID" "$QADBAK_VMAILBOX_GID" 2>/dev/null || true
 chown root:postfix "$QADBAK_VIRTUAL" "$QADBAK_DOMAINS" "$QADBAK_VMAILBOX" "$QADBAK_VMAILBOX_UID" "$QADBAK_VMAILBOX_GID" 2>/dev/null || true
 
-# Legacy VirtualMin /etc/postfix/virtual must NOT be copied into qadbak-virtual —
+# Legacy legacy hosting API /etc/postfix/virtual must NOT be copied into qadbak-virtual —
 # mailbox paths live in qadbak-vmailbox; qadbak-virtual is forwards-only.
 if [[ "$FORCE" -eq 1 ]]; then
   : >"$QADBAK_VIRTUAL"

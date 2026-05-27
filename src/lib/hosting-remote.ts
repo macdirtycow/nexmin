@@ -4,16 +4,17 @@ import {
 } from "./rbac";
 import type {
   Role,
-  VirtualMinDatabase,
-  VirtualMinDomain,
-  VirtualMinMailbox,
+  HostedDatabase,
+  HostedDomain,
+  HostedMailbox,
 } from "./types";
 
-export { VirtualMinError } from "./errors";
-import { parseDomainsListRows } from "./virtualmin-api-parse";
-import { VirtualMinError } from "./errors";
-import { virtualMinFetch } from "./virtualmin-http";
-import { rewriteWebminLoginUrlForEmbed } from "./webmin-embed-url";
+export { PanelError } from "./errors";
+import { parseDomainsListRows } from "./hosting-api-parse";
+import { PanelError } from "./errors";
+import { hostingRemoteFetch } from "./hosting-remote-http";
+import { rewriteLegacyPanelLoginUrlForEmbed } from "./legacy-panel-embed-url";
+import { LEGACY_UPSTREAM } from "./legacy-upstream-keys";
 import { sanitizeUserFacingMessage } from "./user-facing-errors";
 
 function normalizeFieldKey(key: string): string {
@@ -67,7 +68,7 @@ function normalizeList(data: unknown): Record<string, unknown>[] {
     if (Array.isArray(obj.domains)) return obj.domains as Record<string, unknown>[];
     if (Array.isArray(obj.users)) return obj.users as Record<string, unknown>[];
     if (Array.isArray(obj.databases)) return obj.databases as Record<string, unknown>[];
-    // VirtualMin sometimes returns { data: { "example.com": { ... } } }
+    // legacy hosting API sometimes returns { data: { "example.com": { ... } } }
     if (obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)) {
       return Object.entries(obj.data as Record<string, unknown>).map(
         ([name, meta]) => ({
@@ -110,7 +111,7 @@ function domainNameFromRowHints(row: Record<string, unknown>): string {
   return "";
 }
 
-/** Resolve domain name from a list-domains row (VirtualMin field names vary). */
+/** Resolve domain name from a list-domains row (legacy hosting API field names vary). */
 function rowDomainName(row: Record<string, unknown>): string {
   if (typeof row.name === "string" && row.name.trim()) return row.name.trim();
   for (const key of [
@@ -129,7 +130,7 @@ function rowDomainName(row: Record<string, unknown>): string {
   return domainNameFromRowHints(row);
 }
 
-function mapDomainRow(row: Record<string, unknown>): VirtualMinDomain {
+function mapDomainRow(row: Record<string, unknown>): HostedDomain {
   const name = rowDomainName(row);
   return {
     name,
@@ -153,10 +154,10 @@ function mapDomainRow(row: Record<string, unknown>): VirtualMinDomain {
       vmValue(row, "disk space total") ??
       vmValue(row, "Disk space total available"),
     ...row,
-  } as VirtualMinDomain;
+  } as HostedDomain;
 }
 
-const MOCK_DOMAINS: VirtualMinDomain[] = [
+const MOCK_DOMAINS: HostedDomain[] = [
   {
     name: "example.com",
     disabled: "0",
@@ -175,23 +176,23 @@ const MOCK_DOMAINS: VirtualMinDomain[] = [
   },
 ];
 
-const MOCK_USERS: VirtualMinMailbox[] = [
+const MOCK_USERS: HostedMailbox[] = [
   { user: "info", real: "Info", quota: "250" },
   { user: "support", real: "Support", quota: "500" },
 ];
 
-const MOCK_DATABASES: VirtualMinDatabase[] = [
+const MOCK_DATABASES: HostedDatabase[] = [
   { name: "example_wp", type: "mysql", host: "localhost" },
 ];
 
 /**
- * Programs that break when remote.cgi adds json=1 / --multiline (older Virtualmin).
+ * Programs that break when remote.cgi adds json=1 / --multiline (older legacy hosting).
  * Use plain-text remote.cgi output instead.
  */
 const PLAIN_TEXT_PROGRAMS = new Set(["create-login-link"]);
 
-/** Programs that accept --multiline on the VirtualMin CLI (see json-lib.pl). */
-function virtualMinProgramUsesMultiline(program: string): boolean {
+/** Programs that accept --multiline on the legacy hosting API CLI (see json-lib.pl). */
+function hostingRemoteProgramUsesMultiline(program: string): boolean {
   return program.startsWith("list-") || program === "get-dns";
 }
 
@@ -202,26 +203,26 @@ function extractUrlFromText(text: string): string | undefined {
 
 function isUnknownParamLoginLinkError(err: unknown): boolean {
   return (
-    err instanceof VirtualMinError &&
+    err instanceof PanelError &&
     /Unknown parameter\s+--/i.test(err.message)
   );
 }
 
-function isNoWebminLoginError(err: unknown): boolean {
+function isNoLegacyPanelLoginError(err: unknown): boolean {
   return (
-    err instanceof VirtualMinError &&
-    /no Webmin login/i.test(err.message)
+    err instanceof PanelError &&
+    /no (?:server admin|legacy panel) login/i.test(err.message)
   );
 }
 
-function summarizePlainVirtualminError(text: string): string {
+function summarizePlainHostingRemoteError(text: string): string {
   const line = text
     .split("\n")
     .map((l) => l.trim())
     .find(
       (l) =>
         l &&
-        !/^virtualmin /i.test(l) &&
+        !/^[a-z][a-z0-9-]* /i.test(l) &&
         !/^Generates a link/i.test(l) &&
         !/^Exit status:/i.test(l) &&
         !/^--\[/i.test(l),
@@ -239,20 +240,23 @@ export async function resolveDomainUnixUser(
   return defaultDomainUnixUser(domain);
 }
 
-/** Enable domain-owner Webmin login (required for create-login-link --domain). */
-export async function ensureDomainWebminLogin(
+/** Enable domain-owner server admin login (required for create-login-link --domain). */
+export async function ensureDomainLegacyPanelLogin(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
   if (actor.role !== "admin") return;
   try {
-    await virtualMinCall("enable-feature", { domain, webmin: "" }, actor);
+    await hostingRemoteCall("enable-feature", {
+      domain,
+      [LEGACY_UPSTREAM.featureAdminUi]: "",
+    }, actor);
   } catch {
-    /* already enabled or server does not support --webmin */
+    /* already enabled or server does not support legacy admin UI flag */
   }
 }
 
-/** Older VirtualMin builds reject redirect-url on create-login-link — append path to returned URL. */
+/** Older legacy hosting API builds reject redirect-url on create-login-link — append path to returned URL. */
 export function appendLoginRedirectPath(
   loginUrl: string,
   redirectPath: string,
@@ -286,8 +290,8 @@ function parseCreateLoginLinkResponse(
     if (typeof obj.link === "string") return obj.link;
   }
   const base = (
-    process.env.WEBMIN_UI_URL ??
-    process.env.VIRTUALMIN_UI_URL ??
+    process.env.QADBAK_LEGACY_PANEL_URL ??
+    process.env.QADBAK_LEGACY_PANEL_URL ??
     "https://localhost:10000"
   ).replace(/\/$/, "");
   if (redirectPath) {
@@ -305,15 +309,15 @@ export async function callCreateLoginLink(
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
   const redirect = params["redirect-url"];
-  const finish = (url: string) => rewriteWebminLoginUrlForEmbed(url);
+  const finish = (url: string) => rewriteLegacyPanelLoginUrlForEmbed(url);
   try {
-    const data = await virtualMinCall("create-login-link", params, actor);
+    const data = await hostingRemoteCall("create-login-link", params, actor);
     return finish(parseCreateLoginLinkResponse(data, params, redirect));
   } catch (err) {
     if (redirect && isUnknownParamLoginLinkError(err)) {
       const retry = { ...params };
       delete retry["redirect-url"];
-      const data = await virtualMinCall("create-login-link", retry, actor);
+      const data = await hostingRemoteCall("create-login-link", retry, actor);
       const base = parseCreateLoginLinkResponse(data, retry);
       return finish(appendLoginRedirectPath(base, redirect));
     }
@@ -325,7 +329,7 @@ export async function callCreateLoginLink(
  * Build remote.cgi POST body. With json=1, remote.cgi injects --multiline unless
  * simple-multiline is set — older servers still break on create-login-link.
  */
-function buildVirtualMinRequestBody(
+function buildHostingRemoteRequestBody(
   program: string,
   params: Record<string, string>,
 ): URLSearchParams {
@@ -339,7 +343,7 @@ function buildVirtualMinRequestBody(
     return body;
   }
   body.set("json", "1");
-  if (virtualMinProgramUsesMultiline(program)) {
+  if (hostingRemoteProgramUsesMultiline(program)) {
     if (!body.has("multiline")) {
       body.set("multiline", "");
     }
@@ -351,17 +355,17 @@ function buildVirtualMinRequestBody(
   return body;
 }
 
-export async function virtualMinCall(
+export async function hostingRemoteCall(
   program: string,
   params: Record<string, string>,
   actor: { role: Role; domains: string[] },
 ): Promise<unknown> {
   if (!isProgramAllowed(actor.role, program)) {
-    throw new VirtualMinError("This action is not allowed for your role.");
+    throw new PanelError("This action is not allowed for your role.");
   }
   assertDomainAccess(actor.role, actor.domains, params.domain, program);
 
-  if (process.env.VIRTUALMIN_MOCK === "true") {
+  if (process.env.QADBAK_LEGACY_API_MOCK === "true") {
     return mockCall(program, params, actor);
   }
 
@@ -369,19 +373,19 @@ export async function virtualMinCall(
   const apiProgram = resolved.program;
   const apiParams = resolved.params;
 
-  const url = process.env.VIRTUALMIN_URL;
-  const user = process.env.VIRTUALMIN_USER;
-  const pass = process.env.VIRTUALMIN_PASS;
+  const url = process.env.QADBAK_LEGACY_API_URL;
+  const user = process.env.QADBAK_LEGACY_API_USER;
+  const pass = process.env.QADBAK_LEGACY_API_PASS;
   if (!url || !user || !pass) {
-    throw new VirtualMinError(
+    throw new PanelError(
       "Hosting API is not configured on this server. Check .env.local or enable mock mode for development.",
     );
   }
 
-  const body = buildVirtualMinRequestBody(apiProgram, apiParams);
+  const body = buildHostingRemoteRequestBody(apiProgram, apiParams);
   const auth = Buffer.from(`${user}:${pass}`).toString("base64");
 
-  const res = await virtualMinFetch(url, {
+  const res = await hostingRemoteFetch(url, {
     method: "POST",
     headers: {
       Authorization: `Basic ${auth}`,
@@ -396,7 +400,7 @@ export async function virtualMinCall(
 
   if (PLAIN_TEXT_PROGRAMS.has(apiProgram)) {
     if (/Unknown parameter\s+--/i.test(text)) {
-      throw new VirtualMinError(
+      throw new PanelError(
         text.match(/Unknown parameter[^\n]*/i)?.[0] ??
           "The server rejected API parameters.",
         exitCode,
@@ -404,15 +408,15 @@ export async function virtualMinCall(
       );
     }
     if (!res.ok) {
-      throw new VirtualMinError(
+      throw new PanelError(
         `Hosting API HTTP ${res.status}`,
         exitCode,
         text,
       );
     }
     if (exitCode !== undefined && exitCode !== 0) {
-      throw new VirtualMinError(
-        summarizePlainVirtualminError(text) || "Server command failed.",
+      throw new PanelError(
+        summarizePlainHostingRemoteError(text) || "Server command failed.",
         exitCode,
         text,
       );
@@ -427,7 +431,7 @@ export async function virtualMinCall(
   const parsed = parseJsonBody(bodyText);
 
   if (!res.ok) {
-    throw new VirtualMinError(
+    throw new PanelError(
       `Hosting API HTTP ${res.status}`,
       exitCode,
       text,
@@ -444,7 +448,7 @@ export async function virtualMinCall(
           envelope.message ??
           "Server command failed.",
       );
-      throw new VirtualMinError(msg, exitCode, text);
+      throw new PanelError(msg, exitCode, text);
     }
   }
 
@@ -453,7 +457,7 @@ export async function virtualMinCall(
       typeof parsed === "object" && parsed && "error" in parsed
         ? String((parsed as { error: unknown }).error)
         : text.slice(0, 500);
-    throw new VirtualMinError(msg || "Server command failed.", exitCode, text);
+    throw new PanelError(msg || "Server command failed.", exitCode, text);
   }
 
   return parsed;
@@ -465,7 +469,7 @@ function mockCall(
   actor: { role: Role; domains: string[] },
 ): unknown {
   const domain = params.domain?.toLowerCase();
-  const filterDomains = (list: VirtualMinDomain[]) => {
+  const filterDomains = (list: HostedDomain[]) => {
     if (actor.role === "admin") return list;
     const allowed = new Set(actor.domains.map((d) => d.toLowerCase()));
     return list.filter((d) => allowed.has((d.name ?? "").toLowerCase()));
@@ -495,10 +499,11 @@ function mockCall(
       return { status: "ok" };
     case "create-login-link": {
       const base =
-        process.env.WEBMIN_UI_URL ??
-        process.env.VIRTUALMIN_UI_URL ??
+        process.env.QADBAK_LEGACY_PANEL_URL ??
+        process.env.QADBAK_LEGACY_PANEL_URL ??
         "https://localhost:10000";
-      const userminBase = process.env.USERMIN_UI_URL ?? "https://localhost:20000";
+      const accountPanelBase =
+        process.env.QADBAK_ACCOUNT_PANEL_UI_URL ?? "https://localhost:20000";
       const redirect = params["redirect-url"] ?? "";
       const path = redirect
         ? redirect.startsWith("/")
@@ -508,9 +513,9 @@ function mockCall(
       if (params.root !== undefined) {
         return { url: `${base.replace(/\/$/, "")}${path || "/"}` };
       }
-      if (params["usermin-user"]) {
+      if (params[LEGACY_UPSTREAM.accountPanelUserParam]) {
         return {
-          url: `${userminBase.replace(/\/$/, "")}${path || "/"}`,
+          url: `${accountPanelBase.replace(/\/$/, "")}${path || "/"}`,
         };
       }
       const url = path
@@ -752,7 +757,7 @@ function mockCall(
   }
 }
 
-/** Maps Qadbak cron aliases to run-api-command on real VirtualMin servers. */
+/** Maps Qadbak cron aliases to run-api-command on real legacy hosting API servers. */
 function resolveProgramCall(
   program: string,
   params: Record<string, string>,
@@ -789,7 +794,7 @@ function resolveProgramCall(
   }
 }
 
-/** Last-resort: extract FQDNs from VirtualMin multiline JSON blobs (error_log paths, etc.). */
+/** Last-resort: extract FQDNs from legacy hosting API multiline JSON blobs (error_log paths, etc.). */
 function domainNamesFromVmPayload(data: unknown): string[] {
   const rows = parseDomainsListRows(data);
   const fallbackRows = rows.length > 0 ? rows : normalizeList(data);
@@ -801,7 +806,7 @@ function domainNamesFromVmPayload(data: unknown): string[] {
   if (names.size > 0) return [...names];
 
   const blob = JSON.stringify(data);
-  for (const m of blob.matchAll(/virtualmin\/([\w.-]+\.[a-z]{2,})_error_log/gi)) {
+  for (const m of blob.matchAll(/\/([\w.-]+\.[a-z]{2,})_error_log/gi)) {
     names.add(m[1].toLowerCase());
   }
   return [...names];
@@ -810,9 +815,9 @@ function domainNamesFromVmPayload(data: unknown): string[] {
 export async function listDomains(actor: {
   role: Role;
   domains: string[];
-}): Promise<VirtualMinDomain[]> {
+}): Promise<HostedDomain[]> {
   // Remote API: empty value = flag only (--multiline), not --multiline 1
-  const data = await virtualMinCall("list-domains", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-domains", { multiline: "" }, actor);
   const rows = parseDomainsListRows(data);
   const fallbackRows = rows.length > 0 ? rows : normalizeList(data);
   const mapped = fallbackRows
@@ -826,7 +831,7 @@ export async function listDomains(actor: {
         disabled: "0",
         plan: "Default Plan",
         user: name.split(".")[0],
-      } as VirtualMinDomain);
+      } as HostedDomain);
     }
   }
 
@@ -837,17 +842,17 @@ export async function listDomains(actor: {
   return mapped;
 }
 
-/** Find one domain after create-domain (tolerates slow VirtualMin / parse quirks). */
+/** Find one domain after create-domain (tolerates slow legacy hosting API / parse quirks). */
 export async function findDomainByName(
   domainName: string,
   actor: { role: Role; domains: string[] },
-): Promise<VirtualMinDomain | undefined> {
+): Promise<HostedDomain | undefined> {
   const want = domainName.trim().toLowerCase();
   const domains = await listDomains(actor);
   const hit = domains.find((d) => d.name.toLowerCase() === want);
   if (hit) return hit;
 
-  const data = await virtualMinCall("list-domains", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-domains", { multiline: "" }, actor);
   const rows = parseDomainsListRows(data);
   for (const row of rows) {
     const name = rowDomainName(row);
@@ -884,13 +889,13 @@ export async function setDomainEnabled(
   enabled: boolean,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall(enabled ? "enable-domain" : "disable-domain", { domain }, actor);
+  await hostingRemoteCall(enabled ? "enable-domain" : "disable-domain", { domain }, actor);
 }
 
-export async function createVirtualMinLoginLink(
+export async function createDomainLegacyLoginLink(
   domain: string,
   actor: { role: Role; domains: string[] },
-  options?: { redirectUrl?: string; preferUsermin?: boolean },
+  options?: { redirectUrl?: string; preferAccountPanel?: boolean },
 ): Promise<string> {
   const redirect = options?.redirectUrl
     ? options.redirectUrl.startsWith("/")
@@ -899,36 +904,36 @@ export async function createVirtualMinLoginLink(
     : undefined;
   const unixUser = await resolveDomainUnixUser(domain, actor);
 
-  if (!options?.preferUsermin) {
-    await ensureDomainWebminLogin(domain, actor);
+  if (!options?.preferAccountPanel) {
+    await ensureDomainLegacyPanelLogin(domain, actor);
     const domainParams: Record<string, string> = { domain };
     if (redirect) domainParams["redirect-url"] = redirect;
     try {
       return await callCreateLoginLink(domainParams, actor);
     } catch (err) {
-      if (!isNoWebminLoginError(err)) throw err;
+      if (!isNoLegacyPanelLoginError(err)) throw err;
     }
   }
 
-  const userminParams: Record<string, string> = {
+  const accountPanelParams: Record<string, string> = {
     domain,
-    "usermin-user": unixUser,
+    [LEGACY_UPSTREAM.accountPanelUserParam]: unixUser,
   };
-  if (redirect) userminParams["redirect-url"] = redirect;
-  return callCreateLoginLink(userminParams, actor);
+  if (redirect) accountPanelParams["redirect-url"] = redirect;
+  return callCreateLoginLink(accountPanelParams, actor);
 }
 
 export async function listMailboxes(
   domain: string,
   actor: { role: Role; domains: string[] },
-): Promise<VirtualMinMailbox[]> {
-  const data = await virtualMinCall("list-users", { domain, multiline: "" }, actor);
+): Promise<HostedMailbox[]> {
+  const data = await hostingRemoteCall("list-users", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     user: vmValue(row, "user") ?? vmValue(row, "name") ?? "",
     real: vmValue(row, "real"),
     quota: vmValue(row, "quota"),
     ...row,
-  })) as VirtualMinMailbox[];
+  })) as HostedMailbox[];
 }
 
 export async function createMailbox(
@@ -945,7 +950,7 @@ export async function createMailbox(
     mail: "1",
   };
   if (real) params.real = real;
-  await virtualMinCall("create-user", params, actor);
+  await hostingRemoteCall("create-user", params, actor);
 }
 
 export async function updateMailboxPassword(
@@ -954,7 +959,7 @@ export async function updateMailboxPassword(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("modify-user", { domain, user, pass }, actor);
+  await hostingRemoteCall("modify-user", { domain, user, pass }, actor);
 }
 
 export async function deleteMailbox(
@@ -962,20 +967,20 @@ export async function deleteMailbox(
   user: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-user", { domain, user }, actor);
+  await hostingRemoteCall("delete-user", { domain, user }, actor);
 }
 
 export async function listDatabases(
   domain: string,
   actor: { role: Role; domains: string[] },
-): Promise<VirtualMinDatabase[]> {
-  const data = await virtualMinCall("list-databases", { domain, multiline: "" }, actor);
+): Promise<HostedDatabase[]> {
+  const data = await hostingRemoteCall("list-databases", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     type: vmValue(row, "type") ?? "mysql",
     host: vmValue(row, "host") ?? "localhost",
     ...row,
-  })) as VirtualMinDatabase[];
+  })) as HostedDatabase[];
 }
 
 export async function createDatabase(
@@ -985,7 +990,7 @@ export async function createDatabase(
   type: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall(
+  await hostingRemoteCall(
     "create-database",
     { domain, name, pass, type: type || "mysql" },
     actor,
@@ -998,7 +1003,7 @@ export async function updateDatabasePassword(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("modify-database-pass", { domain, name, pass }, actor);
+  await hostingRemoteCall("modify-database-pass", { domain, name, pass }, actor);
 }
 
 export interface DnsRecord {
@@ -1013,8 +1018,8 @@ export async function getDns(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<{ records: DnsRecord[]; raw: unknown }> {
-  const { parseDnsRecords } = await import("./virtualmin-api-parse");
-  const data = await virtualMinCall("get-dns", { domain, multiline: "" }, actor);
+  const { parseDnsRecords } = await import("./hosting-api-parse");
+  const data = await hostingRemoteCall("get-dns", { domain, multiline: "" }, actor);
   if (data && typeof data === "object" && "records" in data) {
     const recs = (data as { records: DnsRecord[] }).records;
     if (recs.length > 0) return { records: recs, raw: data };
@@ -1039,9 +1044,9 @@ export async function addDnsRecord(
   record: DnsRecord,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  const { formatDnsRecordArg } = await import("./virtualmin-api-parse");
+  const { formatDnsRecordArg } = await import("./hosting-api-parse");
   const { param, value } = formatDnsRecordArg(record);
-  await virtualMinCall("modify-dns", { domain, [param]: value }, actor);
+  await hostingRemoteCall("modify-dns", { domain, [param]: value }, actor);
 }
 
 export async function deleteDnsRecord(
@@ -1049,8 +1054,8 @@ export async function deleteDnsRecord(
   record: DnsRecord,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  const { formatDnsRemoveArg } = await import("./virtualmin-api-parse");
-  await virtualMinCall(
+  const { formatDnsRemoveArg } = await import("./hosting-api-parse");
+  await hostingRemoteCall(
     "modify-dns",
     { domain, "remove-record": formatDnsRemoveArg(record) },
     actor,
@@ -1069,11 +1074,11 @@ export async function listSslCerts(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<SslCert[]> {
-  const data = await virtualMinCall(
+  const data = await hostingRemoteCall(
     "list-certs-expiry",
     { domain, multiline: "" },
     actor,
-  ).catch(() => virtualMinCall("list-certs", { domain, multiline: "" }, actor));
+  ).catch(() => hostingRemoteCall("list-certs", { domain, multiline: "" }, actor));
   return normalizeList(data).map((row) => ({
     id: vmValue(row, "id"),
     host: vmValue(row, "host") ?? vmValue(row, "dom"),
@@ -1088,7 +1093,7 @@ export async function requestLetsEncrypt(
   host: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("generate-letsencrypt-cert", {
+  await hostingRemoteCall("generate-letsencrypt-cert", {
     domain,
     host: host || domain,
   }, actor);
@@ -1103,11 +1108,11 @@ export async function listAliases(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<MailAlias[]> {
-  const data = await virtualMinCall(
+  const data = await hostingRemoteCall(
     "list-simple-aliases",
     { domain, multiline: "" },
     actor,
-  ).catch(() => virtualMinCall("list-aliases", { domain, multiline: "" }, actor));
+  ).catch(() => hostingRemoteCall("list-aliases", { domain, multiline: "" }, actor));
   return normalizeList(data).map((row) => ({
     from: vmValue(row, "from") ?? vmValue(row, "name") ?? "",
     to: vmValue(row, "to") ?? vmValue(row, "dest") ?? "",
@@ -1120,7 +1125,7 @@ export async function createAlias(
   to: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-simple-alias", { domain, from, to }, actor);
+  await hostingRemoteCall("create-simple-alias", { domain, from, to }, actor);
 }
 
 export async function deleteAlias(
@@ -1128,7 +1133,7 @@ export async function deleteAlias(
   from: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-alias", { domain, from }, actor);
+  await hostingRemoteCall("delete-alias", { domain, from }, actor);
 }
 
 export interface UrlRedirect {
@@ -1141,7 +1146,7 @@ export async function listRedirects(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<UrlRedirect[]> {
-  const data = await virtualMinCall("list-redirects", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-redirects", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     path: vmValue(row, "path") ?? vmValue(row, "from") ?? "",
     dest: vmValue(row, "dest") ?? vmValue(row, "url") ?? "",
@@ -1156,7 +1161,7 @@ export async function createRedirect(
   type: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-redirect", {
+  await hostingRemoteCall("create-redirect", {
     domain,
     path,
     dest,
@@ -1169,7 +1174,7 @@ export async function deleteRedirect(
   path: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-redirect", { domain, path }, actor);
+  await hostingRemoteCall("delete-redirect", { domain, path }, actor);
 }
 
 export interface ScheduledBackup {
@@ -1183,7 +1188,7 @@ export async function listScheduledBackups(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<ScheduledBackup[]> {
-  const data = await virtualMinCall("list-scheduled-backups", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-scheduled-backups", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row, i) => ({
     id: vmValue(row, "id") ?? String(i),
     schedule: vmValue(row, "schedule") ?? vmValue(row, "when"),
@@ -1196,7 +1201,7 @@ export async function startBackup(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<unknown> {
-  return virtualMinCall("backup-domain", { domain }, actor);
+  return hostingRemoteCall("backup-domain", { domain }, actor);
 }
 
 export async function modifyScheduledBackup(
@@ -1208,7 +1213,7 @@ export async function modifyScheduledBackup(
   const params: Record<string, string> = { domain, id };
   if (opts.enabled === true) params.enable = "";
   if (opts.enabled === false) params.disable = "";
-  await virtualMinCall("modify-scheduled-backup", params, actor);
+  await hostingRemoteCall("modify-scheduled-backup", params, actor);
 }
 
 export async function restoreDomain(
@@ -1223,7 +1228,7 @@ export async function restoreDomain(
   };
   if (opts.test) params.test = "";
   if (opts.allFeatures !== false) params["all-features"] = "";
-  return virtualMinCall("restore-domain", params, actor);
+  return hostingRemoteCall("restore-domain", params, actor);
 }
 
 export interface S3Bucket {
@@ -1236,7 +1241,7 @@ export async function listS3Buckets(
   secretKey: string,
   actor: { role: Role; domains: string[] },
 ): Promise<S3Bucket[]> {
-  const data = await virtualMinCall(
+  const data = await hostingRemoteCall(
     "list-s3-buckets",
     { "access-key": accessKey, "secret-key": secretKey, multiline: "" },
     actor,
@@ -1259,7 +1264,7 @@ export async function listS3Files(
   secretKey: string,
   actor: { role: Role; domains: string[] },
 ): Promise<S3File[]> {
-  const data = await virtualMinCall(
+  const data = await hostingRemoteCall(
     "list-s3-files",
     {
       bucket,
@@ -1293,7 +1298,7 @@ export async function uploadS3File(
     "secret-key": opts.secretKey,
   };
   if (opts.source) params.source = opts.source;
-  return virtualMinCall("upload-s3-file", params, actor);
+  return hostingRemoteCall("upload-s3-file", params, actor);
 }
 
 export interface GlobalFeature {
@@ -1305,7 +1310,7 @@ export interface GlobalFeature {
 export async function listGlobalFeatures(
   actor: { role: Role; domains: string[] },
 ): Promise<GlobalFeature[]> {
-  const data = await virtualMinCall("list-global-features", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-global-features", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     feature: vmValue(row, "feature") ?? vmValue(row, "name") ?? "",
     enabled: vmValue(row, "enabled") ?? "0",
@@ -1321,14 +1326,14 @@ export async function setGlobalFeature(
   const params: Record<string, string> = { feature };
   if (enabled) params.enable = "";
   else params.disable = "";
-  await virtualMinCall("set-global-feature", params, actor);
+  await hostingRemoteCall("set-global-feature", params, actor);
 }
 
 export async function runConfigSystem(
   bundle: string,
   actor: { role: Role; domains: string[] },
 ): Promise<unknown> {
-  return virtualMinCall("config-system", { bundle }, actor);
+  return hostingRemoteCall("config-system", { bundle }, actor);
 }
 
 export async function getWebsiteLogs(
@@ -1336,7 +1341,7 @@ export async function getWebsiteLogs(
   logType: "access" | "error",
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
-  const data = await virtualMinCall("get-logs", {
+  const data = await hostingRemoteCall("get-logs", {
     domain,
     "log-type": logType === "error" ? "error_log" : "access_log",
     tail: "100",
@@ -1360,7 +1365,7 @@ export async function listPhpVersions(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<PhpVersion[]> {
-  const data = await virtualMinCall("list-php-versions", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-php-versions", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     version: vmValue(row, "version") ?? vmValue(row, "name") ?? "",
     id: vmValue(row, "id"),
@@ -1377,7 +1382,7 @@ export async function listPhpDirectories(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<PhpDirectory[]> {
-  const data = await virtualMinCall("list-php-directories", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-php-directories", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     dir: vmValue(row, "dir") ?? vmValue(row, "path") ?? "",
     version: vmValue(row, "version"),
@@ -1391,7 +1396,7 @@ export async function setPhpDirectory(
   version: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("set-php-directory", { domain, dir, version }, actor);
+  await hostingRemoteCall("set-php-directory", { domain, dir, version }, actor);
 }
 
 export async function deletePhpDirectory(
@@ -1399,7 +1404,7 @@ export async function deletePhpDirectory(
   dir: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-php-directory", { domain, dir }, actor);
+  await hostingRemoteCall("delete-php-directory", { domain, dir }, actor);
 }
 
 export interface PhpIniSetting {
@@ -1414,7 +1419,7 @@ export async function listPhpIni(
 ): Promise<PhpIniSetting[]> {
   const params: Record<string, string> = { domain, multiline: "" };
   if (version) params.version = version;
-  const data = await virtualMinCall("list-php-ini", params, actor);
+  const data = await hostingRemoteCall("list-php-ini", params, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     value: vmValue(row, "value") ?? "",
@@ -1430,7 +1435,7 @@ export async function modifyPhpIni(
 ): Promise<void> {
   const params: Record<string, string> = { domain, name, value };
   if (version) params.version = version;
-  await virtualMinCall("modify-php-ini", params, actor);
+  await hostingRemoteCall("modify-php-ini", params, actor);
 }
 
 export interface ProtectedDirectory {
@@ -1442,7 +1447,7 @@ export async function listProtectedDirectories(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<ProtectedDirectory[]> {
-  const data = await virtualMinCall("list-protected-directories", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-protected-directories", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     path: vmValue(row, "path") ?? vmValue(row, "dir") ?? "",
     id: vmValue(row, "id"),
@@ -1454,7 +1459,7 @@ export async function createProtectedDirectory(
   path: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-protected-directory", { domain, path }, actor);
+  await hostingRemoteCall("create-protected-directory", { domain, path }, actor);
 }
 
 export async function deleteProtectedDirectory(
@@ -1462,7 +1467,7 @@ export async function deleteProtectedDirectory(
   path: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-protected-directory", { domain, path }, actor);
+  await hostingRemoteCall("delete-protected-directory", { domain, path }, actor);
 }
 
 export interface ProtectedUser {
@@ -1475,7 +1480,7 @@ export async function listProtectedUsers(
   path: string,
   actor: { role: Role; domains: string[] },
 ): Promise<ProtectedUser[]> {
-  const data = await virtualMinCall("list-protected-users", { domain, path, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-protected-users", { domain, path, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     user: vmValue(row, "user") ?? vmValue(row, "name") ?? "",
     path: vmValue(row, "path") ?? path,
@@ -1489,7 +1494,7 @@ export async function createProtectedUser(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-protected-user", { domain, path, user, pass }, actor);
+  await hostingRemoteCall("create-protected-user", { domain, path, user, pass }, actor);
 }
 
 export async function deleteProtectedUser(
@@ -1498,7 +1503,7 @@ export async function deleteProtectedUser(
   user: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-protected-user", { domain, path, user }, actor);
+  await hostingRemoteCall("delete-protected-user", { domain, path, user }, actor);
 }
 
 export interface MailSecuritySettings {
@@ -1510,7 +1515,7 @@ export async function getMailSecurity(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<MailSecuritySettings> {
-  // VirtualMin has no dedicated read API; return defaults until save refreshes UI
+  // legacy hosting API has no dedicated read API; return defaults until save refreshes UI
   void actor;
   void domain;
   return { spamEnabled: true, dkimEnabled: false };
@@ -1521,7 +1526,7 @@ export async function setSpamFilter(
   enabled: boolean,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("set-spam", {
+  await hostingRemoteCall("set-spam", {
     domain,
     spam: enabled ? "spamassassin" : "nocspam",
   }, actor);
@@ -1532,7 +1537,7 @@ export async function setDkim(
   enabled: boolean,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("set-dkim", {
+  await hostingRemoteCall("set-dkim", {
     domain,
     dkim: enabled ? "1" : "0",
   }, actor);
@@ -1543,7 +1548,7 @@ export async function modifyWeb(
   params: Record<string, string>,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("modify-web", { domain, ...params }, actor);
+  await hostingRemoteCall("modify-web", { domain, ...params }, actor);
 }
 
 export interface DomainFeatureFlag {
@@ -1556,7 +1561,7 @@ export async function listDomainFeatures(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<DomainFeatureFlag[]> {
-  const data = await virtualMinCall("list-features", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-features", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     feature: vmValue(row, "feature") ?? vmValue(row, "name") ?? "",
     enabled: vmValue(row, "enabled") === "1" || vmValue(row, "enabled") === "true",
@@ -1570,7 +1575,7 @@ export async function setDomainFeature(
   enabled: boolean,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall(enabled ? "enable-feature" : "disable-feature", {
+  await hostingRemoteCall(enabled ? "enable-feature" : "disable-feature", {
     domain,
     feature,
   }, actor);
@@ -1607,8 +1612,8 @@ export async function updateDomainLimits(
   if (limits.bandwidth) params.bandwidth = limits.bandwidth;
   if (limits.mailboxes) params.mailboxes = limits.mailboxes;
   if (limits.databases) params.databases = limits.databases;
-  await virtualMinCall("modify-limits", params, actor);
-  await virtualMinCall("modify-resources", params, actor);
+  await hostingRemoteCall("modify-limits", params, actor);
+  await hostingRemoteCall("modify-resources", params, actor);
 }
 
 export interface CreateDomainInput {
@@ -1623,7 +1628,7 @@ export interface CreateDomainInput {
   subdom?: boolean;
 }
 
-/** Unix username derived from domain (VirtualMin convention). */
+/** Unix username derived from domain (legacy hosting API convention). */
 export function defaultDomainUnixUser(domain: string): string {
   const base = domain.split(".")[0] ?? "site";
   const safe = base.toLowerCase().replace(/[^a-z0-9_-]/g, "");
@@ -1641,7 +1646,7 @@ export async function createDomain(
     desc: input.domain,
     unix: "1",
     dir: "1",
-    webmin: "1",
+    [LEGACY_UPSTREAM.featureAdminUi]: "1",
     web: "1",
     dns: "1",
     mail: "1",
@@ -1652,10 +1657,10 @@ export async function createDomain(
   if (input.alias) params.alias = "1";
   if (input.subdom) params.subdom = "1";
   try {
-    await virtualMinCall("create-domain", params, actor);
+    await hostingRemoteCall("create-domain", params, actor);
   } catch (err) {
     if (
-      err instanceof VirtualMinError &&
+      err instanceof PanelError &&
       isDomainAlreadyExistsError(err.message)
     ) {
       const existing = await findDomainByName(input.domain, actor);
@@ -1670,7 +1675,7 @@ export async function cloneDomain(
   newDomain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("clone-domain", {
+  await hostingRemoteCall("clone-domain", {
     domain: source,
     "new-domain": newDomain,
   }, actor);
@@ -1680,7 +1685,7 @@ export async function deleteDomain(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-domain", { domain }, actor);
+  await hostingRemoteCall("delete-domain", { domain }, actor);
 }
 
 export async function migrateDomain(
@@ -1688,7 +1693,7 @@ export async function migrateDomain(
   destHost: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("migrate-domain", { domain, host: destHost }, actor);
+  await hostingRemoteCall("migrate-domain", { domain, host: destHost }, actor);
 }
 
 export async function transferDomain(
@@ -1696,14 +1701,14 @@ export async function transferDomain(
   newOwner: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("transfer-domain", { domain, user: newOwner }, actor);
+  await hostingRemoteCall("transfer-domain", { domain, user: newOwner }, actor);
 }
 
 export async function validateDomain(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<{ valid: boolean; messages: string[] }> {
-  const data = await virtualMinCall("validate-domains", { domain }, actor);
+  const data = await hostingRemoteCall("validate-domains", { domain }, actor);
   if (data && typeof data === "object") {
     const obj = data as Record<string, unknown>;
     if (typeof obj.valid === "boolean") {
@@ -1724,7 +1729,7 @@ export async function validateDomain(
 export async function checkServerConfig(
   actor: { role: Role; domains: string[] },
 ): Promise<string> {
-  const data = await virtualMinCall("check-config", {}, actor);
+  const data = await hostingRemoteCall("check-config", {}, actor);
   if (typeof data === "string") return data;
   if (data && typeof data === "object") {
     const obj = data as Record<string, unknown>;
@@ -1750,7 +1755,7 @@ export async function listAvailableScripts(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<AvailableScript[]> {
-  const data = await virtualMinCall("list-available-scripts", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-available-scripts", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     desc: vmValue(row, "desc") ?? vmValue(row, "description"),
@@ -1762,7 +1767,7 @@ export async function listInstalledScripts(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<InstalledScript[]> {
-  const data = await virtualMinCall("list-scripts", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-scripts", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     version: vmValue(row, "version"),
@@ -1779,7 +1784,7 @@ export async function installScript(
 ): Promise<void> {
   const params: Record<string, string> = { domain, script };
   if (path) params.dir = path;
-  await virtualMinCall("install-script", params, actor);
+  await hostingRemoteCall("install-script", params, actor);
 }
 
 export async function deleteInstalledScript(
@@ -1787,7 +1792,7 @@ export async function deleteInstalledScript(
   script: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-script", { domain, script }, actor);
+  await hostingRemoteCall("delete-script", { domain, script }, actor);
 }
 
 export interface ProxyRoute {
@@ -1800,7 +1805,7 @@ export async function listProxies(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<ProxyRoute[]> {
-  const data = await virtualMinCall("list-proxies", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-proxies", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     path: vmValue(row, "path") ?? "",
     dest: vmValue(row, "dest") ?? vmValue(row, "url") ?? "",
@@ -1814,7 +1819,7 @@ export async function createProxy(
   dest: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-proxy", { domain, path, url: dest }, actor);
+  await hostingRemoteCall("create-proxy", { domain, path, url: dest }, actor);
 }
 
 export async function deleteProxy(
@@ -1822,7 +1827,7 @@ export async function deleteProxy(
   path: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-proxy", { domain, path }, actor);
+  await hostingRemoteCall("delete-proxy", { domain, path }, actor);
 }
 
 export interface CronJob {
@@ -1837,9 +1842,9 @@ export async function listCronJobs(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<CronJob[]> {
-  const { parseCronJobs } = await import("./virtualmin-api-parse");
+  const { parseCronJobs } = await import("./hosting-api-parse");
   try {
-    const data = await virtualMinCall("list-cron-jobs", { domain }, actor);
+    const data = await hostingRemoteCall("list-cron-jobs", { domain }, actor);
     const jobs = parseCronJobs(data);
     if (jobs.length > 0) return jobs;
     const rows = normalizeList(data);
@@ -1854,7 +1859,7 @@ export async function listCronJobs(
       .filter((j) => j.schedule || j.command);
     if (legacy.length > 0) return legacy;
   } catch (err) {
-    if (process.env.VIRTUALMIN_MOCK === "true") throw err;
+    if (process.env.QADBAK_LEGACY_API_MOCK === "true") throw err;
   }
   const mock = mockCall("list-cron-jobs", { domain }, actor);
   return parseCronJobs(mock);
@@ -1871,7 +1876,7 @@ export async function listCronJobsWithFallback(
   } catch {
     /* try live */
   }
-  if (process.env.VIRTUALMIN_MOCK === "true") return [];
+  if (process.env.QADBAK_LEGACY_API_MOCK === "true") return [];
   const { listCronJobsLive } = await import("./domain-cron-live");
   return listCronJobsLive(domain, actor);
 }
@@ -1889,7 +1894,7 @@ export async function createCronJob(
     commandline: command,
   };
   if (user) params.user = user;
-  await virtualMinCall("create-cron-job", params, actor);
+  await hostingRemoteCall("create-cron-job", params, actor);
 }
 
 export async function deleteCronJob(
@@ -1897,7 +1902,7 @@ export async function deleteCronJob(
   id: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-cron-job", { domain, id }, actor);
+  await hostingRemoteCall("delete-cron-job", { domain, id }, actor);
 }
 
 export interface ImapMailbox {
@@ -1914,7 +1919,7 @@ export async function listImapMailboxes(
 ): Promise<ImapMailbox[]> {
   const params: Record<string, string> = { domain, multiline: "" };
   if (user) params.user = user;
-  const data = await virtualMinCall("list-mailbox", params, actor);
+  const data = await hostingRemoteCall("list-mailbox", params, actor);
   if (data && typeof data === "object" && "lines" in data) {
     const lines = (data as { lines: string[] }).lines;
     return lines.map((line) => ({
@@ -1941,7 +1946,7 @@ export async function copyMailbox(
 ): Promise<void> {
   const params: Record<string, string> = { domain, from, to };
   if (mailboxUser) params.user = mailboxUser;
-  await virtualMinCall("copy-mailbox", params, actor);
+  await hostingRemoteCall("copy-mailbox", params, actor);
 }
 
 export async function searchMailLogs(
@@ -1949,7 +1954,7 @@ export async function searchMailLogs(
   query: string,
   actor: { role: Role; domains: string[] },
 ): Promise<string[]> {
-  const data = await virtualMinCall("search-maillogs", {
+  const data = await hostingRemoteCall("search-maillogs", {
     domain,
     query: query || ".",
     tail: "50",
@@ -1968,7 +1973,7 @@ export async function resendEmail(
   messageId: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("resend-email", { domain, id: messageId }, actor);
+  await hostingRemoteCall("resend-email", { domain, id: messageId }, actor);
 }
 
 export interface MailDomainSettings {
@@ -2000,7 +2005,7 @@ export async function updateMailSettings(
   if (settings.autoresponder !== undefined) params.autoreply = settings.autoresponder;
   if (settings.autoresponderEnabled) params.autoreply_enabled = "1";
   else if (settings.autoresponderEnabled === false) params.autoreply_enabled = "0";
-  await virtualMinCall("modify-mail", params, actor);
+  await hostingRemoteCall("modify-mail", params, actor);
 }
 
 export interface FtpAccount {
@@ -2013,7 +2018,7 @@ export async function listFtpAccounts(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<FtpAccount[]> {
-  const data = await virtualMinCall("list-users", { domain, multiline: "", ftp: "1" }, actor);
+  const data = await hostingRemoteCall("list-users", { domain, multiline: "", ftp: "1" }, actor);
   const rows = normalizeList(data);
   return rows
     .filter((row) => {
@@ -2035,7 +2040,7 @@ export async function listFtpAccountsSafe(
 ): Promise<FtpAccount[]> {
   const list = await listFtpAccounts(domain, actor);
   if (list.length > 0) return list;
-  if (process.env.VIRTUALMIN_MOCK === "true") {
+  if (process.env.QADBAK_LEGACY_API_MOCK === "true") {
     return [
       { user: "ftpuser", dir: "/home/" + domain.split(".")[0], quota: "500" },
     ];
@@ -2049,7 +2054,7 @@ export async function createFtpAccount(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-user", { domain, user, pass, ftp: "1" }, actor);
+  await hostingRemoteCall("create-user", { domain, user, pass, ftp: "1" }, actor);
 }
 
 export async function updateFtpPassword(
@@ -2058,7 +2063,7 @@ export async function updateFtpPassword(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("modify-user", { domain, user, pass, ftp: "1" }, actor);
+  await hostingRemoteCall("modify-user", { domain, user, pass, ftp: "1" }, actor);
 }
 
 export async function deleteFtpAccount(
@@ -2066,7 +2071,7 @@ export async function deleteFtpAccount(
   user: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-user", { domain, user, ftp: "1" }, actor);
+  await hostingRemoteCall("delete-user", { domain, user, ftp: "1" }, actor);
 }
 
 export interface SharedAddress {
@@ -2078,7 +2083,7 @@ export async function listSharedAddresses(
   domain: string,
   actor: { role: Role; domains: string[] },
 ): Promise<SharedAddress[]> {
-  const data = await virtualMinCall("list-shared-addresses", { domain, multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-shared-addresses", { domain, multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     address: vmValue(row, "address") ?? vmValue(row, "name") ?? "",
     users: vmValue(row, "users") ?? vmValue(row, "members") ?? "",
@@ -2091,7 +2096,7 @@ export async function createSharedAddress(
   users: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-shared-address", { domain, address, users }, actor);
+  await hostingRemoteCall("create-shared-address", { domain, address, users }, actor);
 }
 
 export async function deleteSharedAddress(
@@ -2099,7 +2104,7 @@ export async function deleteSharedAddress(
   address: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-shared-address", { domain, address }, actor);
+  await hostingRemoteCall("delete-shared-address", { domain, address }, actor);
 }
 
 export interface BandwidthRow {
@@ -2111,7 +2116,7 @@ export interface BandwidthRow {
 export async function listBandwidth(
   actor: { role: Role; domains: string[] },
 ): Promise<BandwidthRow[]> {
-  const data = await virtualMinCall("list-bandwidth", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-bandwidth", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     domain: vmValue(row, "domain") ?? vmValue(row, "name") ?? "",
     used: vmValue(row, "used") ?? vmValue(row, "bw"),
@@ -2127,7 +2132,7 @@ export interface ServerService {
 export async function listServerStatuses(
   actor: { role: Role; domains: string[] },
 ): Promise<ServerService[]> {
-  const data = await virtualMinCall("list-server-statuses", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-server-statuses", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     service: vmValue(row, "service") ?? vmValue(row, "name") ?? "",
     status: vmValue(row, "status") ?? "unknown",
@@ -2138,7 +2143,7 @@ export async function restartServer(
   service: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("restart-server", { service }, actor);
+  await hostingRemoteCall("restart-server", { service }, actor);
 }
 
 export interface Reseller {
@@ -2150,7 +2155,7 @@ export interface Reseller {
 export async function listResellers(
   actor: { role: Role; domains: string[] },
 ): Promise<Reseller[]> {
-  const data = await virtualMinCall("list-resellers", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-resellers", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? vmValue(row, "user") ?? "",
     domains: vmValue(row, "domains"),
@@ -2163,14 +2168,14 @@ export async function createReseller(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-reseller", { name, pass }, actor);
+  await hostingRemoteCall("create-reseller", { name, pass }, actor);
 }
 
 export async function deleteReseller(
   name: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-reseller", { name }, actor);
+  await hostingRemoteCall("delete-reseller", { name }, actor);
 }
 
 export interface AccountPlan {
@@ -2182,7 +2187,7 @@ export interface AccountPlan {
 export async function listPlans(
   actor: { role: Role; domains: string[] },
 ): Promise<AccountPlan[]> {
-  const data = await virtualMinCall("list-plans", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-plans", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     id: vmValue(row, "id"),
@@ -2194,14 +2199,14 @@ export async function createPlan(
   name: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-plan", { name }, actor);
+  await hostingRemoteCall("create-plan", { name }, actor);
 }
 
 export async function deletePlan(
   name: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-plan", { name }, actor);
+  await hostingRemoteCall("delete-plan", { name }, actor);
 }
 
 export interface ServerTemplate {
@@ -2212,7 +2217,7 @@ export interface ServerTemplate {
 export async function listTemplates(
   actor: { role: Role; domains: string[] },
 ): Promise<ServerTemplate[]> {
-  const data = await virtualMinCall("list-templates", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-templates", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     name: vmValue(row, "name") ?? "",
     id: vmValue(row, "id"),
@@ -2223,7 +2228,7 @@ export async function getTemplate(
   id: string,
   actor: { role: Role; domains: string[] },
 ): Promise<Record<string, string>> {
-  const data = await virtualMinCall("get-template", { id }, actor);
+  const data = await hostingRemoteCall("get-template", { id }, actor);
   if (data && typeof data === "object") {
     const row = data as Record<string, unknown>;
     return {
@@ -2243,7 +2248,7 @@ export interface ExtraAdmin {
 export async function listAdmins(
   actor: { role: Role; domains: string[] },
 ): Promise<ExtraAdmin[]> {
-  const data = await virtualMinCall("list-admins", { multiline: "" }, actor);
+  const data = await hostingRemoteCall("list-admins", { multiline: "" }, actor);
   return normalizeList(data).map((row) => ({
     user: vmValue(row, "user") ?? vmValue(row, "name") ?? "",
     domains: vmValue(row, "domains"),
@@ -2255,20 +2260,20 @@ export async function createAdmin(
   pass: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("create-admin", { user, pass }, actor);
+  await hostingRemoteCall("create-admin", { user, pass }, actor);
 }
 
 export async function deleteAdmin(
   user: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  await virtualMinCall("delete-admin", { user }, actor);
+  await hostingRemoteCall("delete-admin", { user }, actor);
 }
 
 export async function getLicenseInfo(
   actor: { role: Role; domains: string[] },
 ): Promise<Record<string, string>> {
-  const data = await virtualMinCall("license-info", {}, actor);
+  const data = await hostingRemoteCall("license-info", {}, actor);
   if (data && typeof data === "object") {
     const row = data as Record<string, unknown>;
     return {

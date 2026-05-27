@@ -1,18 +1,18 @@
-import { webminUiBase } from "./webmin";
+import { legacyPanelUiBase } from "./legacy-panel";
 
-/** Public base for Webmin when proxied under the panel (same origin as Qadbak). */
-export function webminEmbedPublicBase(): string | null {
-  const explicit = process.env.QADBAK_WEBMIN_EMBED_BASE?.replace(/\/$/, "");
+/** Public base for server admin when proxied under the panel (same origin as Qadbak). */
+export function legacyPanelEmbedPublicBase(): string | null {
+  const explicit = process.env.QADBAK_LEGACY_PANEL_EMBED_BASE?.replace(/\/$/, "");
   if (explicit) return explicit;
   const panel = process.env.QADBAK_PANEL_URL?.replace(/\/$/, "");
-  if (panel) return `${panel}/embed/webmin`;
+  if (panel) return `${panel}/embed/legacy-panel`;
   return null;
 }
 
-function directWebminOrigins(): string[] {
+function directLegacyPanelOrigins(): string[] {
   const bases = [
-    process.env.WEBMIN_UI_URL,
-    process.env.VIRTUALMIN_UI_URL,
+    process.env.QADBAK_LEGACY_PANEL_URL,
+    process.env.QADBAK_LEGACY_PANEL_URL,
     "https://localhost:10000",
     "http://localhost:10000",
     "https://127.0.0.1:10000",
@@ -30,16 +30,16 @@ function directWebminOrigins(): string[] {
     }
   }
   try {
-    origins.add(new URL(webminUiBase()).origin);
+    origins.add(new URL(legacyPanelUiBase()).origin);
   } catch {
     /* ignore */
   }
   return [...origins];
 }
 
-/** Rewrite :10000 login URLs to the panel /embed/webmin/ proxy when configured. */
-export function rewriteWebminLoginUrlForEmbed(url: string): string {
-  const embedBase = webminEmbedPublicBase();
+/** Rewrite :10000 login URLs to the panel /embed/legacy-panel/ proxy when configured. */
+export function rewriteLegacyPanelLoginUrlForEmbed(url: string): string {
+  const embedBase = legacyPanelEmbedPublicBase();
   if (!embedBase || !url.startsWith("http")) return url;
 
   let parsed: URL;
@@ -49,11 +49,11 @@ export function rewriteWebminLoginUrlForEmbed(url: string): string {
     return url;
   }
 
-  const directOrigins = directWebminOrigins();
+  const directOrigins = directLegacyPanelOrigins();
   if (embedBase) {
     try {
       const embedOrigin = new URL(embedBase).origin;
-      if (parsed.origin === embedOrigin && parsed.pathname.includes("/embed/webmin")) {
+      if (parsed.origin === embedOrigin && parsed.pathname.includes("/embed/legacy-panel")) {
         return url;
       }
     } catch {
@@ -61,11 +61,11 @@ export function rewriteWebminLoginUrlForEmbed(url: string): string {
     }
   }
 
-  const isDirectWebmin =
+  const isDirectLegacyPanel =
     parsed.port === "10000" ||
     directOrigins.some((o) => parsed.origin === o);
 
-  if (!isDirectWebmin) return url;
+  if (!isDirectLegacyPanel) return url;
 
   try {
     const embed = new URL(embedBase);

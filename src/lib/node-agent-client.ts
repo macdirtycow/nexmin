@@ -51,7 +51,7 @@ export async function probeNodeHealth(node: QadbakNode): Promise<NodeHealth> {
   }
 }
 
-export async function agentVirtualminCall(
+export async function agentLegacyApiCall(
   node: QadbakNode,
   program: string,
   params: Record<string, string> = {},
@@ -61,7 +61,7 @@ export async function agentVirtualminCall(
   if (!agentUrl || !token) {
     throw new Error("Node agent URL or QADBAK_NODE_AGENT_TOKEN not configured");
   }
-  const res = await fetch(`${agentUrl}/v1/virtualmin/call`, {
+  const res = await fetch(`${agentUrl}/v1/legacy-api/call`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

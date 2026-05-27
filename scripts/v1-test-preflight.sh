@@ -38,10 +38,10 @@ fi
 
 if [[ "${QADBAK_PROVISIONER:-}" == "native" ]]; then
   pass "QADBAK_PROVISIONER=native"
-elif [[ "${VIRTUALMIN_MOCK:-true}" == "true" ]]; then
-  fail "VIRTUALMIN_MOCK=true — set false on test server or use QADBAK_PROVISIONER=native"
+elif [[ "${QADBAK_LEGACY_API_MOCK:-true}" == "true" ]]; then
+  fail "QADBAK_LEGACY_API_MOCK=true — set false on test server or use QADBAK_PROVISIONER=native"
 else
-  pass "VIRTUALMIN_MOCK=false"
+  pass "QADBAK_LEGACY_API_MOCK=false"
 fi
 
 if [[ -n "${SESSION_SECRET:-}" && "${#SESSION_SECRET}" -ge 16 ]]; then
@@ -79,7 +79,7 @@ echo ""
 if [[ "${QADBAK_PROVISIONER:-}" == "hybrid" || "${QADBAK_PROVISIONER:-}" == "native" ]]; then
   echo "==> Native domains (phase 8)"
 else
-  echo "==> VirtualMin API"
+  echo "==> legacy hosting API API"
 fi
 if bash scripts/test-api.sh >/tmp/qadbak-test-api.out 2>&1; then
   if [[ "${QADBAK_PROVISIONER:-}" == "hybrid" || "${QADBAK_PROVISIONER:-}" == "native" ]]; then

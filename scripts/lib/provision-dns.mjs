@@ -19,10 +19,12 @@ async function zoneFromRegistry(domain) {
   return hit?.zoneFile || hit?.zonePath || null;
 }
 
-async function zoneFromVirtualminCli(domain) {
+async function zoneFromLegacyHostCli(domain) {
+  const bin = process.env.QADBAK_LEGACY_HOST_BIN?.trim();
+  if (!bin) return null;
   try {
     const { stdout } = await exec(
-      "virtualmin",
+      bin,
       ["list-domains", "--domain", domain, "--multiline"],
       { maxBuffer: 2 * 1024 * 1024 },
     );
@@ -98,7 +100,7 @@ async function locateZonePath(domain) {
     if (await fileExists(p)) return p;
   }
 
-  const vm = await zoneFromVirtualminCli(domain);
+  const vm = await zoneFromLegacyHostCli(domain);
   if (vm) return vm;
 
   const named = await zoneFromNamedConf(domain);

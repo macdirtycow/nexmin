@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Point WEBMIN_UI_URL at the panel origin /embed/webmin/ so login links work in iframes.
+# Point QADBAK_LEGACY_PANEL_URL at the panel origin /embed/legacy-panel/ so login links work in iframes.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -70,7 +70,7 @@ if [[ -z "$PANEL_URL" ]]; then
   exit 0
 fi
 
-EMBED_BASE="${PANEL_URL}/embed/webmin"
+EMBED_BASE="${PANEL_URL}/embed/legacy-panel"
 
 set_env_key() {
   local key="$1" val="$2" file="$3"
@@ -81,8 +81,8 @@ set_env_key() {
   fi
 }
 
-echo "==> .env.local: WEBMIN_UI_URL → $EMBED_BASE"
-set_env_key "WEBMIN_UI_URL" "$EMBED_BASE" "$ENV_FILE"
-set_env_key "VIRTUALMIN_UI_URL" "$EMBED_BASE" "$ENV_FILE"
-set_env_key "QADBAK_WEBMIN_EMBED_BASE" "$EMBED_BASE" "$ENV_FILE"
+echo "==> .env.local: QADBAK_LEGACY_PANEL_URL → $EMBED_BASE"
+set_env_key "QADBAK_LEGACY_PANEL_URL" "$EMBED_BASE" "$ENV_FILE"
+set_env_key "QADBAK_LEGACY_PANEL_URL" "$EMBED_BASE" "$ENV_FILE"
+set_env_key "QADBAK_LEGACY_PANEL_EMBED_BASE" "$EMBED_BASE" "$ENV_FILE"
 set_env_key "QADBAK_PANEL_URL" "$PANEL_URL" "$ENV_FILE"

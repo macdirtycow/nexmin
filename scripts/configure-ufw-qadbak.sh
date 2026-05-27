@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Basic firewall for a Qadbak test VPS (SSH + web; Webmin optional).
+# Basic firewall for a Qadbak test VPS (SSH + web; server admin optional).
 set -euo pipefail
 
 if [[ "$(id -u)" -ne 0 ]]; then
@@ -11,10 +11,10 @@ if ! command -v ufw &>/dev/null; then
   apt-get install -y -qq ufw
 fi
 
-if [[ -z "${OPEN_WEBMIN:-}" ]]; then
-  read -rp "Allow Webmin port 10000 from anywhere? (y/N): " OPEN_WEBMIN
+if [[ -z "${OPEN_LEGACY_PANEL:-}" ]]; then
+  read -rp "Allow server admin port 10000 from anywhere? (y/N): " OPEN_LEGACY_PANEL
 fi
-OPEN_WEBMIN="${OPEN_WEBMIN:-N}"
+OPEN_LEGACY_PANEL="${OPEN_LEGACY_PANEL:-N}"
 
 ufw default deny incoming
 ufw default allow outgoing
@@ -26,11 +26,11 @@ if [[ -n "${PANEL_ALT_PORT:-}" ]]; then
   ufw allow "${PANEL_ALT_PORT}/tcp"
   echo "Panel alt port ${PANEL_ALT_PORT}/tcp allowed."
 fi
-if [[ "$OPEN_WEBMIN" =~ ^[Yy]$ ]]; then
+if [[ "$OPEN_LEGACY_PANEL" =~ ^[Yy]$ ]]; then
   ufw allow 10000/tcp
-  echo "Webmin :10000 opened (prefer locking to your IP in production)."
+  echo "server admin :10000 opened (prefer locking to your IP in production)."
 else
-  echo "Webmin :10000 not opened — use SSH tunnel or Qadbak embeds only."
+  echo "server admin :10000 not opened — use SSH tunnel or Qadbak embeds only."
 fi
 
 ufw --force enable

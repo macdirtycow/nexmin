@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create a BIND master zone for a Qadbak native domain (fresh install / no VirtualMin).
+# Create a BIND master zone for a Qadbak native domain (fresh install / no legacy hosting API).
 # Idempotent — skips if zone already exists.
 #
 # Usage:

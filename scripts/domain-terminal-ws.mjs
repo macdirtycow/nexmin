@@ -48,7 +48,7 @@ const DOMAIN_RUNNER =
 const ADMIN_RUNNER =
   process.env.QADBAK_ADMIN_TERMINAL_RUNNER ||
   path.join(ROOT, "scripts/run-admin-terminal.sh");
-const MOCK = process.env.VIRTUALMIN_MOCK === "true";
+const MOCK = process.env.QADBAK_LEGACY_API_MOCK === "true";
 
 function secretKey() {
   const secret = process.env.SESSION_SECRET;

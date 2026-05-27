@@ -1,4 +1,4 @@
-# Parity audit — Webmin / Virtualmin vs Qadbak
+# Parity audit — server admin / legacy hosting vs Qadbak
 
 Reference screenshots: **your live production server** (read-only audit source — **do not install Qadbak there**). Validate on an isolated test VPS per [V1-TEST-SERVER.md](./V1-TEST-SERVER.md).
 
@@ -8,16 +8,16 @@ Reference screenshots: **your live production server** (read-only audit source �
 |--------|---------|
 | **UI** | Native panel screen + API |
 | **API** | API wired; UI incomplete |
-| **Embed** | In-panel Webmin/Usermin module (login link iframe) — interim for v2–v5 |
+| **Embed** | In-panel server admin/account panel module (login link iframe) — interim for v2–v5 |
 | **Link** | External one-shot login link only |
 | **Gap** | Not implemented |
 | **N/A** | Module unused on server |
 
-**Phase target:** v1 = Virtualmin hosting native · v2 = Dashboard+System · v3 = Servers · v4–v5 = Tools/Net/HW/Cluster
+**Phase target:** v1 = legacy hosting hosting native · v2 = Dashboard+System · v3 = Servers · v4–v5 = Tools/Net/HW/Cluster
 
 ---
 
-## Virtualmin sidebar (v1 — must be UI)
+## legacy hosting sidebar (v1 — must be UI)
 
 | Menu item | Route / program | Status | Phase |
 |-----------|-----------------|--------|-------|
@@ -45,7 +45,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Dashboard (v2)
+## server admin — Dashboard (v2)
 
 | Item | Target | Status | Phase |
 |------|--------|--------|-------|
@@ -57,21 +57,21 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — category Webmin (v2)
+## server admin — category server admin (v2)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
 | Backup Configuration Files | `/backup-config/` | Embed | v2 |
 | Change Language and Theme | `/settings/` | Embed | v2 |
-| Usermin Configuration | `/usermin/` | Embed | v2 |
-| Webmin Actions Log | `/webminlog/` | Embed | v2 |
-| Webmin Configuration | `/config/` | Embed | v2 |
-| Webmin Servers Index | `/servers/` | Embed | v2 |
-| Webmin Users | `/webminusers/` | Embed | v2 |
+| account panel Configuration | `account-panel-config` (legacy catalog) | Embed | v2 |
+| server admin Actions Log | `admin-actions-log` (legacy catalog) | Embed | v2 |
+| server admin Configuration | `/config/` | Embed | v2 |
+| server admin Servers Index | `/servers/` | Embed | v2 |
+| server admin Users | `admin-users` (legacy catalog) | Embed | v2 |
 
 ---
 
-## Webmin — System (v2)
+## server admin — System (v2)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -95,7 +95,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Servers (v3)
+## server admin — Servers (v3)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -114,7 +114,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Tools (v4)
+## server admin — Tools (v4)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -132,7 +132,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Networking (v4)
+## server admin — Networking (v4)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -146,7 +146,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Hardware (v4)
+## server admin — Hardware (v4)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -159,7 +159,7 @@ Reference screenshots: **your live production server** (read-only audit source �
 
 ---
 
-## Webmin — Cluster (v5)
+## server admin — Cluster (v5)
 
 | Item | Module path | Status | Phase |
 |------|-------------|--------|-------|
@@ -168,9 +168,9 @@ Reference screenshots: **your live production server** (read-only audit source �
 | Cluster Cron Jobs | `/cluster-cron/` | Embed | v5 |
 | Cluster Shell Commands | `/cluster-shell/` | Embed | v5 |
 | Cluster Software Packages | `/cluster-software/` | Embed | v5 |
-| Cluster Usermin Servers | `/cluster-usermin/` | Embed | v5 |
+| Cluster account panel Servers | `/cluster-account-panel/` | Embed | v5 |
 | Cluster Users and Groups | `/cluster-useradmin/` | Embed | v5 |
-| Cluster Webmin Servers | `/cluster-webmin/` | Embed | v5 |
+| Cluster server admin Servers | `/cluster-legacy-panel/` | Embed | v5 |
 
 ---
 
@@ -188,6 +188,6 @@ Store under `docs/audit-screenshots/` (optional, not in git).
 
 ## v1 exit criteria
 
-- [ ] All Virtualmin sidebar rows = **UI** or **Embed** (not Gap, not Link-only)
+- [ ] All legacy hosting sidebar rows = **UI** or **Embed** (not Gap, not Link-only)
 - [ ] E2E on **test VPS only**: domain list, mailbox, DNS record, backup list ([E2E-CHECKLIST.md](./E2E-CHECKLIST.md))
-- [ ] `VIRTUALMIN_MOCK=false` on production
+- [ ] `QADBAK_LEGACY_API_MOCK=false` on production

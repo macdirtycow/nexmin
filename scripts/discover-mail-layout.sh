@@ -9,7 +9,7 @@ if ! grep -q 'load-env-local' "$QADBAK_DIR/scripts/provisioning-helper.mjs" 2>/d
 fi
 
 echo "==> .env mail settings"
-grep -E '^QADBAK_(MAIL|PROVISIONER|VIRTUALMIN)' "$QADBAK_DIR/.env.local" 2>/dev/null || true
+grep -E '^QADBAK_(MAIL|PROVISIONER|LEGACY_API)' "$QADBAK_DIR/.env.local" 2>/dev/null || true
 
 echo ""
 echo "==> mail-list (expect source: postfix-dovecot)"

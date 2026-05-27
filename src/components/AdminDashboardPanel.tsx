@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, Card } from "@/components/ui";
-import type { ServerService } from "@/lib/virtualmin";
+import type { ServerService } from "@/lib/hosting-remote";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 

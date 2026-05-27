@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test VirtualMin Remote API connectivity (Phase 0).
+# Test legacy hosting API Remote API connectivity (Phase 0).
 # Usage: cp .env.example .env.local && edit credentials, then: npm run test-api
 
 set -euo pipefail
@@ -19,21 +19,21 @@ elif [[ -f "$ROOT/.env" ]]; then
   set +a
 fi
 
-PROVISIONER="${QADBAK_PROVISIONER:-virtualmin}"
+PROVISIONER="${QADBAK_PROVISIONER:-legacy-remote}"
 if [[ "$PROVISIONER" == "hybrid" || "$PROVISIONER" == "native" ]]; then
   echo "Provisioner=$PROVISIONER — testing native domain registry"
   exec bash "$ROOT/scripts/test-native-domains.sh"
 fi
 
-: "${VIRTUALMIN_URL:?Set VIRTUALMIN_URL in .env.local}"
-: "${VIRTUALMIN_USER:?Set VIRTUALMIN_USER}"
-: "${VIRTUALMIN_PASS:?Set VIRTUALMIN_PASS}"
+: "${QADBAK_LEGACY_API_URL:?Set QADBAK_LEGACY_API_URL in .env.local}"
+: "${QADBAK_LEGACY_API_USER:?Set QADBAK_LEGACY_API_USER}"
+: "${QADBAK_LEGACY_API_PASS:?Set QADBAK_LEGACY_API_PASS}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# shellcheck source=lib/virtualmin-domains.sh
-source "$ROOT/scripts/lib/virtualmin-domains.sh" 2>/dev/null || true
-# shellcheck source=lib/extract-virtualmin-domain.sh
-source "$ROOT/scripts/lib/extract-virtualmin-domain.sh" 2>/dev/null || true
+# shellcheck source=lib/legacy-host-domains.sh
+source "$ROOT/scripts/lib/legacy-host-domains.sh" 2>/dev/null || true
+# shellcheck source=lib/extract-legacy-domain.sh
+source "$ROOT/scripts/lib/extract-legacy-domain.sh" 2>/dev/null || true
 
 TEST_DOMAIN="${TEST_DOMAIN:-}"
 if [[ -z "$TEST_DOMAIN" && -f "$ROOT/.env.local" ]]; then
@@ -46,10 +46,10 @@ if [[ -n "$TEST_DOMAIN" ]] && [[ ! "$TEST_DOMAIN" =~ \. ]]; then
   TEST_DOMAIN=""
 fi
 if [[ -z "$TEST_DOMAIN" ]]; then
-  TEST_DOMAIN="$(first_virtualmin_domain 2>/dev/null || true)"
+  TEST_DOMAIN="$(first_legacy_host_domain 2>/dev/null || true)"
 fi
-if [[ -z "$TEST_DOMAIN" ]] && [[ "$(id -u)" -eq 0 ]] && command -v virtualmin &>/dev/null; then
-  TEST_DOMAIN="$(virtualmin list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
+if [[ -z "$TEST_DOMAIN" ]] && [[ "$(id -u)" -eq 0 ]] && command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+  TEST_DOMAIN="$("${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null | sed '/^$/d' | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' | head -1 || true)"
 fi
 LIST_DOMAINS_TMP=""
 echo "Using TEST_DOMAIN=${TEST_DOMAIN:-<from list-domains>}"
@@ -72,12 +72,12 @@ call_api() {
   tmp="$(mktemp)"
   # Do not pipe curl to head — pipefail treats SIGPIPE as failure even when data arrived.
   if ! curl -sk \
-    -u "${VIRTUALMIN_USER}:${VIRTUALMIN_PASS}" \
+    -u "${QADBAK_LEGACY_API_USER}:${QADBAK_LEGACY_API_PASS}" \
     -X POST \
     --data-urlencode "program=${program}" \
     "${extra[@]}" \
     "$@" \
-    "${VIRTUALMIN_URL}" \
+    "${QADBAK_LEGACY_API_URL}" \
     -o "$tmp"; then
     rm -f "$tmp"
     echo "FAILED: $program (curl error)" >&2
@@ -114,7 +114,7 @@ if ! call_api "list-domains"; then
 fi
 
 if [[ -z "$TEST_DOMAIN" ]]; then
-  echo "Set TEST_DOMAIN=your.domain or create a VirtualMin domain first." >&2
+  echo "Set TEST_DOMAIN=your.domain or create a legacy hosting API domain first." >&2
   [[ -n "$LIST_DOMAINS_TMP" ]] && rm -f "$LIST_DOMAINS_TMP"
   exit 1
 fi

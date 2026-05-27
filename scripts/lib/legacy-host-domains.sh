@@ -5,28 +5,28 @@ _is_valid_domain() {
   [[ "$1" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$ ]]
 }
 
-_virtualmin_list_domains() {
-  if ! command -v virtualmin &>/dev/null; then
+_legacy_host_list_domains() {
+  if ! command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
     return 1
   fi
   if [[ "$(id -u)" -eq 0 ]]; then
-    virtualmin list-domains --name-only 2>/dev/null
+    "${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null
     return $?
   fi
-  if sudo -n virtualmin list-domains --name-only 2>/dev/null; then
+  if sudo -n "${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null; then
     return 0
   fi
-  virtualmin list-domains --name-only 2>/dev/null
+  "${QADBAK_LEGACY_HOST_BIN}" list-domains --name-only 2>/dev/null
 }
 
-first_virtualmin_domain() {
+first_legacy_host_domain() {
   local d
   while read -r d; do
     [[ -z "$d" ]] && continue
     _is_valid_domain "$d" || continue
     echo "$d"
     return 0
-  done < <(_virtualmin_list_domains | sed '/^$/d')
+  done < <(_legacy_host_list_domains | sed '/^$/d')
   return 1
 }
 
@@ -50,8 +50,8 @@ first_panel_domain() {
       return 0
     fi
   fi
-  if command -v virtualmin &>/dev/null; then
-    first_virtualmin_domain
+  if command -v "${QADBAK_LEGACY_HOST_BIN:-}" &>/dev/null; then
+    first_legacy_host_domain
   fi
   return 1
 }

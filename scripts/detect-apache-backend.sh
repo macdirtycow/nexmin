@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Print the Apache (or httpd) address nginx should proxy hosted domains to.
-# Default VirtualMin + nginx front: Apache listens on 127.0.0.1:8080.
+# Default legacy hosting API + nginx front: Apache listens on 127.0.0.1:8080.
 set -euo pipefail
 
 DEFAULT="127.0.0.1:8080"

@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { BandwidthRow, ServerService } from "./virtualmin";
+import type { BandwidthRow, ServerService } from "./hosting-remote";
 
 const execFileAsync = promisify(execFile);
 

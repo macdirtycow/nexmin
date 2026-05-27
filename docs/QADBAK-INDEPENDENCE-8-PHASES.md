@@ -1,6 +1,6 @@
-# Qadbak — 8 fasen naar onafhankelijkheid (zonder Webmin-UI)
+# Qadbak — 8 fasen naar onafhankelijkheid (zonder server admin-UI)
 
-Dit document is het **loskoppelplan**: klanten en resellers gebruiken **alleen Qadbak**; VirtualMin/Webmin verdwijnen van het dagelijks werk en uiteindelijk van de serverrol.
+Dit document is het **loskoppelplan**: klanten en resellers gebruiken **alleen Qadbak**; legacy hosting API/server admin verdwijnen van het dagelijks werk en uiteindelijk van de serverrol.
 
 Zie ook: [ROADMAP.md](./ROADMAP.md) · [ROADMAP-NATIVE.md](./ROADMAP-NATIVE.md) · [PARITY-AUDIT.md](./PARITY-AUDIT.md)
 
@@ -10,12 +10,12 @@ Zie ook: [ROADMAP.md](./ROADMAP.md) · [ROADMAP-NATIVE.md](./ROADMAP-NATIVE.md) 
 
 | Doel | Haalbaar? | Opmerking |
 |------|-----------|-----------|
-| Klanten zien **nooit** Webmin (`:10000`) | **Ja** | 3–6 maanden met huidige API + native UI (fase 1–3) |
-| **Geen** VirtualMin-API meer, alles eigen scripts | **Ja, maar groot** | 12–24+ maanden; vergelijkbaar met een eigen Hestia/ISPConfig bouwen |
+| Klanten zien **nooit** server admin (`:10000`) | **Ja** | 3–6 maanden met huidige API + native UI (fase 1–3) |
+| **Geen** legacy hosting API-API meer, alles eigen scripts | **Ja, maar groot** | 12–24+ maanden; vergelijkbaar met een eigen Hestia/ISPConfig bouwen |
 | Qadbak **zonder** Apache/BIND/Postfix op de server | **Nee** | Panel bestuurt altijd een stack; alleen de **stuurlaag** wordt Qadbak |
-| 1 persoon, volledige Webmin-pariteit (~90 modules) | **Onrealistisch kort** | Team of jaren; daarom 8 fasen met duidelijke “good enough” per fase |
+| 1 persoon, volledige server admin-pariteit (~90 modules) | **Onrealistisch kort** | Team of jaren; daarom 8 fasen met duidelijke “good enough” per fase |
 
-**Conclusie:** Qadbak kan **op zichzelf bestaan als product** (UI + auth + automatisering) terwijl VirtualMin in vroege fasen **onzichtbare motor** blijft. Volledige verwijdering van VirtualMin is fase 8 en is een **bewuste migratie**, geen weekendklus.
+**Conclusie:** Qadbak kan **op zichzelf bestaan als product** (UI + auth + automatisering) terwijl legacy hosting API in vroege fasen **onzichtbare motor** blijft. Volledige verwijdering van legacy hosting API is fase 8 en is een **bewuste migratie**, geen weekendklus.
 
 ---
 
@@ -23,18 +23,18 @@ Zie ook: [ROADMAP.md](./ROADMAP.md) · [ROADMAP-NATIVE.md](./ROADMAP-NATIVE.md) 
 
 | Project | Sterkte | Wat Qadbak kan overnemen |
 |---------|---------|---------------------------|
-| **[HestiaCP](https://github.com/hestiacp/hestiacp)** | Eén bash-API (`v-add-user`, `v-add-domain`); geen Webmin | **Script-first provisioning** achter een dunne Node-laag; duidelijke CLI-contracten |
+| **[HestiaCP](https://github.com/hestiacp/hestiacp)** | Eén bash-API (`v-add-user`, `v-add-domain`); geen server admin | **Script-first provisioning** achter een dunne Node-laag; duidelijke CLI-contracten |
 | **[CloudPanel](https://www.cloudpanel.io)** | Modern UI, PHP/Node stack, lean | UX: snelle domein-flow, SSL in één klik |
 | **[CyberPanel](https://github.com/usmannasir/cyberpanel)** | OpenLiteSpeed + API | Idee: REST voor alles; minder geschikt als jij Apache/VM stack houdt |
 | **[ISPConfig](https://www.ispconfig.org)** | Multi-server, mature | Model: “remote” API naar agents op nodes |
 | **[Froxlor](https://froxlor.org)** | Lichtgewicht PHP panel | Simpele domein/mail-screens; minder enterprise |
-| **VirtualMin (huidig)** | Alles kan; API `remote.cgi` | Blijft **fase 1–4 engine** tot vervanging klaar is |
+| **legacy hosting API (huidig)** | Alles kan; API `remote.cgi` | Blijft **fase 1–4 engine** tot vervanging klaar is |
 
-Qadbak hoeft Webmin **niet** te forken. Het slimste pad is:
+Qadbak hoeft server admin **niet** te forken. Het slimste pad is:
 
-1. **Nu:** VirtualMin API achter `virtualmin.ts` / toekomstige `provisioner/`.
+1. **Nu:** legacy hosting API API achter `legacy-host.ts` / toekomstige `provisioner/`.
 2. **Later:** Hestia-achtige scripts **of** directe config (nginx, postfix, bind) per domein.
-3. **Nooit:** 90 Webmin-schermen 1-op-1 nabouwen — alleen wat hosting-klanten echt gebruiken (zie [PARITY-AUDIT.md](./PARITY-AUDIT.md)).
+3. **Nooit:** 90 server admin-schermen 1-op-1 nabouwen — alleen wat hosting-klanten echt gebruiken (zie [PARITY-AUDIT.md](./PARITY-AUDIT.md)).
 
 ---
 
@@ -52,7 +52,7 @@ flowchart TB
     Prov[Provisioner abstraction]
   end
   subgraph engine [Server engine — vervangbaar]
-    VM[VirtualMin API — fase 1-4]
+    VM[legacy hosting API API — fase 1-4]
     Scripts[Hestia-style scripts — fase 5-7]
     Native[Eigen minimal engine — fase 8]
   end
@@ -76,7 +76,7 @@ flowchart TB
 
 ---
 
-## Fase 1 — Geen Webmin in de dagelijkse workflow (nu → 4 weken)
+## Fase 1 — Geen server admin in de dagelijkse workflow (nu → 4 weken)
 
 **Doel:** Alles wat een klant op een domein doet, gaat via Qadbak; geen embeds, geen `:10000`.
 
@@ -86,8 +86,8 @@ flowchart TB
 | Terminal | Native bash + WebSocket (`qadbak-terminal`) | Code klaar; VPS: `check-terminal-ws.sh` |
 | Website | nginx/Apache scripts, repair in panel | Klaar |
 | Mail / DNS / SSL / DB | Bestaande native schermen + VM API | Klaar |
-| Webmin-tab / embeds | Verbergen voor `client`; admin alleen waar nodig | Te doen |
-| Installer | `install-hosting-stack.sh`, geen Webmin-URL in onboarding | Klaar |
+| server admin-tab / embeds | Verbergen voor `client`; admin alleen waar nodig | Te doen |
+| Installer | `install-hosting-stack.sh`, geen server admin-URL in onboarding | Klaar |
 
 **Exit:** E2E op test-VPS zonder iframe; terminal toont prompt als `domainowner@…`.
 
@@ -102,17 +102,17 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ## Fase 2 — Provisioner-laag (abstractie) ✅ in repo
 
-**Doel:** Geen `virtualmin.ts` meer direct in API-routes; één interface om later te wisselen.
+**Doel:** Geen `legacy-host.ts` meer direct in API-routes; één interface om later te wisselen.
 
-- `src/lib/provisioner/` — `getProvisioner()`, VirtualMin-adapter
-- `.env`: `QADBAK_PROVISIONER=virtualmin` (later `hestia` / `native`)
+- `src/lib/provisioner/` — `getProvisioner()`, legacy hosting API-adapter
+- `.env`: `QADBAK_PROVISIONER=legacy-host` (later `hestia` / `native`)
 - Docs: [PROVISIONER.md](./PROVISIONER.md)
 
 **Exit:** Alle `src/app/api/**` routes + `domain-api.ts` via `getProvisioner()`. Server components migreren in fase 3.
 
 ---
 
-## Fase 3 — Hosting-kern 100% Qadbak (VirtualMin alleen headless) ✅ in repo
+## Fase 3 — Hosting-kern 100% Qadbak (legacy hosting API alleen headless) ✅ in repo
 
 **Doel:** v1-pariteit in [PARITY-AUDIT.md](./PARITY-AUDIT.md) op **UI**, niet Embed.
 
@@ -121,32 +121,32 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 - DNS records CRUD
 - SSL Let’s Encrypt + renew
 - Cron, PHP, redirects, proxies
-- Logs (tail via helper, geen Webmin log-viewer)
+- Logs (tail via helper, geen server admin log-viewer)
 
-**Gedaan:** `src/app/(app)/**` + managers via `getProvisioner()`; Webmin-domeinlink `adminOnly` + redirect voor clients.
+**Gedaan:** `src/app/(app)/**` + managers via `getProvisioner()`; server admin-domeinlink `adminOnly` + redirect voor clients.
 
-**Exit:** Geen enkele Virtualmin-sidebar-link nodig voor hosting; API mag nog VM zijn.
+**Exit:** Geen enkele legacy hosting-sidebar-link nodig voor hosting; API mag nog VM zijn.
 
 ---
 
-## Fase 4 — Server & reseller zonder Webmin-menu ✅ in repo
+## Fase 4 — Server & reseller zonder server admin-menu ✅ in repo
 
 **Doel:** Admin beheert server vanuit Qadbak (status, diensten, firewall, plannen).
 
-- Dashboard: CPU/RAM/disk (via `/proc`, `systemctl`, niet Webmin dashboard-embed)
+- Dashboard: CPU/RAM/disk (via `/proc`, `systemctl`, niet server admin dashboard-embed)
 - Diensten: nginx, apache, postfix, bind — start/stop/restart met policy
 - Resellers/plannen: native forms
 - Backups: scripts + S3 (bestaande richting in repo)
 
-**Gedaan:** `AdminHostMetrics` + `/api/admin/host-metrics`; `host-services-helper` + sudo; Webmin uit header/admin-nav (break-glass link op overview); `QADBAK_SHOW_WEBMIN_NAV` voor oude menu’s.
+**Gedaan:** `AdminHostMetrics` + `/api/admin/host-metrics`; `host-services-helper` + sudo; server admin uit header/admin-nav (break-glass link op overview); `QADBAK_SHOW_LEGACY_PANEL_NAV` voor oude menu’s.
 
 **Exit:** Admin opent `:10000` niet meer; optioneel alleen break-glass SSH.
 
 ---
 
-## Fase 5 — Config-bestanden + helpers (Webmin modules vervangen) ✅ in repo
+## Fase 5 — Config-bestanden + helpers (server admin modules vervangen) ✅ in repo
 
-**Doel:** Gevoelige bewerkingen via **gevalideerde helpers**, niet door 70 Webmin-modules.
+**Doel:** Gevoelige bewerkingen via **gevalideerde helpers**, niet door 70 server admin-modules.
 
 | Domein | Aanpak | Inspiratie |
 |--------|--------|------------|
@@ -163,17 +163,17 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ---
 
-## Fase 6 — Install & lifecycle zonder VirtualMin-installer ✅ in repo
+## Fase 6 — Install & lifecycle zonder legacy hosting API-installer ✅ in repo
 
 **Doel:** Nieuwe VPS = Qadbak-first stack.
 
 - `install/qadbak-install-native.sh` + `scripts/install-native-stack.sh`
-- `install/qadbak-install.sh` vraagt: VirtualMin wel/niet op deze machine
-- Docs: [QADBAK-NATIVE-INSTALL.md](./QADBAK-NATIVE-INSTALL.md) · [MIGRATE-FROM-VIRTUALMIN.md](./MIGRATE-FROM-VIRTUALMIN.md)
+- `install/qadbak-install.sh` vraagt: legacy hosting API wel/niet op deze machine
+- Docs: [QADBAK-NATIVE-INSTALL.md](./QADBAK-NATIVE-INSTALL.md) · [MIGRATE-FROM-LEGACY-HOSTING.md](./MIGRATE-FROM-LEGACY-HOSTING.md)
 
 **Gedaan:** Native stack installer; bestaande VM-servers blijven ongewijzigd (geen herinstall nodig).
 
-**Exit:** Fresh Ubuntu + Qadbak = stack zonder `virtualmin-install.sh`; multi-tenant provisioning nog via remote VM of fase 8 native engine.
+**Exit:** Fresh Ubuntu + Qadbak = stack zonder `legacy-host-install.sh`; multi-tenant provisioning nog via remote VM of fase 8 native engine.
 
 ---
 
@@ -183,7 +183,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 | Onderdeel | Status |
 |-----------|--------|
-| Node agent (`qadbak-node-agent`, :9100) | ✅ pm2 + health + VirtualMin proxy |
+| Node agent (`qadbak-node-agent`, :9100) | ✅ pm2 + health + legacy hosting API proxy |
 | Registry `data/servers.json` | ✅ |
 | Admin **Nodes** + health | ✅ `/admin/nodes` |
 | Per-domain routing naar remote node | 🔜 volgende iteratie |
@@ -197,22 +197,22 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 ## Fase 8 — Onafhankelijk (eigen engine) 🚧 hybrid + independent in repo
 
-**Doel:** Qadbak is de control plane; geen Webmin-UI; geen `remote.cgi` voor dagelijkse hosting.
+**Doel:** Qadbak is de control plane; geen server admin-UI; geen `remote.cgi` voor dagelijkse hosting.
 
 | Sub-modus | Commando | Status |
 |-----------|----------|--------|
 | **8-hybrid** (veilig) | `apply-phase8-native-enable.sh` | ✅ ssl,dns,mail,db,backup,cron + VM fallback |
 | **8-onafhankelijk** (geen API) | `apply-phase8-independent.sh` | ✅ `native` + `FALLBACK=false` + stubs |
-| **8-pakketten weg** | `apt remove webmin` | 🔜 na CLI-vrije mail + parity |
+| **8-pakketten weg** | `apt remove legacy-panel` | 🔜 na CLI-vrije mail + parity |
 
 | Stap | Status |
 |------|--------|
-| Geen Webmin UI (`QADBAK_DISABLE_WEBMIN`) | ✅ |
+| Geen server admin UI (`QADBAK_DISABLE_LEGACY_PANEL`) | ✅ |
 | Domeinlijst zonder VM API (`native-domains.json`) | ✅ |
 | Native provisioning (8a–8g) | ✅ scripts + helper |
 | Geen `remote.cgi` (onafhankelijk) | ✅ test-VPS via `apply-phase8-independent.sh` |
-| Geen `virtualmin` CLI (mail direct) | ✅ `QADBAK_MAIL_BACKEND=direct` |
-| `dpkg -l webmin` niet meer nodig | 🔜 |
+| Geen `legacy-host` CLI (mail direct) | ✅ `QADBAK_MAIL_BACKEND=direct` |
+| `dpkg -l legacy-panel` niet meer nodig | 🔜 |
 
 **Docs:** [PHASE-8-NATIVE.md](./PHASE-8-NATIVE.md) · [PHASE-8-INDEPENDENT.md](./PHASE-8-INDEPENDENT.md) · [NATIVE-PHASES.md](./NATIVE-PHASES.md)
 
@@ -226,7 +226,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 
 | Fase | Duur indicatief |
 |------|-----------------|
-| 1 Geen Webmin-UI | 2–4 weken |
+| 1 Geen server admin-UI | 2–4 weken |
 | 2 Provisioner | 2–3 weken |
 | 3 Hosting native | 6–10 weken |
 | 4 Server admin | 6–8 weken |
@@ -235,14 +235,14 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 | 7 Multi-server | 2–4 maanden (optioneel) |
 | 8 VM verwijderen | 3–6 maanden |
 
-**Tussendoel (verkoopbaar):** na **fase 3** is Qadbak een **zelfstandig panel** voor klanten; VirtualMin is alleen nog backend.
+**Tussendoel (verkoopbaar):** na **fase 3** is Qadbak een **zelfstandig panel** voor klanten; legacy hosting API is alleen nog backend.
 
 ---
 
 ## Wat we bewust níet doen
 
-- Alle 90+ Webmin-menu’s nabouwen
-- Webmin in iframe houden als eindoplossing
+- Alle 90+ server admin-menu’s nabouwen
+- server admin in iframe houden als eindoplossing
 - Eén grote “big bang” migratie zonder per-fase exit criteria
 
 ---
@@ -250,7 +250,7 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 ## Volgende concrete stappen (deze week)
 
 1. Terminal op VPS werkend krijgen (`install-node-build-deps`, `npm install` als `qadbak`, `check-terminal-ws.sh`).
-2. **Webmin**-nav en embed-routes voor rol `client` verbergen.
+2. **server admin**-nav en embed-routes voor rol `client` verbergen.
 3. **Fase 3**: server components (`src/app/(app)/**`) ook op `getProvisioner()` zetten.
 
 ---
@@ -262,4 +262,4 @@ sudo -u qadbak pm2 logs qadbak-terminal --lines 20
 | 1 | [E2E-CHECKLIST.md](./E2E-CHECKLIST.md), [TERMINAL-NATIVE.md](./TERMINAL-NATIVE.md) |
 | 2 | [API.md](./API.md) + provisioner ADR |
 | 3 | [PARITY-AUDIT.md](./PARITY-AUDIT.md) → alles hosting = UI |
-| 8 | [DEPLOY.md](./DEPLOY.md) zonder Webmin |
+| 8 | [DEPLOY.md](./DEPLOY.md) zonder server admin |

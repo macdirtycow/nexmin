@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preflight domain list without VirtualMin remote API (phase 8 hybrid/native).
+# Preflight domain list without legacy hosting API remote API (phase 8 hybrid/native).
 set -euo pipefail
 
 ROOT="${QADBAK_DIR:-/opt/qadbak}"

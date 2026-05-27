@@ -46,7 +46,11 @@ export async function POST(request: Request) {
       agentUrl,
       ...(isIndependentMode()
         ? {}
-        : { virtualminUrl: body.virtualminUrl?.trim() || undefined }),
+        : {
+            legacyApiUrl:
+              String(body.legacyApiUrl ?? (body as { legacyApiUrl?: string }).legacyApiUrl ?? "").trim() ||
+              undefined,
+          }),
       isDefault: false,
     };
     await saveNodes([...nodes, entry]);
