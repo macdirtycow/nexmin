@@ -3,7 +3,8 @@
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import { PanelFooter } from "@/components/PanelFooter";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
-import { applyBrandingToDocument } from "@/lib/branding-css";
+import { applyBrandingTheme } from "@/lib/branding-css";
+import type { BrandingThemeColors } from "@/lib/branding-theme";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -26,15 +27,11 @@ export default function LoginPage() {
           brandName?: string;
           tagline?: string;
           logoUrl?: string;
-          primaryColor?: string;
-          accentColor?: string;
-        }) => {
+        } & Partial<BrandingThemeColors>) => {
           if (d.brandName) setBrandName(d.brandName);
           if (d.tagline) setTagline(d.tagline);
           if (d.logoUrl) setLogoUrl(d.logoUrl);
-          if (d.primaryColor && d.accentColor) {
-            applyBrandingToDocument(d.primaryColor, d.accentColor);
-          }
+          applyBrandingTheme(d);
         },
       )
       .catch(() => {});
@@ -81,7 +78,7 @@ export default function LoginPage() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" className="mx-auto mb-4 h-12 w-auto max-w-[200px]" />
         ) : null}
-        <h1 className="text-2xl font-semibold text-white">{brandName}</h1>
+        <h1 className="text-2xl font-semibold text-panel-text">{brandName}</h1>
         <p className="mt-1 text-sm text-panel-muted">{tagline}</p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           {error && <Alert>{error}</Alert>}

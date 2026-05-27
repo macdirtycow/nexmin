@@ -7,6 +7,16 @@
   --brand-accent: #5eead4;
   --brand-primary-rgb: 59 130 246;
   --brand-accent-rgb: 94 234 212;
+  --panel-bg: #0f1419;
+  --panel-bg-rgb: 15 20 25;
+  --panel-card: #1a2332;
+  --panel-card-rgb: 26 35 50;
+  --panel-border: #2d3a4f;
+  --panel-border-rgb: 45 58 79;
+  --panel-muted: #94a3b8;
+  --panel-muted-rgb: 148 163 184;
+  --panel-text: #f1f5f9;
+  --panel-text-rgb: 241 245 249;
 }
 
 html {
@@ -14,19 +24,18 @@ html {
 }
 
 body {
-  @apply bg-panel-bg text-slate-100 antialiased;
+  @apply bg-panel-bg text-panel-text antialiased;
 }
 
 @layer components {
   .qadbak-field {
-    @apply w-full rounded-lg border border-panel-border px-3 py-2 text-sm;
-    background-color: #0f1419 !important;
-    color: #f1f5f9 !important;
-    caret-color: #f1f5f9;
+    @apply w-full rounded-lg border border-panel-border px-3 py-2 text-sm text-panel-text;
+    background-color: rgb(var(--panel-bg-rgb) / 1) !important;
+    caret-color: var(--panel-text);
   }
 
   .qadbak-field::placeholder {
-    color: #94a3b8 !important;
+    color: rgb(var(--panel-muted-rgb) / 1) !important;
     opacity: 1;
   }
 }
@@ -39,8 +48,8 @@ textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
 textarea:-webkit-autofill:focus,
 select:-webkit-autofill {
-  -webkit-text-fill-color: #f1f5f9 !important;
-  caret-color: #f1f5f9;
-  box-shadow: 0 0 0 1000px #0f1419 inset !important;
+  -webkit-text-fill-color: var(--panel-text) !important;
+  caret-color: var(--panel-text);
+  box-shadow: 0 0 0 1000px var(--panel-bg) inset !important;
   transition: background-color 99999s ease-out 0s;
 }

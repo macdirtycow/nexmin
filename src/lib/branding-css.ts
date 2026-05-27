@@ -1,7 +1,14 @@
-/** Shared branding CSS (safe for client + server). */
+import {
+  DEFAULT_BRANDING_THEME,
+  normalizeBrandingTheme,
+  type BrandingThemeColors,
+} from "@/lib/branding-theme";
 
-export const DEFAULT_PRIMARY = "#3b82f6";
-export const DEFAULT_ACCENT = "#5eead4";
+export { DEFAULT_BRANDING_THEME } from "@/lib/branding-theme";
+export type { BrandingThemeColors } from "@/lib/branding-theme";
+
+export const DEFAULT_PRIMARY = DEFAULT_BRANDING_THEME.primaryColor;
+export const DEFAULT_ACCENT = DEFAULT_BRANDING_THEME.accentColor;
 
 export function hexToRgbChannels(hex: string): string | null {
   const c = String(hex || "").trim();
@@ -19,26 +26,27 @@ export function hexToRgbChannels(hex: string): string | null {
   return null;
 }
 
-export function brandingCssVars(
-  primaryColor: string,
-  accentColor: string,
-): string {
-  const primaryRgb =
-    hexToRgbChannels(primaryColor) ?? hexToRgbChannels(DEFAULT_PRIMARY)!;
-  const accentRgb =
-    hexToRgbChannels(accentColor) ?? hexToRgbChannels(DEFAULT_ACCENT)!;
+function varBlock(name: string, hex: string): string {
+  const rgb = hexToRgbChannels(hex) ?? "0 0 0";
+  return `  --${name}:${hex};\n  --${name}-rgb:${rgb};`;
+}
+
+export function brandingCssVars(theme: Partial<BrandingThemeColors>): string {
+  const t = normalizeBrandingTheme(theme);
   return `:root{
-  --brand-primary:${primaryColor};
-  --brand-accent:${accentColor};
-  --brand-primary-rgb:${primaryRgb};
-  --brand-accent-rgb:${accentRgb};
+${varBlock("brand-primary", t.primaryColor)}${varBlock("brand-accent", t.accentColor)}${varBlock("panel-bg", t.backgroundColor)}${varBlock("panel-card", t.cardColor)}${varBlock("panel-border", t.borderColor)}${varBlock("panel-muted", t.mutedColor)}${varBlock("panel-text", t.textColor)}
 }`;
 }
 
+/** @deprecated Use applyBrandingTheme */
 export function applyBrandingToDocument(
   primaryColor: string,
   accentColor: string,
 ): void {
+  applyBrandingTheme({ primaryColor, accentColor });
+}
+
+export function applyBrandingTheme(theme: Partial<BrandingThemeColors>): void {
   if (typeof document === "undefined") return;
   let el = document.getElementById("qadbak-branding");
   if (!el) {
@@ -46,5 +54,5 @@ export function applyBrandingToDocument(
     el.id = "qadbak-branding";
     document.head.appendChild(el);
   }
-  el.textContent = brandingCssVars(primaryColor, accentColor);
+  el.textContent = brandingCssVars(theme);
 }

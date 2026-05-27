@@ -2,9 +2,9 @@ import { auditLog } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import {
+  brandingPublicPayload,
   displayBranding,
   loadPanelBranding,
-  logoPublicPath,
   savePanelBranding,
   type PanelBrandingInput,
 } from "@/lib/branding";
@@ -15,14 +15,7 @@ export async function GET() {
     await requireAdmin();
     const stored = await loadPanelBranding();
     const b = displayBranding(stored);
-    return jsonOk({
-      brandName: b.brandName,
-      tagline: b.tagline,
-      primaryColor: b.primaryColor,
-      accentColor: b.accentColor,
-      logoUrl: logoPublicPath(b.hasLogo),
-      isCustom: b.isCustom,
-    });
+    return jsonOk(brandingPublicPayload(b));
   } catch (err) {
     return handleApiError(err);
   }
@@ -39,14 +32,7 @@ export async function PUT(request: Request) {
       body.reset ? "branding-reset" : "branding-update",
     );
     const b = displayBranding(stored);
-    return jsonOk({
-      brandName: b.brandName,
-      tagline: b.tagline,
-      primaryColor: b.primaryColor,
-      accentColor: b.accentColor,
-      logoUrl: logoPublicPath(b.hasLogo),
-      isCustom: b.isCustom,
-    });
+    return jsonOk(brandingPublicPayload(b));
   } catch (err) {
     return handleApiError(err);
   }

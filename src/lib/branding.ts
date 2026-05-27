@@ -2,11 +2,12 @@ import "server-only";
 import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { brandingCssVars as buildBrandingCssVars } from "@/lib/branding-css";
 import {
-  DEFAULT_ACCENT,
-  DEFAULT_PRIMARY,
-  brandingCssVars as buildBrandingCssVars,
-} from "@/lib/branding-css";
+  DEFAULT_BRANDING_THEME,
+  normalizeBrandingTheme,
+  type BrandingThemeColors,
+} from "@/lib/branding-theme";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const BRANDING_JSON = path.join(DATA_DIR, "branding.json");
@@ -16,32 +17,27 @@ const LOGO_FILE = path.join(BRANDING_DIR, "logo.png");
 export type PanelBranding = {
   brandName: string;
   tagline: string;
-  primaryColor: string;
-  accentColor: string;
   hasLogo: boolean;
-};
+} & BrandingThemeColors;
 
 export type PanelBrandingInput = {
   brandName?: string;
   tagline?: string;
-  primaryColor?: string;
-  accentColor?: string;
   logoBase64?: string | null;
   reset?: boolean;
-};
+} & Partial<BrandingThemeColors>;
 
 type StoredBranding = {
   brandName?: string;
   tagline?: string;
   primaryColor?: string;
   accentColor?: string;
+  backgroundColor?: string;
+  cardColor?: string;
+  borderColor?: string;
+  mutedColor?: string;
+  textColor?: string;
 };
-
-function normalizeHex(color: string | undefined, fallback: string): string {
-  const c = String(color ?? "").trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(c)) return c.toLowerCase();
-  return fallback;
-}
 
 export async function loadPanelBranding(): Promise<PanelBranding | null> {
   try {
@@ -55,12 +51,12 @@ export async function loadPanelBranding(): Promise<PanelBranding | null> {
     } catch {
       hasLogo = false;
     }
+    const colors = normalizeBrandingTheme(data);
     return {
       brandName: data.brandName.trim(),
       tagline: (data.tagline ?? APP_TAGLINE).trim(),
-      primaryColor: normalizeHex(data.primaryColor, DEFAULT_PRIMARY),
-      accentColor: normalizeHex(data.accentColor, DEFAULT_ACCENT),
       hasLogo,
+      ...colors,
     };
   } catch {
     return null;
@@ -74,17 +70,20 @@ export function displayBranding(
     return {
       brandName: APP_NAME,
       tagline: APP_TAGLINE,
-      primaryColor: DEFAULT_PRIMARY,
-      accentColor: DEFAULT_ACCENT,
       hasLogo: false,
       isCustom: false,
+      ...DEFAULT_BRANDING_THEME,
     };
   }
   return { ...stored, isCustom: true };
 }
 
 export function brandingCssVars(b: PanelBranding): string {
-  return buildBrandingCssVars(b.primaryColor, b.accentColor);
+  return buildBrandingCssVars(b);
+}
+
+export function brandingThemeFromPanel(b: PanelBranding): BrandingThemeColors {
+  return normalizeBrandingTheme(b);
 }
 
 export async function savePanelBranding(
@@ -99,15 +98,22 @@ export async function savePanelBranding(
   const existing = (await loadPanelBranding()) ?? {
     brandName: APP_NAME,
     tagline: APP_TAGLINE,
-    primaryColor: DEFAULT_PRIMARY,
-    accentColor: DEFAULT_ACCENT,
     hasLogo: false,
+    ...DEFAULT_BRANDING_THEME,
   };
+  const merged = normalizeBrandingTheme({
+    primaryColor: input.primaryColor ?? existing.primaryColor,
+    accentColor: input.accentColor ?? existing.accentColor,
+    backgroundColor: input.backgroundColor ?? existing.backgroundColor,
+    cardColor: input.cardColor ?? existing.cardColor,
+    borderColor: input.borderColor ?? existing.borderColor,
+    mutedColor: input.mutedColor ?? existing.mutedColor,
+    textColor: input.textColor ?? existing.textColor,
+  });
   const next: StoredBranding = {
     brandName: (input.brandName ?? existing.brandName).trim() || APP_NAME,
     tagline: (input.tagline ?? existing.tagline).trim() || APP_TAGLINE,
-    primaryColor: normalizeHex(input.primaryColor, existing.primaryColor),
-    accentColor: normalizeHex(input.accentColor, existing.accentColor),
+    ...merged,
   };
   await writeFile(BRANDING_JSON, `${JSON.stringify(next, null, 2)}\n`, "utf8");
   if (input.logoBase64 === null) {
@@ -121,4 +127,14 @@ export async function savePanelBranding(
 
 export function logoPublicPath(hasLogo: boolean): string | null {
   return hasLogo ? "/api/branding/logo" : null;
+}
+
+export function brandingPublicPayload(b: PanelBranding & { isCustom: boolean }) {
+  return {
+    brandName: b.brandName,
+    tagline: b.tagline,
+    logoUrl: logoPublicPath(b.hasLogo),
+    isCustom: b.isCustom,
+    ...brandingThemeFromPanel(b),
+  };
 }

@@ -32,6 +32,11 @@ export default async function BrandingPage() {
         tagline: b.tagline,
         primaryColor: b.primaryColor,
         accentColor: b.accentColor,
+        backgroundColor: b.backgroundColor,
+        cardColor: b.cardColor,
+        borderColor: b.borderColor,
+        mutedColor: b.mutedColor,
+        textColor: b.textColor,
         logoUrl: logoPublicPath(b.hasLogo),
         isCustom: b.isCustom,
       }}

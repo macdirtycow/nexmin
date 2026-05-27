@@ -10,14 +10,15 @@ const config: Config = {
     extend: {
       colors: {
         panel: {
-          bg: "#0f1419",
-          card: "#1a2332",
-          border: "#2d3a4f",
-          /** Buttons, nav highlights — maps to branding Primary color */
+          bg: "rgb(var(--panel-bg-rgb) / <alpha-value>)",
+          card: "rgb(var(--panel-card-rgb) / <alpha-value>)",
+          border: "rgb(var(--panel-border-rgb) / <alpha-value>)",
+          text: "rgb(var(--panel-text-rgb) / <alpha-value>)",
+          /** Buttons, nav highlights — branding Primary */
           accent: "rgb(var(--brand-primary-rgb) / <alpha-value>)",
-          /** Links and secondary highlights — maps to branding Accent color */
+          /** Links and focus — branding Accent */
           link: "rgb(var(--brand-accent-rgb) / <alpha-value>)",
-          muted: "#94a3b8",
+          muted: "rgb(var(--panel-muted-rgb) / <alpha-value>)",
         },
       },
     },
