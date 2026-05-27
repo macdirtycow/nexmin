@@ -8,7 +8,8 @@ export async function GET(_request: Request, { params }: Params) {
   try {
     await requireDomainApi((await params).domain);
     const raw = await runProvisioningHelper("mail-dns-hints", (await params).domain);
-    return jsonOk({ hints: raw.hints ?? null });
+    const hints = (raw.hints ?? raw) as Record<string, unknown>;
+    return jsonOk({ hints });
   } catch (err) {
     return handleApiError(err);
   }

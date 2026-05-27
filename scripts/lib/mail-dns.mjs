@@ -57,7 +57,74 @@ export async function resolveOriginIp() {
   }
 }
 
-/** DNS records users need for inbound mail (any provider). */
+/** MX presets for common external mail hosts (DNS at Cloudflare etc.). */
+export const EXTERNAL_MAIL_PROVIDERS = [
+  {
+    id: "google",
+    name: "Google Workspace",
+    setupUrl: "https://admin.google.com/ac/domains/manage",
+    steps: [
+      "Add and verify your domain in Google Admin (Domains).",
+      "Copy the MX records Google shows — they override mail on this VPS.",
+      "Remove old MX records that point to this server when switching fully to Google.",
+      "Add Google's domain verification TXT record if asked.",
+    ],
+    mx: [
+      { priority: 1, host: "ASPMX.L.GOOGLE.COM." },
+      { priority: 5, host: "ALT1.ASPMX.L.GOOGLE.COM." },
+      { priority: 5, host: "ALT2.ASPMX.L.GOOGLE.COM." },
+      { priority: 10, host: "ALT3.ASPMX.L.GOOGLE.COM." },
+      { priority: 10, host: "ALT4.ASPMX.L.GOOGLE.COM." },
+    ],
+  },
+  {
+    id: "microsoft",
+    name: "Microsoft 365",
+    setupUrl: "https://admin.microsoft.com/#/Domains",
+    steps: [
+      "Add the domain in Microsoft 365 admin center and verify ownership (TXT).",
+      "Apply the MX record Microsoft provides (often *.mail.protection.outlook.com).",
+      "Complete autodiscover/CNAME steps if shown in the wizard.",
+      "Remove MX to this VPS when mail is fully on Microsoft.",
+    ],
+    mx: [
+      {
+        priority: 0,
+        host: "YOUR-TENANT.mail.protection.outlook.com.",
+        note: "Replace with the exact host from the Microsoft 365 setup wizard.",
+      },
+    ],
+  },
+  {
+    id: "zoho",
+    name: "Zoho Mail",
+    setupUrl: "https://www.zoho.com/mail/help/adminconsole/domain-verification.html",
+    steps: [
+      "Add the domain in Zoho Mail admin and verify via TXT/MX.",
+      "Use the MX values Zoho assigns (mx.zoho.eu / mx.zoho.com depending on region).",
+    ],
+    mx: [
+      {
+        priority: 10,
+        host: "mx.zoho.com.",
+        note: "Use mx.zoho.eu for EU accounts — check Zoho admin.",
+      },
+    ],
+  },
+  {
+    id: "other",
+    name: "Other provider",
+    steps: [
+      "In your provider's admin, add the domain and note their required MX/TXT records.",
+      "At your DNS host (Cloudflare, etc.), set MX to the provider — not this VPS.",
+      "Keep only one active MX target; conflicting MX causes lost mail.",
+      "Website can stay on this server; only mail DNS moves to the provider.",
+    ],
+    mx: [],
+  },
+];
+
+/** DNS records users need for inbound mail on this VPS (Qadbak/Postfix). */
 export async function mailDnsHints(domain) {
   const mailHost = await resolveMailHost();
   const ip = await resolveOriginIp();
@@ -90,7 +157,13 @@ export async function mailDnsHints(domain) {
         note: "SPF",
       },
     ],
-    ports: "Inbound SMTP: TCP 25 open on this server and provider firewall",
+    ports: "Inbound SMTP: TCP 25 · Submission: 587 · IMAP: 993 (TLS)",
+    externalProviders: EXTERNAL_MAIL_PROVIDERS,
+    onThisServer: {
+      imap: `${mailHost}`,
+      smtp: `${mailHost}`,
+      note: "Use the mailbox password from Mail → Accounts. Host is often mail.yourdomain.com or the server hostname.",
+    },
   };
 }
 

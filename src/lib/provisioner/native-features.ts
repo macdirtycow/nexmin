@@ -62,3 +62,8 @@ export function nativeImapEnabled(): boolean {
     (nativeFeatureEnabled("mail") && nativeMailUsesDirectBackend())
   );
 }
+
+/** Mail delivery logs — explicit mail-logs flag or native mail module. */
+export function nativeMailLogsEnabled(): boolean {
+  return nativeFeatureEnabled("mail-logs") || nativeFeatureEnabled("mail");
+}

@@ -13,14 +13,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type DnsRecordHint = {
-  type: string;
-  name: string;
-  value: string;
-  priority?: string;
-  note?: string;
-};
-
 export function EmailManager({
   domain,
   initialUsers,
@@ -44,7 +36,6 @@ export function EmailManager({
   const [confirmTyped, setConfirmTyped] = useState("");
   const [resetUser, setResetUser] = useState<string | null>(null);
   const [resetPass, setResetPass] = useState("");
-  const [dnsHints, setDnsHints] = useState<DnsRecordHint[]>([]);
   const [mailHost, setMailHost] = useState("");
 
   useEffect(() => {
@@ -52,9 +43,8 @@ export function EmailManager({
       try {
         const res = await fetch(`/api/domains/${enc}/mail-dns`);
         const data = await res.json();
-        if (res.ok && data.hints?.records) {
-          setDnsHints(data.hints.records as DnsRecordHint[]);
-          setMailHost(String(data.hints.mailHost ?? ""));
+        if (res.ok && data.hints?.mailHost) {
+          setMailHost(String(data.hints.mailHost));
         }
       } catch {
         /* optional */
@@ -171,27 +161,21 @@ export function EmailManager({
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      {dnsHints.length > 0 && (
-        <Card>
-          <h2 className="text-lg font-medium text-white">DNS for receiving mail</h2>
-          <p className="mt-1 text-sm text-panel-muted">
-            Add these at your DNS provider (Cloudflare, etc.). MX and mail A must be{" "}
-            <strong className="text-white">DNS only</strong> — not proxied. Mail host:{" "}
-            <code className="text-white">{mailHost || "mail"}</code>
-          </p>
-          <ul className="mt-3 space-y-2 text-sm text-panel-muted">
-            {dnsHints.map((r) => (
-              <li key={`${r.type}-${r.name}-${r.value}`} className="rounded-lg border border-panel-border bg-panel-bg/50 px-3 py-2">
-                <span className="font-medium text-white">{r.type}</span>{" "}
-                <code className="text-white">{r.name}</code>
-                {r.priority ? ` priority ${r.priority} ` : " "}
-                → <code className="break-all text-white">{r.value}</code>
-                {r.note && <span className="block text-xs mt-1">{r.note}</span>}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
+      <p className="text-sm text-panel-muted">
+        DNS for mail on this server or an external provider (Google, Microsoft, …):{" "}
+        <Link
+          href={`/domains/${enc}/mail/settings`}
+          className="text-panel-link hover:underline"
+        >
+          Mail → Settings
+        </Link>
+        {mailHost ? (
+          <>
+            {" "}
+            · mail host <code className="text-white">{mailHost}</code>
+          </>
+        ) : null}
+      </p>
 
       <div className="flex justify-end">
         <Button onClick={() => setShowCreate(!showCreate)}>
