@@ -3,6 +3,7 @@
 import { useImapMail } from "@/hooks/useImapMail";
 import {
   folderIcon,
+  folderLabel,
   formatFromDisplay,
   formatMailDate,
   senderInitials,
@@ -178,7 +179,7 @@ export function QadbakWebmailClient({
                       {folderIcon(box.folder)}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-medium">
-                      {box.folder}
+                      {folderLabel(box.folder)}
                     </span>
                     {count ? (
                       <span

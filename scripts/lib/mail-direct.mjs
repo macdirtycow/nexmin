@@ -16,6 +16,8 @@ import {
 } from "./mail-layout.mjs";
 import { ensureNativeMailStack, syncVirtualDomainsFile, rebuildPostfixMailboxMaps, rebuildVirtualAliasMap } from "./mail-sync.mjs";
 import { ensureInboundMailDns } from "./mail-dns.mjs";
+import { ensureStandardMailboxes } from "./mail-folders.mjs";
+import { doveadmAvailable } from "./doveadm-util.mjs";
 
 const exec = promisify(execFile);
 
@@ -48,9 +50,10 @@ export async function mailCreateDirect(domain, localUser, pass, real) {
 
   const email = `${local}@${domain}`;
   const isOwner = local === owner;
+  let maildir;
 
   if (isOwner) {
-    const maildir = path.join(home, "Maildir");
+    maildir = path.join(home, "Maildir");
     await ensureMaildir(maildir);
     await exec("chown", ["-R", `${owner}:${owner}`, maildir], { timeout: 60_000 });
   } else {
@@ -79,11 +82,17 @@ export async function mailCreateDirect(domain, localUser, pass, real) {
     } else {
       await mkdir(userHome, { recursive: true });
     }
-    const maildir = await resolveMailboxMaildir(layout, local, owner, home);
+    maildir = await resolveMailboxMaildir(layout, local, owner, home);
     await ensureMaildir(maildir);
     const actualHome = (await resolveUnixHome(local)) || userHome;
     await exec("chown", ["-R", `${local}:${owner}`, actualHome], { timeout: 60_000 });
   }
+
+  await ensureStandardMailboxes({
+    authUser: email,
+    maildirRoot: maildir,
+    useDoveadm: await doveadmAvailable(),
+  });
 
   await syncVirtualDomainsFile();
   await rebuildPostfixMailboxMaps();

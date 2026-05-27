@@ -52,6 +52,31 @@ export function formatMailDate(dateStr: string | undefined): string {
   });
 }
 
+/** Human label for standard folder names in webmail. */
+export function folderLabel(folder: string): string {
+  const f = canonicalFolderKey(folder);
+  const labels: Record<string, string> = {
+    INBOX: "Inbox",
+    Sent: "Sent",
+    Drafts: "Drafts",
+    Archive: "Archive",
+    Junk: "Junk",
+    Trash: "Trash",
+  };
+  return labels[f] ?? folder;
+}
+
+function canonicalFolderKey(folder: string): string {
+  const u = String(folder || "INBOX").trim();
+  if (u.toUpperCase() === "INBOX") return "INBOX";
+  if (/sent/i.test(u)) return "Sent";
+  if (/draft/i.test(u)) return "Drafts";
+  if (/archive/i.test(u)) return "Archive";
+  if (/junk|spam/i.test(u)) return "Junk";
+  if (/trash|deleted/i.test(u)) return "Trash";
+  return u;
+}
+
 export function folderIcon(folder: string): string {
   const f = folder.toUpperCase();
   if (f === "INBOX") return "📥";

@@ -73,7 +73,7 @@ sudo bash scripts/test-mail-receive.sh YOUR-DOMAIN info
 
 **Outgoing mail** uses Postfix on this host; many providers require **SPF/DKIM** DNS records to avoid spam folders (see **Mail security** per domain).
 
-Panel: **Domains → IMAP** → pick user → **Load folders** → read mail, or use **Send email**.
+Panel: **Domains → Webmail** — standard folders (Inbox, Sent, Drafts, Archive, Junk, Trash) are created automatically on first open. Sent mail is copied to **Sent** after send.
 
 ## Related
 

@@ -14,6 +14,10 @@ import {
   resolveDovecotAuthUser,
   resolveMaildirRoot,
 } from "./dovecot-imap.mjs";
+import {
+  ensureStandardMailboxes,
+  mergeStandardMailboxes,
+} from "./mail-folders.mjs";
 
 async function imapSession(domain, localUser) {
   const { layout, owner, home } = await layoutForDomain(domain);
@@ -70,21 +74,34 @@ export async function imapList(domain, localUser) {
 
   if (useDoveadm) {
     authUser = await resolveDovecotAuthUser(candidates);
-    if (authUser) {
-      try {
-        mailboxes = await listMailboxesDoveadm(authUser, maildirRoot);
-        if (mailboxes.length) source = "doveadm";
-      } catch {
-        authUser = null;
-      }
+  }
+  if (!authUser) authUser = local ? `${local}@${domain}` : null;
+
+  await ensureStandardMailboxes({
+    authUser,
+    maildirRoot,
+    useDoveadm,
+  });
+
+  if (useDoveadm && authUser) {
+    try {
+      mailboxes = await listMailboxesDoveadm(authUser, maildirRoot);
+      if (mailboxes.length) source = "doveadm";
+    } catch {
+      authUser = local || owner;
     }
   }
 
   if (!mailboxes.length) {
-    authUser = local || owner;
+    authUser = authUser || local || owner;
     mailboxes = await listMailboxesMaildir(maildirRoot, authUser);
     source = "maildir";
   }
+
+  mailboxes = mergeStandardMailboxes(
+    mailboxes,
+    authUser || `${local}@${domain}`,
+  );
 
   emit({
     ok: true,
