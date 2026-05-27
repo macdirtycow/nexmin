@@ -95,10 +95,10 @@ export function QadbakWebmailClient({
           <Button
             type="button"
             variant="secondary"
-            disabled={!m.user}
-            onClick={m.composeTestToSelf}
+            disabled={!m.user || m.sendLoading}
+            onClick={() => void m.composeTestToSelf()}
           >
-            Test send
+            {m.sendLoading ? "Sending…" : "Test send"}
           </Button>
           <Button
             type="button"
@@ -152,9 +152,19 @@ export function QadbakWebmailClient({
       <div className="flex min-h-0 flex-1 divide-x divide-panel-border/80">
         {/* Folders */}
         <aside className="flex w-44 shrink-0 flex-col overflow-y-auto bg-[#0d1118] sm:w-52">
-          <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
-            Folders
-          </p>
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+              Folders
+            </p>
+            <button
+              type="button"
+              onClick={m.openComposeNew}
+              className="rounded-md bg-panel-accent/20 px-2 py-1 text-[11px] font-medium text-panel-link hover:bg-panel-accent/30"
+              title="New message (C)"
+            >
+              + New
+            </button>
+          </div>
           {m.mailboxes.length === 0 && !m.loading && (
             <p className="px-3 py-4 text-xs text-panel-muted">
               No folders. Check Dovecot and mail for this user.
@@ -296,7 +306,7 @@ export function QadbakWebmailClient({
                 ✉
               </span>
               <p className="text-sm">Select a message to read</p>
-              <p className="text-xs">Press C to compose</p>
+              <p className="text-xs">Compose or + New to write mail</p>
             </div>
           )}
           {m.messageLoading && (
@@ -311,6 +321,15 @@ export function QadbakWebmailClient({
                   {m.selectedMessage.subject || "(no subject)"}
                 </h2>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {m.selectedFolder === "Drafts" && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => m.openDraftForEdit(m.selectedMessage!)}
+                    >
+                      Edit draft
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="secondary"
@@ -452,7 +471,6 @@ export function QadbakWebmailClient({
                     className="mt-1"
                     value={m.sendTo}
                     onChange={(e) => m.setSendTo(e.target.value)}
-                    required
                     placeholder="recipient@example.com"
                   />
                 </div>
@@ -483,9 +501,17 @@ export function QadbakWebmailClient({
                   />
                 </div>
               </div>
-              <div className="mt-4 flex gap-2 border-t border-panel-border pt-4">
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-panel-border pt-4">
                 <Button type="submit" disabled={m.sendLoading || !m.sendTo}>
                   {m.sendLoading ? "Sending…" : "Send"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={m.draftLoading || !m.user}
+                  onClick={() => void m.saveDraft()}
+                >
+                  {m.draftLoading ? "Saving…" : "Save draft"}
                 </Button>
                 <Button
                   type="button"

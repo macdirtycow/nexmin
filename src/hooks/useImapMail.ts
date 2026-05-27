@@ -76,6 +76,7 @@ export function useImapMail({
   const [composeMode, setComposeMode] = useState<ComposeMode>("new");
   const [composeOpen, setComposeOpen] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [sendSuccess, setSendSuccess] = useState("");
 
   const load = useCallback(async () => {
@@ -209,18 +210,57 @@ export function useImapMail({
     setError("");
   }
 
-  function composeTestToSelf() {
-    if (!user) return;
+  function openDraftForEdit(msg: ImapMessageDetail) {
     resetCompose();
     setComposeMode("new");
-    setSendTo(`${user}@${domain}`);
-    setSendSubject("Qadbak webmail test");
-    setSendBody(
-      `Test message from Qadbak Mail at ${new Date().toLocaleString()}.\n\nIf you see this in INBOX, receiving works.`,
+    setSendTo(msg.to || "");
+    setSendCc(msg.cc || "");
+    setSendSubject(
+      (msg.subject || "").replace(/^\[?draft\]?/i, "").trim() ||
+        msg.subject ||
+        "",
     );
+    setSendBody(msg.bodyText?.trim() || "");
     setComposeOpen(true);
     setSendSuccess("");
     setError("");
+  }
+
+  async function composeTestToSelf() {
+    if (!user) return;
+    const to = `${user}@${domain}`;
+    setSendLoading(true);
+    setError("");
+    setSendSuccess("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/mailboxes/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user,
+          to,
+          subject: "Qadbak webmail test",
+          body: `Test message from Qadbak Mail at ${new Date().toLocaleString()}.\n\nYou should see this in INBOX and a copy in Sent.`,
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        savedToSent?: boolean;
+        sentSaveError?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Test send failed.");
+      let msg = `Test sent to ${to}. Check INBOX and Sent.`;
+      if (data.savedToSent === false) {
+        msg += ` Sent folder copy failed: ${data.sentSaveError ?? "unknown"}.`;
+      }
+      setSendSuccess(msg);
+      await load();
+      await loadMessages("Sent");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setSendLoading(false);
+    }
   }
 
   function startReply(mode: ComposeMode, msg: ImapMessageDetail) {
@@ -322,18 +362,55 @@ export function useImapMail({
       }
       if (!res.ok) throw new Error(data.error ?? "Send failed.");
       const via = (data as { source?: string }).source;
-      setSendSuccess(
+      const savedToSent = (data as { savedToSent?: boolean }).savedToSent;
+      const sentErr = (data as { sentSaveError?: string }).sentSaveError;
+      let okMsg =
         via === "smtp-local"
           ? `Message sent to ${sendTo} (delivered on this server).`
-          : `Message sent to ${sendTo}.`,
-      );
+          : `Message sent to ${sendTo}.`;
+      if (savedToSent !== false) {
+        okMsg += " Copy saved to Sent.";
+      } else if (sentErr) {
+        okMsg += ` (Sent copy failed: ${sentErr})`;
+      }
+      setSendSuccess(okMsg);
       setComposeOpen(false);
       resetCompose();
-      if (selectedFolder) await loadMessages(selectedFolder);
+      await load();
+      await loadMessages("Sent");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setSendLoading(false);
+    }
+  }
+
+  async function saveDraft() {
+    if (!user) return;
+    setDraftLoading(true);
+    setError("");
+    setSendSuccess("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/mailboxes/draft`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user,
+          to: sendTo,
+          cc: sendCc,
+          subject: sendSubject,
+          body: sendBody,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Could not save draft.");
+      setSendSuccess("Draft saved in Drafts folder.");
+      await load();
+      await loadMessages("Drafts");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setDraftLoading(false);
     }
   }
 
@@ -379,12 +456,15 @@ export function useImapMail({
     sendBody,
     setSendBody,
     sendLoading,
+    draftLoading,
     sendSuccess,
     load,
     loadMessages,
     openMessage,
     openComposeNew,
+    openDraftForEdit,
     composeTestToSelf,
+    saveDraft,
     startReply,
     sendMail,
     resetCompose,

@@ -10,9 +10,14 @@ import {
   discoverMailLayout,
   ensureMaildir,
   resolveMailboxMaildir,
+  listMailboxesFromLayout,
 } from "./mail-layout.mjs";
 import { doveadmAvailable } from "./doveadm-util.mjs";
-import { resolveDomainUser } from "./provisioning-common.mjs";
+import { fileExists, resolveDomainUser } from "./provisioning-common.mjs";
+import {
+  authUserCandidates,
+  resolveDovecotAuthUser,
+} from "./dovecot-imap.mjs";
 
 const exec = promisify(execFile);
 
@@ -43,9 +48,165 @@ export function canonicalFolderName(name) {
   const raw = String(name || "").trim();
   if (!raw || raw === ".") return "INBOX";
   let f = raw.replace(/^INBOX[./]/i, "").replace(/^\//, "").trim();
+  if (f.startsWith(".")) f = f.slice(1);
   if (!f) return "INBOX";
   const key = f.toLowerCase();
   return FOLDER_ALIASES[key] ?? f;
+}
+
+/** Dovecot maildir++ path for a standard subfolder (e.g. .Sent). */
+export function maildirSubfolderPath(maildirRoot, folderName) {
+  const f = String(folderName || "").trim();
+  if (!f || f === "INBOX") return maildirRoot;
+  if (f.startsWith(".")) return path.join(maildirRoot, f);
+  return path.join(maildirRoot, `.${f}`);
+}
+
+/** Resolve on-disk Maildir path for a canonical folder name. */
+export async function resolveFolderMaildirPath(maildirRoot, folder) {
+  const canon = canonicalFolderName(folder);
+  if (canon === "INBOX") return maildirRoot;
+
+  const candidates = [
+    maildirSubfolderPath(maildirRoot, canon),
+    path.join(maildirRoot, canon),
+    path.join(maildirRoot, "INBOX", canon),
+  ];
+
+  for (const p of candidates) {
+    for (const sub of ["cur", "new", "tmp"]) {
+      if (await fileExists(path.join(p, sub))) return p;
+    }
+  }
+
+  const preferred = maildirSubfolderPath(maildirRoot, canon);
+  await ensureMaildir(preferred);
+  return preferred;
+}
+
+async function listDovecotMailboxNames(authUser) {
+  try {
+    const { stdout } = await exec(
+      "doveadm",
+      ["-f", "tab", "mailbox", "list", "-u", authUser],
+      { timeout: 30_000, maxBuffer: 2 * 1024 * 1024 },
+    );
+    const names = stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !/^mailbox$/i.test(l));
+    if (names.length) return names;
+  } catch {
+    /* */
+  }
+  try {
+    const { stdout } = await exec(
+      "doveadm",
+      ["mailbox", "list", "-u", authUser],
+      { timeout: 30_000, maxBuffer: 2 * 1024 * 1024 },
+    );
+    return stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/** Map canonical folder (Sent, Drafts) to Dovecot mailbox name. */
+export async function resolveDovecotMailboxName(authUser, canonical) {
+  const want = canonicalFolderName(canonical);
+  if (want === "INBOX") return "INBOX";
+  if (!(await doveadmAvailable())) return want;
+
+  const names = await listDovecotMailboxNames(authUser);
+  if (!names.length) return want;
+
+  for (const n of names) {
+    if (canonicalFolderName(n) === want) return n;
+  }
+  for (const n of names) {
+    const lower = n.toLowerCase();
+    if (lower === want.toLowerCase() || lower.endsWith(`.${want.toLowerCase()}`)) {
+      return n;
+    }
+  }
+  return want;
+}
+
+async function resolveImapAuth(domain, localUser) {
+  const local = String(localUser || "").trim().toLowerCase();
+  if (!local) return { authUser: null, maildir: null };
+
+  const { user: owner, home } = await resolveDomainUser(domain);
+  const layout = await discoverMailLayout(domain, owner, home);
+  const layoutUsers = await listMailboxesFromLayout(layout);
+  const candidates = authUserCandidates(
+    domain,
+    local,
+    owner,
+    layoutUsers.map((m) => ({ user: m.user })),
+  );
+
+  let authUser = `${local}@${domain}`;
+  if (await doveadmAvailable()) {
+    const resolved = await resolveDovecotAuthUser(candidates);
+    if (resolved) authUser = resolved;
+  }
+
+  const maildir = await resolveMailboxMaildir(layout, local, owner, home);
+  return { authUser, maildir, layout, owner, home };
+}
+
+/**
+ * Save a raw RFC822 message into a standard folder (Sent, Drafts, …).
+ * @returns {{ ok: boolean, mailbox?: string, source?: string, error?: string }}
+ */
+export async function saveMailToFolder(domain, localUser, folderCanonical, rawMessage) {
+  const local = String(localUser || "").trim().toLowerCase();
+  if (!local) return { ok: false, error: "Missing mailbox user" };
+
+  try {
+    const { authUser, maildir } = await resolveImapAuth(domain, local);
+    const canon = canonicalFolderName(folderCanonical);
+
+    await ensureStandardMailboxes({
+      authUser,
+      maildirRoot: maildir,
+      useDoveadm: await doveadmAvailable(),
+    });
+
+    const mailbox = authUser
+      ? await resolveDovecotMailboxName(authUser, canon)
+      : canon;
+
+    if (authUser && (await doveadmAvailable())) {
+      const tmp = path.join(
+        "/tmp",
+        `qadbak-save-${randomBytes(6).toString("hex")}.eml`,
+      );
+      await writeFile(tmp, rawMessage);
+      try {
+        await exec("doveadm", ["save", "-u", authUser, "-m", mailbox, tmp], {
+          timeout: 30_000,
+        });
+        return { ok: true, mailbox, source: "doveadm" };
+      } finally {
+        await unlink(tmp).catch(() => {});
+      }
+    }
+
+    const folderPath = await resolveFolderMaildirPath(maildir, canon);
+    const fname = `${Date.now()}.M${process.pid}P${randomBytes(4).toString("hex")}:2,${canon === "Drafts" ? "D" : "S"}`;
+    await writeFile(path.join(folderPath, "cur", fname), rawMessage);
+    return { ok: true, mailbox: canon, source: "maildir" };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
 
 /**
@@ -62,7 +223,7 @@ export async function ensureStandardMailboxes({
     await ensureMaildir(maildirRoot);
     for (const name of STANDARD_MAILBOX_FOLDERS) {
       if (name === "INBOX") continue;
-      await ensureMaildir(path.join(maildirRoot, name));
+      await ensureMaildir(maildirSubfolderPath(maildirRoot, name));
     }
   }
 
@@ -74,7 +235,7 @@ export async function ensureStandardMailboxes({
           timeout: 30_000,
         });
       } catch {
-        /* already exists or unsupported name — Maildir layout still works */
+        /* already exists */
       }
     }
   }
@@ -117,37 +278,7 @@ export function mergeStandardMailboxes(mailboxes, defaultUser = "") {
   return out;
 }
 
-/** Store a copy of an outgoing message in the Sent folder (best effort). */
+/** Store a copy of an outgoing message in the Sent folder. */
 export async function saveSentCopy(domain, localUser, rawMessage) {
-  try {
-    const local = String(localUser || "").trim().toLowerCase();
-    if (!local) return;
-    const { user: owner, home } = await resolveDomainUser(domain);
-    const layout = await discoverMailLayout(domain, owner, home);
-    const maildir = await resolveMailboxMaildir(layout, local, owner, home);
-    const sentRoot = path.join(maildir, "Sent");
-    await ensureMaildir(sentRoot);
-    const from = `${local}@${domain}`;
-
-    if (await doveadmAvailable()) {
-      const tmp = path.join(
-        "/tmp",
-        `qadbak-sent-${randomBytes(6).toString("hex")}.eml`,
-      );
-      await writeFile(tmp, rawMessage);
-      try {
-        await exec("doveadm", ["save", "-u", from, "-m", "Sent", tmp], {
-          timeout: 30_000,
-        });
-      } finally {
-        await unlink(tmp).catch(() => {});
-      }
-      return;
-    }
-
-    const fname = `${Date.now()}.M${process.pid}P${randomBytes(4).toString("hex")}:2,S`;
-    await writeFile(path.join(sentRoot, "cur", fname), rawMessage);
-  } catch {
-    /* optional */
-  }
+  return saveMailToFolder(domain, localUser, "Sent", rawMessage);
 }

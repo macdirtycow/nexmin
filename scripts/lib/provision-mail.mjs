@@ -8,6 +8,7 @@ import {
   mailPassDirect,
 } from "./mail-direct.mjs";
 import { mailSendDirect } from "./mail-send.mjs";
+import { mailDraftSaveDirect } from "./mail-draft.mjs";
 import { mailSyncAll, mailDiagnose, mailReceiveTest } from "./mail-sync.mjs";
 import { mailDnsHints } from "./mail-dns.mjs";
 
@@ -122,6 +123,13 @@ export async function mailSend(domain, localUser, payloadJson) {
     fail("Send from panel is only available in native mail mode (QADBAK_MAIL_BACKEND=direct).");
   }
   await mailSendDirect(domain, localUser, payloadJson);
+}
+
+export async function mailDraftSave(domain, localUser, payloadJson) {
+  if (useVirtualminCli() && (await virtualminAvailable())) {
+    fail("Drafts are only available in native mail mode (QADBAK_MAIL_BACKEND=direct).");
+  }
+  await mailDraftSaveDirect(domain, localUser, payloadJson);
 }
 
 export async function mailSync() {

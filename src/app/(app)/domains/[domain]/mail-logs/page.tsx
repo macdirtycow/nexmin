@@ -1,24 +1,10 @@
-import { MailLogsManager } from "@/components/MailLogsManager";
-import { requireDomainAccess } from "@/lib/domain-api";
-import { getProvisioner } from "@/lib/provisioner";
+import { redirect } from "next/navigation";
 
 type Props = { params: Promise<{ domain: string }> };
 
-export default async function MailLogsPage({ params }: Props) {
-  const { session, domain } = await requireDomainAccess((await params).domain);
-  let lines: string[] = [];
-  let error = "";
-  try {
-    lines = await getProvisioner().searchMailLogs(domain, "", session);
-  } catch (e) {
-    error = e instanceof Error ? e.message : "Could not load logs.";
-  }
-  return (
-    <MailLogsManager
-      domain={domain}
-      initialLines={lines}
-      initialError={error}
-      isAdmin={session.role === "admin"}
-    />
-  );
+/** @deprecated Use /domains/[domain]/mail/logs */
+export default async function MailLogsRedirectPage({ params }: Props) {
+  const { domain: encoded } = await params;
+  const domain = decodeURIComponent(encoded);
+  redirect(`/domains/${encodeURIComponent(domain)}/mail/logs`);
 }

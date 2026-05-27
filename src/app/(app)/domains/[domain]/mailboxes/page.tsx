@@ -1,24 +1,10 @@
-import { ImapMailboxesManager } from "@/components/ImapMailboxesManager";
-import { requireDomainAccess } from "@/lib/domain-api";
-import { getProvisioner } from "@/lib/provisioner";
+import { redirect } from "next/navigation";
 
 type Props = { params: Promise<{ domain: string }> };
 
-export default async function MailboxesPage({ params }: Props) {
-  const { session, domain } = await requireDomainAccess((await params).domain);
-  let mailboxes: Awaited<ReturnType<ReturnType<typeof getProvisioner>["listImapMailboxes"]>> = [];
-  let error = "";
-  try {
-    mailboxes = await getProvisioner().listImapMailboxes(domain, "", session);
-  } catch (e) {
-    error = e instanceof Error ? e.message : "Could not load mailboxes.";
-  }
-  return (
-    <ImapMailboxesManager
-      domain={domain}
-      initialMailboxes={mailboxes}
-      initialError={error}
-      isAdmin={session.role === "admin"}
-    />
-  );
+/** @deprecated Use /domains/[domain]/mail/imap */
+export default async function MailboxesRedirectPage({ params }: Props) {
+  const { domain: encoded } = await params;
+  const domain = decodeURIComponent(encoded);
+  redirect(`/domains/${encodeURIComponent(domain)}/mail/imap`);
 }

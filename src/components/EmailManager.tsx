@@ -160,7 +160,7 @@ export function EmailManager({
         <h1 className="mt-2 text-2xl font-semibold text-white">Email</h1>
         <p className="mt-1 text-sm text-panel-muted">
           Mailboxes for {domain}. Use the{" "}
-          <Link href={`/domains/${enc}/mailboxes`} className="text-accent hover:underline">
+          <Link href={`/domains/${enc}/mail/imap`} className="text-accent hover:underline">
             IMAP
           </Link>{" "}
           tab or <strong className="text-white">Webmail</strong> per mailbox to read and send mail. For external clients: IMAP port 993, SMTP submission

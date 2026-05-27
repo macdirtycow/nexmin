@@ -10,6 +10,10 @@ import { discoverMailLayout, listMailboxesFromLayout, resolveMailboxMaildir } fr
 import { fileExists } from "./provisioning-common.mjs";
 import { doveadmAvailable } from "./doveadm-util.mjs";
 import { bodyPreview, parseMailHeaders, splitHeadersAndBody } from "./mail-parse.mjs";
+import {
+  canonicalFolderName,
+  resolveFolderMaildirPath,
+} from "./mail-folders.mjs";
 
 export { doveadmAvailable };
 
@@ -150,7 +154,7 @@ async function statsForFolder(authUser, folder, maildirRoot) {
     }
   }
   if (maildirRoot) {
-    const fp = folderMaildirPath(maildirRoot, folder);
+    const fp = await resolveFolderMaildirPath(maildirRoot, folder);
     const n = await countMaildirMessages(fp);
     const mdCount = String(n);
     if (!messages || messages === "0") messages = mdCount;
@@ -242,7 +246,12 @@ export async function listMailboxesMaildir(maildirRoot, authUser) {
   for (const { name, path: folderPath } of folders) {
     const messages = String(await countMaildirMessages(folderPath));
     const size = formatBytes(await maildirFolderSize(folderPath));
-    mailboxes.push({ user: authUser, folder: name, messages, size });
+    mailboxes.push({
+      user: authUser,
+      folder: canonicalFolderName(name),
+      messages,
+      size,
+    });
   }
   return mailboxes;
 }
@@ -523,7 +532,7 @@ export async function fetchMessageDoveadm(authUser, folder, messageId) {
 }
 
 export async function listMessagesInFolder(authUser, maildirRoot, folder, limit = 200) {
-  const fp = folderMaildirPath(maildirRoot, folder);
+  const fp = await resolveFolderMaildirPath(maildirRoot, folder);
 
   if (authUser) {
     const fromDove = await listMessagesDoveadm(authUser, folder, limit);
@@ -548,7 +557,7 @@ export async function listMessagesInFolder(authUser, maildirRoot, folder, limit 
 }
 
 export async function fetchMessageInFolder(authUser, maildirRoot, folder, messageId) {
-  const fp = folderMaildirPath(maildirRoot, folder);
+  const fp = await resolveFolderMaildirPath(maildirRoot, folder);
   if (authUser) {
     try {
       return await fetchMessageDoveadm(authUser, folder, messageId);

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const HIGHLIGHT_IDS = new Set([
   "files",
-  "email",
+  "mail",
   "dns",
   "ssl",
   "databases",

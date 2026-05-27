@@ -23,20 +23,40 @@ export interface DomainFeature {
   adminOnly?: boolean;
   /** Lower = earlier in domain nav (default 50). */
   navOrder?: number;
+  /** Kept for programs/redirects but omitted from domain top nav. */
+  hideFromNav?: boolean;
 }
 
 /** All VirtualMin programs used by Qadbak, grouped per feature. */
 export const DOMAIN_FEATURES: DomainFeature[] = [
   {
-    id: "email",
+    id: "mail",
     phase: 1,
-    label: "Email",
-    description: "Manage mailboxes",
-    path: "email",
+    label: "Mail",
+    description: "Accounts, webmail, settings, and delivery logs",
+    path: "mail",
     navOrder: 10,
     programs: {
-      admin: ["list-users", "create-user", "modify-user", "delete-user"],
-      client: ["list-users", "create-user", "modify-user", "delete-user"],
+      admin: [
+        "list-users",
+        "create-user",
+        "modify-user",
+        "delete-user",
+        "list-mailbox",
+        "copy-mailbox",
+        "search-maillogs",
+        "resend-email",
+        "modify-mail",
+      ],
+      client: [
+        "list-users",
+        "create-user",
+        "modify-user",
+        "delete-user",
+        "list-mailbox",
+        "search-maillogs",
+        "modify-mail",
+      ],
     },
   },
   {
@@ -304,51 +324,6 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
     },
   },
   {
-    id: "webmail",
-    phase: 6,
-    label: "Webmail",
-    description: "Read and send mail in the browser",
-    path: "mail",
-    navOrder: 11,
-    programs: {
-      admin: ["list-mailbox"],
-      client: ["list-mailbox"],
-    },
-  },
-  {
-    id: "mailboxes",
-    phase: 6,
-    label: "IMAP",
-    description: "Mailboxes and folders (IMAP)",
-    path: "mailboxes",
-    programs: {
-      admin: ["list-mailbox", "copy-mailbox"],
-      client: ["list-mailbox"],
-    },
-  },
-  {
-    id: "mail-logs",
-    phase: 6,
-    label: "Mail logs",
-    description: "Search mail server logs",
-    path: "mail-logs",
-    programs: {
-      admin: ["search-maillogs", "resend-email"],
-      client: ["search-maillogs"],
-    },
-  },
-  {
-    id: "mail-settings",
-    phase: 6,
-    label: "Mail settings",
-    description: "Catch-all and autoresponder",
-    path: "mail-settings",
-    programs: {
-      admin: ["modify-mail"],
-      client: ["modify-mail"],
-    },
-  },
-  {
     id: "ftp",
     phase: 6,
     label: "FTP",
@@ -475,6 +450,7 @@ export function programsForRole(role: Role): readonly string[] {
 
 export function featuresForDomain(role: Role, isAdmin: boolean): DomainFeature[] {
   return DOMAIN_FEATURES.filter((f) => {
+    if (f.hideFromNav) return false;
     if (f.phase > IMPLEMENTED_PHASE) return false;
     if (f.adminOnly && !isAdmin) return false;
     const progs = isAdmin ? f.programs.admin : f.programs.client;

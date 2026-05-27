@@ -1,6 +1,17 @@
-type Props = { children: React.ReactNode };
+import { MailSubNav } from "@/components/MailSubNav";
+import { requireDomainAccess } from "@/lib/domain-api";
 
-/** Webmail uses a full-height client; reduce extra vertical padding from domain layout. */
-export default function MailLayout({ children }: Props) {
-  return <div className="-mt-2">{children}</div>;
+type Props = {
+  children: React.ReactNode;
+  params: Promise<{ domain: string }>;
+};
+
+export default async function MailSectionLayout({ children, params }: Props) {
+  const { domain, session } = await requireDomainAccess((await params).domain);
+  return (
+    <div className="-mt-2 space-y-4">
+      <MailSubNav domain={domain} isAdmin={session.role === "admin"} />
+      {children}
+    </div>
+  );
 }

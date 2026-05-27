@@ -12,6 +12,7 @@ import {
   mailDelete,
   mailPass,
   mailSend,
+  mailDraftSave,
   mailSync,
   mailDiagnoseDomain,
   mailReceiveTestDomain,
@@ -152,6 +153,9 @@ async function main() {
       break;
     case "mail-send":
       await mailSend(args[0], args[1], args.length > 2 ? args.slice(2).join(" ") : "{}");
+      break;
+    case "mail-draft-save":
+      await mailDraftSave(args[0], args[1], args.length > 2 ? args.slice(2).join(" ") : "{}");
       break;
     case "mail-sync":
       await mailSync();

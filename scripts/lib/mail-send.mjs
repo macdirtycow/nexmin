@@ -4,6 +4,7 @@ import { emit, fail, resolveDomainUser, fileExists } from "./provisioning-common
 import { listMailboxesFromLayout, discoverMailLayout } from "./mail-layout.mjs";
 import { deliverLocalMessage, queueSendmail } from "./mail-queue.mjs";
 import { saveSentCopy } from "./mail-folders.mjs";
+import { buildRfc822Message } from "./mail-message.mjs";
 
 const SENDMAIL = "/usr/sbin/sendmail";
 const MAIL_CONFIGURED_STAMP = "/var/lib/qadbak/native-mail-configured";
@@ -18,28 +19,6 @@ async function ensureMailReady() {
   }
   const { ensureNativeMailStack } = await import("./mail-sync.mjs");
   await ensureNativeMailStack();
-}
-
-function buildMessage(from, to, subject, body, opts = {}) {
-  const subj = String(subject || "").replace(/\r?\n/g, " ").trim() || "(no subject)";
-  const text = String(body ?? "");
-  const lines = [`From: ${from}`, `To: ${to}`];
-  const cc = String(opts.cc || "").trim();
-  if (cc) lines.push(`Cc: ${cc}`);
-  lines.push(`Subject: ${subj}`);
-  const inReplyTo = String(opts.inReplyTo || "").trim();
-  if (inReplyTo) lines.push(`In-Reply-To: ${inReplyTo}`);
-  const references = String(opts.references || "").trim();
-  if (references) lines.push(`References: ${references}`);
-  lines.push(
-    "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
-    "Content-Transfer-Encoding: 8bit",
-    "",
-    text,
-    "",
-  );
-  return lines.join("\r\n");
 }
 
 export async function mailSendDirect(domain, localUser, payloadJson) {
@@ -72,7 +51,7 @@ export async function mailSendDirect(domain, localUser, payloadJson) {
   if (!to || !to.includes("@")) fail("Valid recipient address (to) required");
 
   const from = `${local}@${domain}`;
-  const message = buildMessage(from, to, subject, body, {
+  const message = buildRfc822Message(from, to, subject, body, {
     cc,
     inReplyTo,
     references,
@@ -87,13 +66,16 @@ export async function mailSendDirect(domain, localUser, payloadJson) {
     } else {
       await queueSendmail(from, message);
     }
-    await saveSentCopy(domain, local, message);
+    const sentSave = await saveSentCopy(domain, local, message);
     emit({
       ok: true,
       from,
       to,
       source: sameDomain ? "smtp-local" : "sendmail",
-      savedToSent: true,
+      savedToSent: sentSave.ok === true,
+      sentFolder: sentSave.mailbox,
+      sentSaveSource: sentSave.source,
+      sentSaveError: sentSave.ok ? undefined : sentSave.error,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
