@@ -1,40 +1,47 @@
 import Link from "next/link";
 import { Alert, Card } from "@/components/ui";
+import { ALL_PREMIUM_FEATURES } from "@/lib/premium/features";
 
 export function PremiumUpgradeCard({
   feature,
   title = "Premium feature",
+  premiumActive = false,
+  licensedFeatures = [],
+  verifyError,
 }: {
   feature: string;
   title?: string;
+  premiumActive?: boolean;
+  licensedFeatures?: string[];
+  verifyError?: string;
 }) {
+  const hasFeature = licensedFeatures.includes(feature);
+
   return (
     <Card className="border-amber-500/30 bg-amber-950/20">
       <h2 className="text-lg font-medium text-white">{title}</h2>
       <div className="mt-4">
         <Alert>
-          This feature ({feature}) requires a Qadbak Premium license. Core
-          evaluation includes domain, mail, DNS, files, and backups only.
+          {!premiumActive
+            ? `Premium is not active on this panel${verifyError ? `: ${verifyError}` : ""}. Open License → Activate → Heartbeat now.`
+            : !hasFeature
+              ? `License is active but "${feature}" is not in your feature list. Enable it in license admin, then Heartbeat now.`
+              : `This feature (${feature}) requires a Qadbak Premium license.`}
         </Alert>
       </div>
+      {licensedFeatures.length > 0 && (
+        <p className="mt-3 text-sm text-panel-muted">
+          Licensed modules: {licensedFeatures.join(", ")}
+        </p>
+      )}
       <p className="mt-4 text-sm text-panel-muted">
-        A new key in license admin does not activate this server automatically.
-        Open{" "}
+        License server: check <strong className="text-white">{feature}</strong> on your key
+        (June plan modules: {ALL_PREMIUM_FEATURES.join(", ")}). Then{" "}
         <Link href="/admin/license" className="text-panel-accent hover:underline">
           Server admin → License
-        </Link>
-        , paste the key, and click <strong className="text-white">Activate</strong>.
-        Then <strong className="text-white">Heartbeat now</strong> if Premium modules stay empty.
-        Commercial licensing:{" "}
-        <a
-          href="https://omiiba.dev"
-          className="text-panel-accent hover:underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          omiiba.dev
-        </a>
-        .
+        </Link>{" "}
+        → <strong className="text-white">Heartbeat now</strong>. On the VPS:{" "}
+        <code className="text-slate-400">sudo bash scripts/repair-panel-premium.sh</code>
       </p>
     </Card>
   );

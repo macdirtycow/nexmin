@@ -462,6 +462,8 @@ export async function heartbeatLicense(): Promise<StoredLicense | null> {
     artifactVersion: data.artifactVersion ?? stored.artifactVersion,
   };
   await writeStoredLicense(updated);
+  const { syncPremiumFeaturesEnv } = await import("./premium/env-sync");
+  await syncPremiumFeaturesEnv(updated.features);
   return updated;
 }
 
