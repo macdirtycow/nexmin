@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { ProtectedDirectory, ProtectedUser } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -42,6 +43,16 @@ export function ProtectedManager({
   const [newPass, setNewPass] = useState("");
   const [deletePath, setDeletePath] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setDirectories(initialDirectories);
+    setSelectedPath(initialDirectories[0]?.path ?? "");
+    setUsers([]);
+    setError(initialError);
+    setSuccess("");
+    setDeletePath(null);
+    setConfirmTyped("");
+  });
 
   async function loadUsers(path: string) {
     if (!path) return;

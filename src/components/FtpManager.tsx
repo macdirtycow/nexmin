@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { FtpAccount } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -32,6 +33,15 @@ export function FtpManager({
   const [resetPass, setResetPass] = useState("");
   const [deleteUser, setDeleteUser] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setAccounts(initialAccounts);
+    setError(initialError);
+    setSuccess("");
+    setResetUser(null);
+    setDeleteUser(null);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/ftp`);

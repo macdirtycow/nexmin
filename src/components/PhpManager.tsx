@@ -6,6 +6,7 @@ import type {
   PhpIniSetting,
   PhpVersion,
 } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -35,6 +36,15 @@ export function PhpManager({
   const [version, setVersion] = useState(initialVersions[0]?.version ?? "8.3");
   const [iniName, setIniName] = useState("");
   const [iniValue, setIniValue] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setDirectories(initialDirectories);
+    setIni(initialIni);
+    setError(initialError);
+    setSuccess("");
+    setVersion(initialVersions[0]?.version ?? "8.3");
+    setDir("public_html");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/php`);

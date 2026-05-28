@@ -2,6 +2,7 @@
 
 import { Alert, Badge, Button, Card } from "@/components/ui";
 import type { SslCert } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -19,6 +20,13 @@ export function SslManager({
   const [error, setError] = useState(initialError);
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useDomainNavReset(domain, () => {
+    setCerts(initialCerts);
+    setError(initialError);
+    setSuccess("");
+    setLoading(false);
+  });
 
   async function requestLe() {
     setLoading(true);

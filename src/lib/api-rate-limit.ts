@@ -1,53 +1,96 @@
 import fs from "fs/promises";
 import path from "path";
 
-const BUCKET_FILE = path.join(process.cwd(), "data", "api-rate-buckets.json");
+const BUCKET_DIR = path.join(process.cwd(), "data", "rate-buckets");
+const LEGACY_FILE = path.join(process.cwd(), "data", "api-rate-buckets.json");
 
-interface BucketFile {
-  buckets: Record<string, { count: number; resetAt: number }>;
+interface BucketRow {
+  count: number;
+  resetAt: number;
 }
 
-async function load(): Promise<BucketFile> {
+function safeKey(bucketKey: string): string {
+  return bucketKey.replace(/[^a-zA-Z0-9:_-]/g, "_").slice(0, 120);
+}
+
+function bucketFile(bucketKey: string): string {
+  return path.join(BUCKET_DIR, `${safeKey(bucketKey)}.json`);
+}
+
+async function readBucket(bucketKey: string): Promise<BucketRow | null> {
   try {
-    return JSON.parse(await fs.readFile(BUCKET_FILE, "utf8")) as BucketFile;
-  } catch {
-    return { buckets: {} };
-  }
-}
-
-async function save(data: BucketFile): Promise<void> {
-  await fs.mkdir(path.dirname(BUCKET_FILE), { recursive: true });
-  await fs.writeFile(BUCKET_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-}
-
-/** Read-modify-write with short retry to reduce lost updates under concurrency. */
-async function updateBuckets(
-  mutator: (data: BucketFile) => void,
-): Promise<void> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const data = await load();
-    mutator(data);
-    try {
-      await save(data);
-      return;
-    } catch {
-      if (attempt === 4) throw new Error("Rate limit store busy.");
-      await new Promise((r) => setTimeout(r, 15 * (attempt + 1)));
+    const raw = await fs.readFile(bucketFile(bucketKey), "utf8");
+    const row = JSON.parse(raw) as BucketRow;
+    if (typeof row.count === "number" && typeof row.resetAt === "number") {
+      return row;
     }
+  } catch {
+    /* missing */
+  }
+  return null;
+}
+
+async function writeBucket(bucketKey: string, row: BucketRow): Promise<void> {
+  await fs.mkdir(BUCKET_DIR, { recursive: true });
+  await fs.writeFile(bucketFile(bucketKey), `${JSON.stringify(row)}\n`, "utf8");
+}
+
+/** One-time import from legacy single-file store. */
+async function migrateLegacyIfNeeded(): Promise<void> {
+  try {
+    const raw = await fs.readFile(LEGACY_FILE, "utf8");
+    const data = JSON.parse(raw) as { buckets?: Record<string, BucketRow> };
+    for (const [key, row] of Object.entries(data.buckets ?? {})) {
+      if (row && typeof row.count === "number") {
+        await writeBucket(key, row);
+      }
+    }
+    await fs.rename(LEGACY_FILE, `${LEGACY_FILE}.migrated`);
+  } catch {
+    /* no legacy file */
   }
 }
 
-function peekBucket(
-  data: BucketFile,
+let migrated = false;
+async function ensureMigrated(): Promise<void> {
+  if (migrated) return;
+  migrated = true;
+  await migrateLegacyIfNeeded();
+}
+
+async function mutateBucket(
   bucketKey: string,
   limit: number,
   windowMs: number,
-  now: number,
-): { ok: boolean; retryAfterSec?: number } {
-  const row = data.buckets[bucketKey];
-  if (!row || now >= row.resetAt) return { ok: true };
+  mode: "peek" | "bump",
+): Promise<{ ok: boolean; retryAfterSec?: number }> {
+  await ensureMigrated();
+  const now = Date.now();
+  const row = (await readBucket(bucketKey)) ?? {
+    count: 0,
+    resetAt: now + windowMs,
+  };
+  if (now >= row.resetAt) {
+    row.count = 0;
+    row.resetAt = now + windowMs;
+  }
   if (row.count >= limit) {
-    return { ok: false, retryAfterSec: Math.ceil((row.resetAt - now) / 1000) };
+    return {
+      ok: false,
+      retryAfterSec: Math.ceil((row.resetAt - now) / 1000),
+    };
+  }
+  if (mode === "peek") {
+    return { ok: true };
+  }
+  row.count += 1;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      await writeBucket(bucketKey, row);
+      return { ok: true };
+    } catch {
+      await new Promise((r) => setTimeout(r, 10 * (attempt + 1)));
+    }
   }
   return { ok: true };
 }
@@ -58,9 +101,7 @@ export async function peekRateLimit(
   limit: number,
   windowMs: number,
 ): Promise<{ ok: boolean; retryAfterSec?: number }> {
-  const now = Date.now();
-  const data = await load();
-  return peekBucket(data, bucketKey, limit, windowMs, now);
+  return mutateBucket(bucketKey, limit, windowMs, "peek");
 }
 
 /** Record one failed attempt (login brute-force). */
@@ -69,15 +110,7 @@ export async function recordRateLimitFailure(
   limit: number,
   windowMs: number,
 ): Promise<void> {
-  const now = Date.now();
-  await updateBuckets((data) => {
-    const row = data.buckets[bucketKey];
-    if (!row || now >= row.resetAt) {
-      data.buckets[bucketKey] = { count: 1, resetAt: now + windowMs };
-      return;
-    }
-    row.count += 1;
-  });
+  await mutateBucket(bucketKey, limit, windowMs, "bump");
 }
 
 /** Fixed-window rate limit — each allowed request consumes one slot. */
@@ -86,26 +119,7 @@ export async function checkRateLimit(
   limit: number,
   windowMs: number,
 ): Promise<{ ok: boolean; retryAfterSec?: number }> {
-  const now = Date.now();
-  let result: { ok: boolean; retryAfterSec?: number } = { ok: true };
-  await updateBuckets((data) => {
-    const row = data.buckets[bucketKey];
-    if (!row || now >= row.resetAt) {
-      data.buckets[bucketKey] = { count: 1, resetAt: now + windowMs };
-      result = { ok: true };
-      return;
-    }
-    if (row.count >= limit) {
-      result = {
-        ok: false,
-        retryAfterSec: Math.ceil((row.resetAt - now) / 1000),
-      };
-      return;
-    }
-    row.count += 1;
-    result = { ok: true };
-  });
-  return result;
+  return mutateBucket(bucketKey, limit, windowMs, "bump");
 }
 
 /** Per API key id — default 120 req/min. */

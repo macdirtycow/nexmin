@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 type ModsecEntry = {
@@ -72,21 +73,27 @@ export function SecurityManager({
     setQuarantined(m.quarantined ?? []);
   }
 
-  useEffect(() => {
-    setError("");
+  useDomainNavReset(domain, () => {
+    setError(initialError);
     setSuccess("");
     setModsecEntries([]);
     setModsecLogPath("");
     setScanResult("");
     setMalwareReports([]);
     setQuarantined([]);
+    setSpamEnabled(false);
+    setDkimEnabled(false);
+    setModsecurityEnabled(false);
+    setCrsInstalled(false);
+    setFail2ban("");
+    setMalwareCfg({ schedule: "0 4 * * 0", enabled: false, quarantine: true });
     load().catch((e) => setError(e instanceof Error ? e.message : "Error"));
     if (isAdmin) {
       loadMalware().catch((e) =>
         setError((prev) => prev || (e instanceof Error ? e.message : "Malware scan load failed")),
       );
     }
-  }, [enc, isAdmin]);
+  });
 
   async function saveMail() {
     setLoading(true);

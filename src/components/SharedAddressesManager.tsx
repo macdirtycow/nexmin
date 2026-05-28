@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { SharedAddress } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -32,6 +33,14 @@ export function SharedAddressesManager({
   const [users, setUsers] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setAddresses(initialAddresses);
+    setError(initialError);
+    setSuccess("");
+    setDeleteTarget(null);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/shared`);

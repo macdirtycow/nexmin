@@ -2,6 +2,7 @@
 
 import { Alert, Button, Card } from "@/components/ui";
 import type { DomainFeatureFlag } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -18,6 +19,12 @@ export function FeaturesManager({
   const [features, setFeatures] = useState(initialFeatures);
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState<string | null>(null);
+
+  useDomainNavReset(domain, () => {
+    setFeatures(initialFeatures);
+    setError(initialError);
+    setLoading(null);
+  });
 
   async function toggle(feature: string, enabled: boolean) {
     setLoading(feature);

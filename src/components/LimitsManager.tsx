@@ -2,6 +2,7 @@
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import type { DomainLimits } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -19,6 +20,12 @@ export function LimitsManager({
   const [error, setError] = useState(initialError);
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useDomainNavReset(domain, () => {
+    setLimits(initialLimits);
+    setError(initialError);
+    setSuccess("");
+  });
 
   async function save(e: React.FormEvent) {
     e.preventDefault();

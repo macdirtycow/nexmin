@@ -9,7 +9,8 @@ import {
   Label,
 } from "@/components/ui";
 import type { CronJob } from "@/lib/provisioner";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function CronManager({
@@ -34,12 +35,13 @@ export function CronManager({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
 
-  useEffect(() => {
+  useDomainNavReset(domain, () => {
     setJobs(initialJobs);
     setError(initialError);
     setSuccess("");
     setDeleteId(null);
-  }, [domain, enc, initialJobs, initialError]);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/cron`);

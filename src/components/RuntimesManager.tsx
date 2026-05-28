@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -36,6 +37,13 @@ export function RuntimesManager({
   const [pyPort, setPyPort] = useState("8000");
   const [dockerName, setDockerName] = useState("stack");
   const [dockerLog, setDockerLog] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setRuntimes(initialRuntimes);
+    setError(initialError);
+    setSuccess("");
+    setDockerLog("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/runtimes`);

@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Input } from "@/components/ui";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useCallback, useEffect, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -20,6 +21,12 @@ export function MailLogsManager({
   const [query, setQuery] = useState("");
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
+
+  useDomainNavReset(domain, () => {
+    setLines(initialLines);
+    setQuery("");
+    setError(initialError);
+  });
 
   const search = useCallback(async () => {
     setLoading(true);

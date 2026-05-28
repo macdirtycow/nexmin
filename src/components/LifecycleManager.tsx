@@ -8,6 +8,7 @@ import {
   Input,
 } from "@/components/ui";
 import { useRouter } from "next/navigation";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -33,6 +34,14 @@ export function LifecycleManager({
   const [newDomain, setNewDomain] = useState("");
   const [destHost, setDestHost] = useState("");
   const [newOwner, setNewOwner] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setValidation(initialValidation);
+    setError(initialError);
+    setSuccess("");
+    setConfirmAction(null);
+    setConfirmTyped("");
+  });
 
   async function refreshValidation() {
     const res = await fetch(`/api/domains/${enc}/lifecycle`);

@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Card } from "@/components/ui";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -20,6 +21,12 @@ export function LogsManager({
   const [log, setLog] = useState(initialLog);
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
+
+  useDomainNavReset(domain, () => {
+    setLogType(initialType);
+    setLog(initialLog);
+    setError(initialError);
+  });
 
   async function load(type: "access" | "error") {
     setLogType(type);

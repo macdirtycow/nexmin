@@ -9,7 +9,8 @@ import {
   Label,
 } from "@/components/ui";
 import type { AvailableScript, InstalledScript } from "@/lib/provisioner";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 import { DomainAppsPicker } from "./DomainAppsPicker";
 
@@ -40,13 +41,14 @@ export function ScriptsManager({
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
 
-  useEffect(() => {
+  useDomainNavReset(domain, () => {
     setInstalled(initialInstalled);
     setError(initialError);
     setSuccess("");
     setDeleteTarget(null);
     setPostInstall([]);
-  }, [domain, enc, initialInstalled, initialError]);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/scripts`);

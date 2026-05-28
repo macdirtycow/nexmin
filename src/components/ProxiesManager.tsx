@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { ProxyRoute } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -32,6 +33,14 @@ export function ProxiesManager({
   const [dest, setDest] = useState("");
   const [deletePath, setDeletePath] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setProxies(initialProxies);
+    setError(initialError);
+    setSuccess("");
+    setDeletePath(null);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/proxies`);

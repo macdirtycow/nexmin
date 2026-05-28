@@ -12,6 +12,7 @@ import {
   replySubject,
 } from "@/lib/mail-reply";
 import Link from "next/link";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -82,6 +83,27 @@ export function ImapMailboxesManager({
   const [sendLoading, setSendLoading] = useState(false);
   const [sendSuccess, setSendSuccess] = useState("");
   const composeRef = useRef<HTMLDivElement>(null);
+  const webmailInboxOpened = useRef(false);
+
+  useDomainNavReset(domain, () => {
+    setMailboxes(initialMailboxes);
+    setError(initialError);
+    setUsers([]);
+    setUser(initialUser);
+    setSearchQuery("");
+    setSource(null);
+    setAuthUser(null);
+    setSelectedFolder(null);
+    setMessages([]);
+    setSelectedMessage(null);
+    setSendTo("");
+    setSendCc("");
+    setSendSubject("");
+    setSendBody("");
+    setSendSuccess("");
+    setComposeMode("new");
+    webmailInboxOpened.current = false;
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -169,7 +191,6 @@ export function ImapMailboxesManager({
     void load();
   }, [load]);
 
-  const webmailInboxOpened = useRef(false);
   useEffect(() => {
     if (!webmailMode || !user || webmailInboxOpened.current) return;
     const boxes =

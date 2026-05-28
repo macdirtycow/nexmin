@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { UrlRedirect } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -31,6 +32,14 @@ export function RedirectsManager({
   const [loading, setLoading] = useState(false);
   const [deletePath, setDeletePath] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setRedirects(initialRedirects);
+    setError(initialError);
+    setSuccess("");
+    setDeletePath(null);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/redirects`);

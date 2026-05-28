@@ -25,6 +25,7 @@ import {
   type UploadByteLimit,
 } from "@/lib/upload-limits";
 import Link from "next/link";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useCallback, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -69,6 +70,25 @@ export function FileManager({
 
   const [moveEntry, setMoveEntry] = useState<DomainFileEntry | null>(null);
   const [renameEntry, setRenameEntry] = useState<DomainFileEntry | null>(null);
+
+  useDomainNavReset(domain, () => {
+    setListing(initialListing);
+    setError(initialError);
+    setSuccess("");
+    setLoading(false);
+    setDragOver(false);
+    setOverwriteExisting(true);
+    setNewDirName("");
+    setShowNewDir(false);
+    setNewFileName("");
+    setShowNewFile(false);
+    setEditPath(null);
+    setDeletePath(null);
+    setConfirmTyped("");
+    setArchiveOpen(false);
+    setMoveEntry(null);
+    setRenameEntry(null);
+  });
 
   const refresh = useCallback(
     async (dir?: string) => {

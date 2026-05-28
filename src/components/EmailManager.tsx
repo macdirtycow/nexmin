@@ -12,7 +12,8 @@ import { formatMailboxUsedMb } from "@/lib/format-quota";
 import type { HostedMailbox } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 
 export function EmailManager({
   domain,
@@ -39,7 +40,7 @@ export function EmailManager({
   const [resetPass, setResetPass] = useState("");
   const [mailHost, setMailHost] = useState("");
 
-  useEffect(() => {
+  useDomainNavReset(domain, () => {
     setUsers(initialUsers);
     setError(initialError);
     setSuccess("");
@@ -47,9 +48,11 @@ export function EmailManager({
     setResetUser(null);
     setResetPass("");
     setShowCreate(false);
+    setConfirmTyped("");
+    setMailHost("");
     void (async () => {
       try {
-        const res = await fetch(`/api/domains/${enc}/mail-dns`);
+        const res = await fetch(`/api/domains/${encodeURIComponent(domain)}/mail-dns`);
         const data = await res.json();
         if (res.ok && data.hints?.mailHost) {
           setMailHost(String(data.hints.mailHost));
@@ -58,7 +61,7 @@ export function EmailManager({
         /* optional */
       }
     })();
-  }, [domain, enc, initialUsers, initialError]);
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/users`);

@@ -13,6 +13,7 @@ export QADBAK_PUBLIC_HOST="${QADBAK_PUBLIC_HOST:-localhost}"
 mkdir -p data
 cp -f data/users.example.json data/users.json
 rm -f data/api-rate-buckets.json
+rm -rf data/rate-buckets
 
 echo "==> E2E production build"
 npm run build

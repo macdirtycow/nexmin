@@ -4,7 +4,8 @@ import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import type { MailDomainSettings } from "@/lib/provisioner";
 import type { MailDnsHints } from "@/lib/mail-dns-types";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function MailSettingsManager({
@@ -24,15 +25,20 @@ export function MailSettingsManager({
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch(`/api/domains/${enc}/mail-dns`)
+  useDomainNavReset(domain, () => {
+    setSettings(initialSettings);
+    setError(initialError);
+    setSuccess("");
+    setDns(null);
+    setDnsError("");
+    void fetch(`/api/domains/${encodeURIComponent(domain)}/mail-dns`)
       .then((r) => r.json())
       .then((data: { hints?: MailDnsHints; error?: string }) => {
         if (data.hints) setDns(data.hints);
         else if (data.error) setDnsError(data.error);
       })
       .catch(() => setDnsError("Could not load DNS hints."));
-  }, [enc]);
+  });
 
   async function save(e: React.FormEvent) {
     e.preventDefault();

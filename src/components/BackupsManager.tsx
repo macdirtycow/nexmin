@@ -10,9 +10,16 @@ import {
   Label,
 } from "@/components/ui";
 import type { ScheduledBackup } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
+
+type BackupDestructive =
+  | { kind: "import-restore"; key: string }
+  | { kind: "restore-db" }
+  | { kind: "restore-partial" }
+  | { kind: "delete"; name: string };
 
 function scheduleFormFromRow(row: ScheduledBackup | undefined) {
   if (!row) return { cron: "0 3 * * *", retain: 7 };
@@ -77,24 +84,30 @@ export function BackupsManager({
     { key: string; size: string; modified: string }[]
   >([]);
   const [restoreDbName, setRestoreDbName] = useState("");
+  const [destructive, setDestructive] = useState<BackupDestructive | null>(null);
+  const [destructiveTyped, setDestructiveTyped] = useState("");
 
-  useEffect(() => {
+  useDomainNavReset(domain, () => {
     setScheduled(initialScheduled);
     setError(initialError);
     setSuccess("");
     setRestoreSource("");
+    setShowRestoreConfirm(false);
+    setConfirmTyped("");
     setBrowseArchive("");
     setBrowsePrefix("");
     setBrowseEntries([]);
     setPartialPath("");
     setRemoteBackups([]);
+    setDestructive(null);
+    setDestructiveTyped("");
     const { cron, retain } = scheduleFormFromRow(
       initialScheduled.find((s) => s.id === "schedule"),
     );
     setCronSchedule(cron);
     setRetainCount(retain);
     if (nativeMode && isAdmin) void loadOffsitePolicy();
-  }, [domain, enc, initialScheduled, initialError, nativeMode, isAdmin]);
+  });
 
   useEffect(() => {
     setBrowseEntries([]);
@@ -180,15 +193,20 @@ export function BackupsManager({
     }
   }
 
+  function closeDestructive() {
+    setDestructive(null);
+    setDestructiveTyped("");
+  }
+
   async function importRemote(key: string, restore: boolean) {
-    if (
-      restore &&
-      !window.confirm(
-        `Import and restore "${key}"? This overwrites the live website, mail, and databases for ${domain}.`,
-      )
-    ) {
+    if (restore) {
+      setDestructive({ kind: "import-restore", key });
       return;
     }
+    await runImportRemote(key, false);
+  }
+
+  async function runImportRemote(key: string, restore: boolean) {
     setLoading(true);
     setError("");
     setSuccess("");
@@ -232,15 +250,12 @@ export function BackupsManager({
     }
   }
 
-  async function restoreDatabase() {
+  function requestRestoreDatabase() {
     if (!browseArchive.trim() || !restoreDbName.trim()) return;
-    if (
-      !window.confirm(
-        `Restore database "${restoreDbName}" from ${browseArchive}? Existing data will be overwritten.`,
-      )
-    ) {
-      return;
-    }
+    setDestructive({ kind: "restore-db" });
+  }
+
+  async function restoreDatabase() {
     setLoading(true);
     setError("");
     setSuccess("");
@@ -289,15 +304,12 @@ export function BackupsManager({
     }
   }
 
-  async function restorePartialFile() {
+  function requestRestorePartialFile() {
     if (!browseArchive.trim() || !partialPath.trim()) return;
-    if (
-      !window.confirm(
-        `Overwrite ${partialPath} on ${domain} from archive ${browseArchive}?`,
-      )
-    ) {
-      return;
-    }
+    setDestructive({ kind: "restore-partial" });
+  }
+
+  async function restorePartialFile() {
     setLoading(true);
     setError("");
     setSuccess("");
@@ -445,8 +457,11 @@ export function BackupsManager({
     }
   }
 
+  function requestDeleteBackup(name: string) {
+    setDestructive({ kind: "delete", name });
+  }
+
   async function deleteBackup(name: string) {
-    if (!confirm(`Delete backup ${name}?`)) return;
     setLoading(true);
     setError("");
     try {
@@ -661,7 +676,7 @@ export function BackupsManager({
             className="mt-3"
             variant="danger"
             disabled={loading || !partialPath.startsWith("public_html/")}
-            onClick={restorePartialFile}
+            onClick={requestRestorePartialFile}
           >
             Restore file only
           </Button>
@@ -685,7 +700,7 @@ export function BackupsManager({
                 className="mt-3"
                 variant="danger"
                 disabled={loading || !browseArchive.trim() || !restoreDbName.trim()}
-                onClick={restoreDatabase}
+                onClick={requestRestoreDatabase}
               >
                 Restore database only
               </Button>
@@ -838,7 +853,7 @@ export function BackupsManager({
                     <Button
                       variant="secondary"
                       disabled={loading}
-                      onClick={() => deleteBackup(s.id)}
+                      onClick={() => requestDeleteBackup(s.id)}
                     >
                       Delete
                     </Button>
@@ -922,6 +937,82 @@ export function BackupsManager({
           setShowRestoreConfirm(false);
           setConfirmTyped("");
         }}
+        loading={loading}
+      />
+
+      <ConfirmDialog
+        open={destructive?.kind === "import-restore"}
+        title="Import and restore"
+        description={
+          destructive?.kind === "import-restore"
+            ? `Import and restore "${destructive.key}"? This overwrites the live website, mail, and databases for ${domain}.`
+            : ""
+        }
+        confirmLabel="Import & restore"
+        confirmValue={domain}
+        typedValue={destructiveTyped}
+        onTypedChange={setDestructiveTyped}
+        onConfirm={() => {
+          if (destructive?.kind !== "import-restore") return;
+          const key = destructive.key;
+          closeDestructive();
+          void runImportRemote(key, true);
+        }}
+        onCancel={closeDestructive}
+        loading={loading}
+      />
+
+      <ConfirmDialog
+        open={destructive?.kind === "restore-db"}
+        title="Restore database"
+        description={`Restore database "${restoreDbName}" from ${browseArchive}? Existing data will be overwritten.`}
+        confirmLabel="Restore database"
+        confirmValue={domain}
+        typedValue={destructiveTyped}
+        onTypedChange={setDestructiveTyped}
+        onConfirm={() => {
+          closeDestructive();
+          void restoreDatabase();
+        }}
+        onCancel={closeDestructive}
+        loading={loading}
+      />
+
+      <ConfirmDialog
+        open={destructive?.kind === "restore-partial"}
+        title="Restore file"
+        description={`Overwrite ${partialPath} on ${domain} from archive ${browseArchive}?`}
+        confirmLabel="Restore file"
+        confirmValue={domain}
+        typedValue={destructiveTyped}
+        onTypedChange={setDestructiveTyped}
+        onConfirm={() => {
+          closeDestructive();
+          void restorePartialFile();
+        }}
+        onCancel={closeDestructive}
+        loading={loading}
+      />
+
+      <ConfirmDialog
+        open={destructive?.kind === "delete"}
+        title="Delete backup"
+        description={
+          destructive?.kind === "delete"
+            ? `Permanently delete backup ${destructive.name}?`
+            : ""
+        }
+        confirmLabel="Delete"
+        confirmValue={destructive?.kind === "delete" ? destructive.name : ""}
+        typedValue={destructiveTyped}
+        onTypedChange={setDestructiveTyped}
+        onConfirm={() => {
+          if (destructive?.kind !== "delete") return;
+          const name = destructive.name;
+          closeDestructive();
+          void deleteBackup(name);
+        }}
+        onCancel={closeDestructive}
         loading={loading}
       />
     </div>

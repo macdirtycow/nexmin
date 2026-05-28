@@ -9,6 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { MailAlias } from "@/lib/provisioner";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
 import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
@@ -36,6 +37,16 @@ export function AliasesManager({
   const [loading, setLoading] = useState(false);
   const [deleteFrom, setDeleteFrom] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useDomainNavReset(domain, () => {
+    setAliases(initialAliases);
+    setError(initialError);
+    setSuccess("");
+    setFrom("");
+    setTo("");
+    setDeleteFrom(null);
+    setConfirmTyped("");
+  });
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/aliases`);

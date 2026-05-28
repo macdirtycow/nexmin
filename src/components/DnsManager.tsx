@@ -2,7 +2,8 @@
 
 import { Alert, Button, Card, ConfirmDialog, Input, Label } from "@/components/ui";
 import type { DnsRecord } from "@/lib/provisioner";
-import { useEffect, useState } from "react";
+import { useDomainNavReset } from "@/hooks/useDomainNavReset";
+import { useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function DnsManager({
@@ -33,22 +34,25 @@ export function DnsManager({
     if (res.ok) setRecords(data.records ?? []);
   }
 
-  useEffect(() => {
+  useDomainNavReset(domain, () => {
     setRecords(initialRecords);
     setError(initialError);
     setSuccess("");
     setDeleteRecord(null);
     setConfirmTyped("");
-    (async () => {
+    setOriginIp("");
+    void (async () => {
       try {
-        const res = await fetch(`/api/domains/${enc}/website-health`);
+        const res = await fetch(
+          `/api/domains/${encodeURIComponent(domain)}/website-health`,
+        );
         const data = await res.json();
         if (res.ok && data.originIp) setOriginIp(data.originIp);
       } catch {
         /* ignore */
       }
     })();
-  }, [enc, initialRecords, initialError]);
+  });
 
   async function removeRecord() {
     if (!deleteRecord) return;
