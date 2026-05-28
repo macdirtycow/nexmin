@@ -3,27 +3,19 @@ import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 import type { SessionPayload } from "./types";
 
-import { installSalt } from "./install-salt";
+import {
+  JWT_AUDIENCE,
+  JWT_ISSUER,
+  sessionCookieName,
+  sessionCookieNames,
+} from "./session-cookies";
 import {
   sessionMaxAgeSec,
   sessionSameSite,
   sessionSecretMinLength,
 } from "./security-config";
 
-const LEGACY_COOKIE = "panel_session";
-
-export function sessionCookieName(): string {
-  const salt = installSalt();
-  return salt ? `qb-${salt}-session` : LEGACY_COOKIE;
-}
-
-/** Cookie names accepted during session read (salted + legacy). */
-export function sessionCookieNames(): string[] {
-  const primary = sessionCookieName();
-  return primary === LEGACY_COOKIE
-    ? [LEGACY_COOKIE]
-    : [primary, LEGACY_COOKIE];
-}
+export { sessionCookieName, sessionCookieNames } from "./session-cookies";
 
 /**
  * Cookie Secure flag is set per-request to match the actual response
@@ -72,9 +64,6 @@ function secretKey(): Uint8Array {
   }
   return new TextEncoder().encode(secret);
 }
-
-const JWT_ISSUER = "qadbak";
-const JWT_AUDIENCE = "qadbak-panel";
 
 export async function createSession(payload: SessionPayload): Promise<string> {
   const maxAge = sessionMaxAgeSec();
@@ -146,9 +135,9 @@ export function sessionCookieOptions(
     value: token,
     httpOnly: true,
     secure: sessionCookieSecure(request),
-    sameSite: "lax" as const,
+    sameSite: sessionSameSite(),
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: sessionMaxAgeSec(),
   };
 }
 
@@ -185,7 +174,7 @@ export function clearSessionCookieOptions(request?: Request | NextRequest) {
     value: "",
     httpOnly: true,
     secure: sessionCookieSecure(request),
-    sameSite: "lax" as const,
+    sameSite: sessionSameSite(),
     path: "/",
     maxAge: 0,
   };

@@ -2,7 +2,11 @@ import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { installFingerprintTag } from "./lib/install-salt";
-import { sessionCookieNames } from "./lib/session";
+import {
+  JWT_AUDIENCE,
+  JWT_ISSUER,
+  sessionCookieNames,
+} from "./lib/session-cookies";
 import {
   clientRbacEnabled,
   isClientBlockedPath,
@@ -113,8 +117,8 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret, {
-      issuer: "qadbak",
-      audience: "qadbak-panel",
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
     });
     const role = String(payload.role ?? "");
     if (role === "client" && clientRbacEnabled()) {

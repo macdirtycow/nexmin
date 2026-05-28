@@ -14,7 +14,7 @@ No hosting panel is “unhackable.” Qadbak layers **defense in depth** so comm
 | Client RBAC | Premium clients blocked from `/admin`, domain create, enable/disable |
 | Domain access | Native ops + API require domain allowlist for clients |
 | TOTP | Optional; force admins with `QADBAK_REQUIRE_ADMIN_TOTP=true` |
-| Health | `QADBAK_HEALTH_MINIMAL=true` hides stack details from anonymous probes |
+| Health | `QADBAK_HEALTH_MINIMAL=true` hides stack details (keeps `ok` + `mock` for monitors) |
 
 ## On the VPS (operator checklist)
 

@@ -55,7 +55,7 @@ if ss -ltn 2>/dev/null | grep -q ':3000 '; then
 fi
 
 if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q inactive; then
-  warn "UFW inactive"
+  echo "  [note] UFW inactive (use provider firewall or: sudo ufw enable)"
 fi
 
 if [[ "$FAIL" -ne 0 ]]; then

@@ -14,7 +14,10 @@ function publicProvisionerId(id: ProvisionerId): string {
 /** Public liveness check for nginx/monitoring (no auth). */
 export async function GET() {
   if (healthMinimalPublic()) {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      mock: process.env.QADBAK_LEGACY_API_MOCK === "true",
+    });
   }
   const mock = process.env.QADBAK_LEGACY_API_MOCK === "true";
   const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
