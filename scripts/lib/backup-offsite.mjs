@@ -1,7 +1,14 @@
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import path from "node:path";
-import { emit, fail, readDomainConfigJson, resolveDomainUser } from "./provisioning-common.mjs";
+import {
+  emit,
+  fail,
+  QADBAK_DIR,
+  readDomainConfigJson,
+  resolveDomainUser,
+} from "./provisioning-common.mjs";
 import { mkdir } from "node:fs/promises";
 import { cloudCredentialsResolve } from "./cloud-credentials.mjs";
 
@@ -62,6 +69,9 @@ export async function maybeUploadBackupOffsite(domain, archivePath, archiveName)
     providerId: "default",
   });
   if (!policy.offsite) return { uploaded: false, reason: "offsite disabled" };
+  if (!(await isPremiumOffsiteEnabled())) {
+    return { uploaded: false, reason: "offsite-backup premium inactive" };
+  }
   let cred;
   try {
     cred = await cloudCredentialsResolve(policy.providerId || "default");
@@ -104,8 +114,10 @@ export async function pullRemoteBackupToLocal(domain, remoteKey) {
   const { user, home } = await resolveDomainUser(domain);
   const localDir = path.join(home, "backups");
   await mkdir(localDir, { recursive: true });
-  const key = String(remoteKey || "").replace(/\.\./g, "");
-  if (!key.endsWith(".tar.gz")) fail("Remote key must end with .tar.gz");
+  const key = String(remoteKey || "").trim();
+  if (key.includes("..") || key.includes("/") || !/^[\w.-]+\.tar\.gz$/.test(key)) {
+    fail("Invalid remote backup key");
+  }
   const s3Key = `${cred.prefix}/${domain}/${key}`.replace(/\/+/g, "/");
   const env = {
     ...process.env,

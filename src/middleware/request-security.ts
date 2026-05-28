@@ -1,10 +1,12 @@
 import type { NextRequest } from "next/server";
+import { trustProxyHeaders } from "@/lib/security-config";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /** Routes that accept cross-site or unauthenticated writes (no Origin check). */
 const CSRF_EXEMPT_PREFIXES = [
   "/api/auth/login",
+  "/api/auth/logout",
   "/api/health",
   "/api/branding",
   "/api/v1/",
@@ -15,13 +17,18 @@ function isCsrfExempt(pathname: string): boolean {
 }
 
 function requestOrigin(request: NextRequest): string | null {
-  const host =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    request.headers.get("host")?.trim();
+  const host = trustProxyHeaders()
+    ? request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      request.headers.get("host")?.trim()
+    : request.headers.get("host")?.trim() ||
+      request.nextUrl.host;
   if (!host) return null;
-  const proto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-    (request.nextUrl.protocol === "https:" ? "https" : "http");
+  const proto = trustProxyHeaders()
+    ? request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      (request.nextUrl.protocol === "https:" ? "https" : "http")
+    : request.nextUrl.protocol === "https:"
+      ? "https"
+      : "http";
   return `${proto}://${host}`;
 }
 

@@ -3,47 +3,87 @@ import { readdir, readFile } from "fs/promises";
 import path from "path";
 import { promisify } from "util";
 import { getHostMetrics } from "./host-metrics";
-import { loadAlertSettings } from "./alert-rules";
+import { loadAlertSettings, type AlertRule } from "./alert-rules";
 import { runProvisioningHelper } from "./provisioner/native-exec";
 import { nativeFeatureEnabled } from "./provisioner/native-features";
 
 const execFileAsync = promisify(execFile);
 
-async function sendEmail(to: string, subject: string, body: string) {
-  if (!to.trim()) return;
+export type EvaluateAlertsResult = {
+  fired: string[];
+  skipped?: string;
+  notified: string[];
+};
+
+async function sendEmail(to: string, subject: string, body: string): Promise<boolean> {
+  if (!to.trim()) return false;
   await execFileAsync(
     "bash",
-    ["-c", `printf %s ${JSON.stringify(body)} | mail -s ${JSON.stringify(subject)} ${JSON.stringify(to)}`],
+    [
+      "-c",
+      `printf %s ${JSON.stringify(body)} | mail -s ${JSON.stringify(subject)} ${JSON.stringify(to)}`,
+    ],
     { timeout: 30_000 },
   );
+  return true;
 }
 
-async function sendWebhook(url: string, payload: object) {
-  if (!url.trim()) return;
-  await fetch(url, {
+async function sendWebhook(url: string, payload: object): Promise<boolean> {
+  if (!url.trim()) return false;
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  return res.ok;
 }
 
-export async function evaluateAlerts(): Promise<{ fired: string[] }> {
+function webhookForRule(
+  rule: AlertRule,
+  settings: Awaited<ReturnType<typeof loadAlertSettings>>,
+): string {
+  if (rule.channel === "email") return rule.target || settings.emailTo || "";
+  if (rule.channel === "slack") return rule.target || settings.slackWebhook || "";
+  return rule.target || settings.telegramWebhook || "";
+}
+
+function rootDiskUsePct(
+  disks: { mount: string; usePct: number }[],
+): { usePct: number; mount: string } | null {
+  const root = disks.find((d) => d.mount === "/");
+  if (root) return { usePct: root.usePct, mount: "/" };
+  if (disks.length === 0) return null;
+  const busiest = disks.reduce((a, b) => (b.usePct > a.usePct ? b : a));
+  return { usePct: busiest.usePct, mount: busiest.mount };
+}
+
+export async function evaluateAlerts(): Promise<EvaluateAlertsResult> {
   const settings = await loadAlertSettings();
   const fired: string[] = [];
+  const notified: string[] = [];
   let metrics;
   try {
     metrics = await getHostMetrics();
-  } catch {
-    return { fired };
+  } catch (e) {
+    return {
+      fired: [],
+      notified: [],
+      skipped:
+        e instanceof Error
+          ? `Could not read host metrics: ${e.message}`
+          : "Could not read host metrics.",
+    };
   }
-  const rootDisk = metrics.disks.find((d) => d.mount === "/");
+
+  const disk = rootDiskUsePct(metrics.disks);
+
   for (const rule of settings.rules) {
     if (!rule.enabled) continue;
     let hit = false;
     let msg = "";
-    if (rule.metric === "disk" && rootDisk) {
-      hit = rootDisk.usePct >= rule.threshold;
-      msg = `Disk / at ${rootDisk.usePct}% (threshold ${rule.threshold}%)`;
+    if (rule.metric === "disk" && disk) {
+      hit = disk.usePct >= rule.threshold;
+      msg = `Disk ${disk.mount} at ${disk.usePct}% (threshold ${rule.threshold}%)`;
     } else if (rule.metric === "memory") {
       hit = metrics.memory.usePct >= rule.threshold;
       msg = `Memory ${metrics.memory.usePct}% (threshold ${rule.threshold}%)`;
@@ -64,18 +104,26 @@ export async function evaluateAlerts(): Promise<{ fired: string[] }> {
       }
     }
     if (!hit) continue;
-    fired.push(`${rule.id}: ${msg}`);
+
     const subject = `[Qadbak] Alert: ${rule.id}`;
-    if (rule.channel === "email") {
-      const to = rule.target || settings.emailTo || "";
-      await sendEmail(to, subject, msg).catch(() => {});
-    } else if (rule.channel === "slack" && settings.slackWebhook) {
-      await sendWebhook(settings.slackWebhook, { text: msg }).catch(() => {});
-    } else if (rule.channel === "telegram" && settings.telegramWebhook) {
-      await sendWebhook(settings.telegramWebhook, { text: msg }).catch(() => {});
+    const dest = webhookForRule(rule, settings);
+    let delivered = false;
+    try {
+      if (rule.channel === "email") {
+        delivered = await sendEmail(dest, subject, msg);
+      } else if (rule.channel === "slack" || rule.channel === "telegram") {
+        delivered = await sendWebhook(dest, { text: msg });
+      }
+    } catch {
+      delivered = false;
     }
+
+    const line = `${rule.id}: ${msg}`;
+    fired.push(line);
+    if (delivered) notified.push(line);
   }
-  return { fired };
+
+  return { fired, notified };
 }
 
 async function minSslDaysLeft(): Promise<number | null> {

@@ -1,6 +1,7 @@
 import { BackupsManager } from "@/components/BackupsManager";
 import { requireDomainAccess } from "@/lib/domain-api";
 import { getProvisioner } from "@/lib/provisioner";
+import { isPremiumFeatureEnabled } from "@/lib/premium/server";
 import { nativeFeatureEnabled } from "@/lib/provisioner/native-features";
 import { isIndependentMode } from "@/lib/provisioner/native-stub";
 
@@ -18,6 +19,7 @@ export default async function BackupsPage({ params }: Props) {
   const nativeMode = nativeFeatureEnabled("backup") || isIndependentMode();
 
   const isAdmin = session.role === "admin";
+  const offsitePremium = await isPremiumFeatureEnabled("offsite-backup");
 
   return (
     <BackupsManager
@@ -25,7 +27,8 @@ export default async function BackupsPage({ params }: Props) {
       initialScheduled={scheduled}
       canBackup
       canRestore={isAdmin}
-      canPartialRestore={nativeMode}
+      canPartialRestore={nativeMode && isAdmin}
+      offsitePremium={offsitePremium}
       canUpload={isAdmin && nativeMode}
       nativeMode={nativeMode}
       isAdmin={isAdmin}

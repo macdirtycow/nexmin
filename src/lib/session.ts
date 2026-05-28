@@ -180,6 +180,26 @@ export function clearSessionCookieOptions(request?: Request | NextRequest) {
   };
 }
 
+/** Clear every session cookie name (primary + legacy) on logout. */
+export function clearAllSessionCookies(
+  response: NextResponse,
+  request?: Request | NextRequest,
+) {
+  const opts = clearSessionCookieOptions(request);
+  const names = new Set(sessionCookieNames());
+  names.add("panel_session");
+  for (const name of names) {
+    response.cookies.set(name, "", {
+      httpOnly: true,
+      secure: opts.secure,
+      sameSite: opts.sameSite,
+      path: "/",
+      maxAge: 0,
+    });
+  }
+  return response;
+}
+
 export async function requireSession(): Promise<SessionPayload> {
   const session = await getSession();
   if (!session) {

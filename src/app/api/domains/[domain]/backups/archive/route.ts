@@ -7,11 +7,18 @@ type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const { domain } = await requireDomainApi((await params).domain);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const url = new URL(request.url);
     const name = url.searchParams.get("name")?.trim();
-    const prefix = url.searchParams.get("prefix")?.trim() ?? "";
+    let prefix = url.searchParams.get("prefix")?.trim() ?? "";
     if (!name) return jsonError("name query param required");
+    if (session.role !== "admin") {
+      prefix = prefix || "public_html";
+      const norm = prefix.replace(/^\/+/, "");
+      if (!norm.startsWith("public_html")) {
+        return jsonError("Clients may only browse public_html/ in backups.", 403);
+      }
+    }
     const r = await runProvisioningHelper(
       "backup-archive-list",
       domain,

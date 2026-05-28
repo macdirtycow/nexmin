@@ -16,6 +16,7 @@ import {
   csrfCheckFailed,
 } from "./middleware/request-security";
 import { applySecurityHeaders } from "./middleware/security-headers";
+import { sessionSecretMinLength } from "./lib/security-config";
 
 const PUBLIC_EXACT = new Set([
   "/",
@@ -47,7 +48,9 @@ function isApiV1Path(pathname: string): boolean {
 
 function getSecret(): Uint8Array | null {
   const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) return null;
+  const min =
+    process.env.NODE_ENV === "production" ? sessionSecretMinLength() : 16;
+  if (!secret || secret.length < min) return null;
   return new TextEncoder().encode(secret);
 }
 

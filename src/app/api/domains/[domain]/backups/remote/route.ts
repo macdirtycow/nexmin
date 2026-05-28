@@ -43,6 +43,13 @@ export async function POST(request: Request, { params }: Params) {
     };
     if (!body.remoteKey?.trim()) return jsonError("remoteKey is required");
     const key = body.remoteKey.trim();
+    if (
+      key.includes("..") ||
+      key.includes("/") ||
+      !/^[\w.-]+\.tar\.gz$/.test(key)
+    ) {
+      return jsonError("Invalid remote backup key.");
+    }
     if (body.action === "pull-restore") {
       const r = await runProvisioningHelper(
         "backup-pull-remote-restore",

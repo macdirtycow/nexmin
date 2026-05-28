@@ -23,6 +23,9 @@ export async function GET(request: Request, { params }: Params) {
       return jsonOk({ modsecurityLogs: logs, crs });
     }
     if (url.searchParams.get("malware") === "1") {
+      if (session.role !== "admin") {
+        return jsonError("Only administrators may view malware scan status.", 403);
+      }
       const mal = await runProvisioningHelper("malware-status", domain);
       return jsonOk({ malware: mal });
     }

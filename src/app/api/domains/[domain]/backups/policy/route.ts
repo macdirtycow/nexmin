@@ -8,7 +8,10 @@ type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { domain } = await requireDomainApi((await params).domain);
+    const { session, domain } = await requireDomainApi((await params).domain);
+    if (session.role !== "admin") {
+      return jsonError("Only administrators may view offsite backup policy.", 403);
+    }
     const r = await runProvisioningHelper("backup-policy-get", domain);
     return jsonOk({ policy: r.policy ?? {} });
   } catch (err) {

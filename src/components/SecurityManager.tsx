@@ -74,6 +74,12 @@ export function SecurityManager({
 
   useEffect(() => {
     setError("");
+    setSuccess("");
+    setModsecEntries([]);
+    setModsecLogPath("");
+    setScanResult("");
+    setMalwareReports([]);
+    setQuarantined([]);
     load().catch((e) => setError(e instanceof Error ? e.message : "Error"));
     if (isAdmin) {
       loadMalware().catch((e) =>
@@ -106,6 +112,7 @@ export function SecurityManager({
   async function saveWaf() {
     if (!isAdmin) return;
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`/api/domains/${enc}/security`, {
         method: "POST",
@@ -177,6 +184,7 @@ export function SecurityManager({
   async function saveMalwareSchedule() {
     if (!isAdmin) return;
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`/api/domains/${enc}/security`, {
         method: "POST",

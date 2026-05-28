@@ -26,10 +26,10 @@ export const RECOMMENDED_ALERT_RULES: AlertRule[] = [
     target: "",
   },
   {
-    id: "backup-48h",
+    id: "backup-2d",
     enabled: false,
     metric: "backup_age",
-    threshold: 48,
+    threshold: 2,
     channel: "email",
     target: "",
   },

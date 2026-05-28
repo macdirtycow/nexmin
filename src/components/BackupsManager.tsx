@@ -14,6 +14,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
+function scheduleFormFromRow(row: ScheduledBackup | undefined) {
+  if (!row) return { cron: "0 3 * * *", retain: 7 };
+  const m = row.dest?.match(/keep (\d+) backups/);
+  const retain = m ? Number(m[1]) : 7;
+  return {
+    cron: row.schedule ?? "0 3 * * *",
+    retain: Number.isFinite(retain) ? Math.min(90, Math.max(1, retain)) : 7,
+  };
+}
+
 export function BackupsManager({
   domain,
   initialScheduled,
@@ -24,6 +34,7 @@ export function BackupsManager({
   nativeMode = false,
   isAdmin = false,
   canPartialRestore = false,
+  offsitePremium = false,
 }: {
   domain: string;
   initialScheduled: ScheduledBackup[];
@@ -36,6 +47,7 @@ export function BackupsManager({
   isAdmin?: boolean;
   /** Browse archive + restore single file under public_html */
   canPartialRestore?: boolean;
+  offsitePremium?: boolean;
 }) {
   const router = useRouter();
   const enc = encodeURIComponent(domain);
@@ -67,8 +79,27 @@ export function BackupsManager({
   const [restoreDbName, setRestoreDbName] = useState("");
 
   useEffect(() => {
+    setScheduled(initialScheduled);
+    setError(initialError);
+    setSuccess("");
+    setRestoreSource("");
+    setBrowseArchive("");
+    setBrowsePrefix("");
+    setBrowseEntries([]);
+    setPartialPath("");
+    setRemoteBackups([]);
+    const { cron, retain } = scheduleFormFromRow(
+      initialScheduled.find((s) => s.id === "schedule"),
+    );
+    setCronSchedule(cron);
+    setRetainCount(retain);
     if (nativeMode && isAdmin) void loadOffsitePolicy();
-  }, [nativeMode, isAdmin, enc]);
+  }, [domain, enc, initialScheduled, initialError, nativeMode, isAdmin]);
+
+  useEffect(() => {
+    setBrowseEntries([]);
+    setPartialPath("");
+  }, [browseArchive]);
 
   const scheduleRow = useMemo(
     () => scheduled.find((s) => s.id === "schedule"),
@@ -80,18 +111,33 @@ export function BackupsManager({
   );
 
   async function refreshList() {
-    const res = await fetch(`/api/domains/${enc}/backups`);
-    const data = await res.json();
-    if (res.ok) setScheduled(data.scheduled ?? []);
+    try {
+      const res = await fetch(`/api/domains/${enc}/backups`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not refresh backups.");
+      const rows = (data.scheduled as ScheduledBackup[]) ?? [];
+      setScheduled(rows);
+      const row = rows.find((s) => s.id === "schedule");
+      const { cron, retain } = scheduleFormFromRow(row);
+      setCronSchedule(cron);
+      setRetainCount(retain);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not refresh backups.");
+    }
   }
 
   async function loadOffsitePolicy() {
     if (!nativeMode || !isAdmin) return;
-    const res = await fetch(`/api/domains/${enc}/backups/policy`);
-    const data = await res.json();
-    if (res.ok && data.policy) {
-      setOffsiteEnabled(Boolean(data.policy.offsite));
-      setProviderId(String(data.policy.providerId ?? "default"));
+    try {
+      const res = await fetch(`/api/domains/${enc}/backups/policy`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not load offsite policy.");
+      if (data.policy) {
+        setOffsiteEnabled(Boolean(data.policy.offsite));
+        setProviderId(String(data.policy.providerId ?? "default"));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load offsite policy.");
     }
   }
 
@@ -464,6 +510,12 @@ export function BackupsManager({
       {nativeMode && isAdmin && (
         <Card>
           <h2 className="text-lg font-medium text-white">Offsite backup (S3 / B2)</h2>
+          {!offsitePremium && (
+            <p className="mt-2 text-sm text-amber-200/90">
+              Premium feature (offsite-backup). Configure credentials under Admin → Cloud, then
+              activate Premium on your license.
+            </p>
+          )}
           <p className="mt-2 text-sm text-panel-muted">
             After each backup, upload to configured provider (Admin → Cloud).
           </p>
@@ -471,6 +523,7 @@ export function BackupsManager({
             <input
               type="checkbox"
               checked={offsiteEnabled}
+              disabled={!offsitePremium}
               onChange={(e) => setOffsiteEnabled(e.target.checked)}
             />
             Upload backups offsite

@@ -43,6 +43,17 @@ function formatRangeCaption(hours: number, history: MetricsSnapshot[]): string {
   return `${label}: ${fmt(first)} → ${fmt(last)} (${history.length} snapshots)`;
 }
 
+function diskPct(h: MetricsSnapshot): number {
+  const p = Number(h.diskRootUsePct);
+  return Number.isFinite(p) ? Math.max(0, p) : 0;
+}
+
+function memPct(h: MetricsSnapshot): number {
+  if (h.memTotalKb <= 0) return 0;
+  const p = Math.round((h.memUsedKb / h.memTotalKb) * 100);
+  return Number.isFinite(p) ? Math.max(0, p) : 0;
+}
+
 export function AdminMetricsHistory() {
   const [history, setHistory] = useState<MetricsSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,23 +103,27 @@ export function AdminMetricsHistory() {
     [history, hours],
   );
 
-  const maxDisk = Math.max(1, ...chartPoints.map((h) => h.diskRootUsePct));
-  const maxMem = Math.max(
-    1,
-    ...chartPoints.map((h) =>
-      h.memTotalKb > 0 ? Math.round((h.memUsedKb / h.memTotalKb) * 100) : 0,
-    ),
-  );
+  const maxDisk = Math.max(1, ...chartPoints.map(diskPct));
+  const maxMem = Math.max(1, ...chartPoints.map(memPct));
 
   const rangeCaption = formatRangeCaption(hours, history);
 
   async function snapshot() {
+    const h = hours;
+    const seq = ++loadSeq.current;
     setLoading(true);
+    setLoadError("");
     try {
-      await fetch("/api/admin/metrics-history", { method: "POST" });
-      await load(hours);
-    } finally {
-      setLoading(false);
+      const res = await fetch("/api/admin/metrics-history", { method: "POST" });
+      const data = await res.json();
+      if (seq !== loadSeq.current) return;
+      if (!res.ok) {
+        setLoadError(String(data.error ?? "Snapshot failed."));
+        return;
+      }
+      await load(h);
+    } catch {
+      if (seq === loadSeq.current) setLoadError("Snapshot failed.");
     }
   }
 
@@ -179,10 +194,7 @@ export function AdminMetricsHistory() {
             <p className="text-xs text-panel-muted mb-2">Memory use %</p>
             <div className="flex h-24 items-end gap-px rounded bg-panel-bg/40 p-1">
               {chartPoints.map((h, i) => {
-                const pct =
-                  h.memTotalKb > 0
-                    ? Math.round((h.memUsedKb / h.memTotalKb) * 100)
-                    : 0;
+                const pct = memPct(h);
                 return (
                   <div
                     key={`m-${h.ts}-${i}`}

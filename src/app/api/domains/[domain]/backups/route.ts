@@ -51,6 +51,13 @@ export async function PATCH(request: Request, { params }: Params) {
     };
 
     if (nativeBackups() && body.id === "schedule" && (body.schedule || body.retain)) {
+      const retain = body.retain;
+      if (retain !== undefined) {
+        const n = Number(retain);
+        if (!Number.isFinite(n) || n < 1 || n > 90) {
+          return jsonError("retain must be between 1 and 90.");
+        }
+      }
       await runProvisioningHelper(
         "backup-schedule-set",
         domain,
@@ -85,12 +92,18 @@ export async function PATCH(request: Request, { params }: Params) {
 export async function DELETE(request: Request, { params }: Params) {
   try {
     const { session, domain } = await requireDomainApi((await params).domain);
+    if (session.role !== "admin") {
+      return jsonError("Only administrators may delete backups.", 403);
+    }
     if (!nativeBackups()) {
       return jsonError("Delete backup is only available in native backup mode.", 501);
     }
     const body = (await request.json()) as { name?: string };
-    if (!body.name?.trim()) return jsonError("name is required.");
-    await runProvisioningHelper("backup-delete", domain, body.name.trim());
+    const name = body.name?.trim();
+    if (!name || name.includes("/") || name.includes("..")) {
+      return jsonError("Invalid backup name.");
+    }
+    await runProvisioningHelper("backup-delete", domain, name);
     await auditLog(session.username, "backup-delete", domain, body.name);
     const scheduled = await getProvisioner().listScheduledBackups(domain, session);
     return jsonOk({ scheduled, native: true });

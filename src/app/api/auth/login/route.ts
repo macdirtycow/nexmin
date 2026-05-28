@@ -37,7 +37,16 @@ export async function POST(request: Request) {
       if (!user?.totpSecret) {
         return jsonError("Two-factor is not enabled for this account.", 401);
       }
+      const totpRl = await checkLoginRateLimit(clientIp, user.username);
+      if (!totpRl.ok) {
+        await auditLog(user.username, "login-rate-limited", undefined, clientIp);
+        return jsonError(
+          `Too many sign-in attempts. Try again in ${totpRl.retryAfterSec ?? 900} seconds.`,
+          429,
+        );
+      }
       if (!verifyTotpCode(user.totpSecret, body.totp)) {
+        await authFailureDelay();
         await auditLog(user.username, "login-totp-failed", undefined, clientIp);
         return jsonError("Invalid authenticator code.", 401);
       }

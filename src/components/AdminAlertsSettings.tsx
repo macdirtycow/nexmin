@@ -9,29 +9,39 @@ export function AdminAlertsSettings() {
   const [settings, setSettings] = useState<AlertSettings | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [evaluating, setEvaluating] = useState(false);
   const [fired, setFired] = useState<string[]>([]);
-
+  const [notified, setNotified] = useState<string[]>([]);
   const [bootLoading, setBootLoading] = useState(true);
 
   async function load() {
     const res = await fetch("/api/admin/alerts");
     const data = await res.json();
-    if (res.ok) setSettings(data.settings ?? null);
-    else setError(String(data.error ?? "Could not load alert settings."));
+    if (res.ok) {
+      setSettings(data.settings ?? null);
+      setError("");
+    } else {
+      setSettings(null);
+      setError(String(data.error ?? "Could not load alert settings."));
+    }
   }
 
   useEffect(() => {
     load()
-      .catch(() => setError("Could not load alert settings."))
+      .catch(() => {
+        setSettings(null);
+        setError("Could not load alert settings.");
+      })
       .finally(() => setBootLoading(false));
   }, []);
 
   async function save() {
     if (!settings) return;
-    setLoading(true);
+    setSaving(true);
     setError("");
     setSuccess("");
+    setFired([]);
     try {
       const res = await fetch("/api/admin/alerts", {
         method: "PATCH",
@@ -44,14 +54,16 @@ export function AdminAlertsSettings() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   async function evaluate() {
-    setLoading(true);
+    setEvaluating(true);
     setFired([]);
+    setNotified([]);
     setError("");
+    setSuccess("");
     try {
       const res = await fetch("/api/admin/alerts", {
         method: "POST",
@@ -61,13 +73,16 @@ export function AdminAlertsSettings() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Evaluate failed");
       setFired(data.fired ?? []);
+      setNotified(data.notified ?? []);
       if ((data.fired as string[] | undefined)?.length === 0) {
-        setSuccess("No alerts fired (thresholds not exceeded).");
+        setSuccess("No thresholds exceeded.");
+      } else if ((data.notified as string[] | undefined)?.length === 0) {
+        setSuccess("Thresholds exceeded but no notifications were delivered (check targets).");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Evaluate failed");
     } finally {
-      setLoading(false);
+      setEvaluating(false);
     }
   }
 
@@ -81,11 +96,17 @@ export function AdminAlertsSettings() {
 
   if (!settings) {
     return (
-      <Card>
-        <Alert>Could not load alert settings.</Alert>
+      <Card className="space-y-3">
+        <h2 className="text-lg font-medium text-white">Alert rules</h2>
+        <Alert>{error || "Could not load alert settings."}</Alert>
+        <Button variant="secondary" onClick={() => void load()}>
+          Retry
+        </Button>
       </Card>
     );
   }
+
+  const busy = saving || evaluating;
 
   return (
     <Card className="space-y-4">
@@ -136,12 +157,17 @@ export function AdminAlertsSettings() {
         ))}
       </ul>
       {fired.length > 0 && (
-        <Alert>Fired: {fired.join("; ")}</Alert>
+        <Alert>
+          Triggered: {fired.join("; ")}
+          {notified.length > 0 && notified.length < fired.length
+            ? ` (notified: ${notified.length}/${fired.length})`
+            : ""}
+        </Alert>
       )}
       <div className="flex flex-wrap gap-2">
         <Button
           variant="secondary"
-          disabled={loading}
+          disabled={busy}
           onClick={() =>
             setSettings((s) =>
               s
@@ -163,17 +189,16 @@ export function AdminAlertsSettings() {
         >
           Load recommended rules
         </Button>
-        <Button disabled={loading} onClick={save}>
-          Save
+        <Button disabled={busy} onClick={save}>
+          {saving ? "Saving…" : "Save"}
         </Button>
-        <Button variant="secondary" disabled={loading} onClick={evaluate}>
-          Test evaluate
+        <Button variant="secondary" disabled={busy} onClick={evaluate}>
+          {evaluating ? "Evaluating…" : "Test evaluate"}
         </Button>
       </div>
       <p className="text-xs text-panel-muted">
-        Tip: plan een cron voor{" "}
-        <code className="text-white">metrics-snapshot</code> en periodieke evaluate op de
-        server.
+        backup_age thresholds are in <strong className="text-white">days</strong> (e.g. 2 = 48
+        hours). Plan cron: <code className="text-white">metrics-snapshot</code> + evaluate.
       </p>
     </Card>
   );
