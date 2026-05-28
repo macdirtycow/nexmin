@@ -9,7 +9,6 @@ import {
   verifyLoginTotpChallenge,
 } from "@/lib/session";
 import { verifyTotpCode } from "@/lib/totp";
-import { validatePanelPassword } from "@/lib/password-policy";
 import { requireAdminTotp } from "@/lib/security-config";
 import { findUserById, findUserByUsername, verifyPassword } from "@/lib/users";
 

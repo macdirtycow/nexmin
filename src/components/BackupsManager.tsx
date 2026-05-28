@@ -207,6 +207,7 @@ export function BackupsManager({
       const next = entry.path.endsWith("/") ? entry.path : `${entry.path}/`;
       setBrowsePrefix(next);
       setLoading(true);
+      setError("");
       try {
         const q = new URLSearchParams({
           name: browseArchive.trim(),
@@ -214,7 +215,10 @@ export function BackupsManager({
         });
         const res = await fetch(`/api/domains/${enc}/backups/archive?${q}`);
         const data = await res.json();
-        if (res.ok) setBrowseEntries(data.entries ?? []);
+        if (!res.ok) throw new Error(data.error ?? "Browse failed");
+        setBrowseEntries(data.entries ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Browse failed");
       } finally {
         setLoading(false);
       }

@@ -73,9 +73,12 @@ export function SecurityManager({
   }
 
   useEffect(() => {
+    setError("");
     load().catch((e) => setError(e instanceof Error ? e.message : "Error"));
     if (isAdmin) {
-      loadMalware().catch(() => {});
+      loadMalware().catch((e) =>
+        setError((prev) => prev || (e instanceof Error ? e.message : "Malware scan load failed")),
+      );
     }
   }, [enc, isAdmin]);
 

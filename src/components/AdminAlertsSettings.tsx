@@ -12,14 +12,19 @@ export function AdminAlertsSettings() {
   const [loading, setLoading] = useState(false);
   const [fired, setFired] = useState<string[]>([]);
 
+  const [bootLoading, setBootLoading] = useState(true);
+
   async function load() {
     const res = await fetch("/api/admin/alerts");
     const data = await res.json();
     if (res.ok) setSettings(data.settings ?? null);
+    else setError(String(data.error ?? "Could not load alert settings."));
   }
 
   useEffect(() => {
-    load();
+    load()
+      .catch(() => setError("Could not load alert settings."))
+      .finally(() => setBootLoading(false));
   }, []);
 
   async function save() {
@@ -46,6 +51,7 @@ export function AdminAlertsSettings() {
   async function evaluate() {
     setLoading(true);
     setFired([]);
+    setError("");
     try {
       const res = await fetch("/api/admin/alerts", {
         method: "POST",
@@ -53,13 +59,33 @@ export function AdminAlertsSettings() {
         body: JSON.stringify({ action: "evaluate" }),
       });
       const data = await res.json();
-      if (res.ok) setFired(data.fired ?? []);
+      if (!res.ok) throw new Error(data.error ?? "Evaluate failed");
+      setFired(data.fired ?? []);
+      if ((data.fired as string[] | undefined)?.length === 0) {
+        setSuccess("No alerts fired (thresholds not exceeded).");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Evaluate failed");
     } finally {
       setLoading(false);
     }
   }
 
-  if (!settings) return null;
+  if (bootLoading) {
+    return (
+      <Card>
+        <p className="text-sm text-panel-muted">Loading alert rules…</p>
+      </Card>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <Card>
+        <Alert>Could not load alert settings.</Alert>
+      </Card>
+    );
+  }
 
   return (
     <Card className="space-y-4">
