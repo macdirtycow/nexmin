@@ -63,6 +63,7 @@ bash "$QADBAK_DIR/scripts/export-native-domains.sh" 2>/dev/null || true
 bash "$QADBAK_DIR/scripts/apply-phase8-independent.sh" 2>/dev/null || true
 bash "$QADBAK_DIR/scripts/configure-native-mail.sh" --force
 sudo -u "$QADBAK_USER" sudo -n "$QADBAK_DIR/scripts/run-provisioning-helper.sh" mail-sync 2>/dev/null || true
+bash "$QADBAK_DIR/scripts/ensure-install-salt.sh"
 bash "$QADBAK_DIR/scripts/ensure-terminal-deps.sh"
 bash "$QADBAK_DIR/scripts/pm2-restart-qadbak.sh"
 env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$QADBAK_USER" --hp "$QADBAK_DIR" | tail -1 | bash || true

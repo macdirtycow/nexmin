@@ -76,11 +76,10 @@ if [[ -f "$ENV_FILE" ]] && grep -q '^QADBAK_NATIVE_FEATURES=' "$ENV_FILE" 2>/dev
     echo "==> Added imap to QADBAK_NATIVE_FEATURES (restart after build)"
   fi
 fi
-if [[ -f "$ENV_FILE" ]] && ! grep -q '^QADBAK_INSTALL_SALT=' "$ENV_FILE" 2>/dev/null; then
-  SALT="$(openssl rand -hex 8 2>/dev/null || head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
-  echo "QADBAK_INSTALL_SALT=$SALT" >>"$ENV_FILE"
-  echo "NEXT_PUBLIC_QADBAK_API_SALT=$SALT" >>"$ENV_FILE"
-  echo "==> Added QADBAK_INSTALL_SALT to .env.local (rebuild required)"
+if [[ -f "$ENV_FILE" ]]; then
+  bash "$ROOT/scripts/ensure-install-salt.sh" --quiet || {
+    echo "    WARN: ensure-install-salt.sh failed" >&2
+  }
 fi
 
 echo "==> Syntax check (domain-fs-helper)"

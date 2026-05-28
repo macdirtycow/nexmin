@@ -57,6 +57,24 @@ else
 fi
 
 echo ""
+echo "==> Install fingerprint (license)"
+if [[ -n "${QADBAK_INSTALL_SALT:-}" && "${#QADBAK_INSTALL_SALT}" -ge 8 ]]; then
+  pass "QADBAK_INSTALL_SALT set (qb-${QADBAK_INSTALL_SALT:0:12})"
+elif [[ "$(id -u)" -eq 0 ]] && [[ -f scripts/ensure-install-salt.sh ]]; then
+  if bash scripts/ensure-install-salt.sh --quiet; then
+    set -a
+    # shellcheck disable=SC1091
+    source .env.local
+    set +a
+    pass "QADBAK_INSTALL_SALT auto-provisioned (qb-${QADBAK_INSTALL_SALT:0:12})"
+  else
+    fail "QADBAK_INSTALL_SALT missing — sudo bash scripts/ensure-install-salt.sh"
+  fi
+else
+  fail "QADBAK_INSTALL_SALT missing — sudo bash scripts/ensure-install-salt.sh"
+fi
+
+echo ""
 echo "==> pm2"
 if command -v pm2 &>/dev/null && pm2 describe qadbak &>/dev/null; then
   pass "pm2 process qadbak"

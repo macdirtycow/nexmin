@@ -10,6 +10,10 @@ echo "============================================"
 echo " Qadbak post-install verification"
 echo "============================================"
 
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/.env.local" ]] && [[ -f "$ROOT/scripts/ensure-install-salt.sh" ]]; then
+  bash "$ROOT/scripts/ensure-install-salt.sh" --quiet || true
+fi
+
 if [[ "$(id -un)" == "$USER" ]]; then
   cd "$ROOT"
   bash scripts/v1-test-preflight.sh

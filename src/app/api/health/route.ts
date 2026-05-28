@@ -1,4 +1,5 @@
 import { APP_NAME, APP_SITE } from "@/lib/brand";
+import { installFingerprintTag } from "@/lib/install-salt";
 import { listEnabledNativeFeatures } from "@/lib/provisioner/native-features";
 import { getProvisionerId } from "@/lib/provisioner";
 import type { ProvisionerId } from "@/lib/provisioner/types";
@@ -15,6 +16,7 @@ export async function GET() {
   const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
   const fallback =
     fb === "false" || fb === "0" || fb === "no" ? false : Boolean(fb ?? true);
+  const fingerprintTag = installFingerprintTag();
   return NextResponse.json({
     ok: true,
     app: APP_NAME,
@@ -23,6 +25,7 @@ export async function GET() {
     provisioner: publicProvisionerId(getProvisionerId()),
     legacyApiFallback: fallback,
     nativeFeatures: listEnabledNativeFeatures(),
+    fingerprintTag,
     ts: new Date().toISOString(),
   });
 }

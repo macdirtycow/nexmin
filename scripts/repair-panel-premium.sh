@@ -46,12 +46,11 @@ else
 fi
 
 echo ""
-echo "==> Install salt (fingerprint tag for license compliance)"
-if [[ -f "$ENV_FILE" ]] && grep -q '^QADBAK_INSTALL_SALT=' "$ENV_FILE" 2>/dev/null; then
-  grep '^QADBAK_INSTALL_SALT=' "$ENV_FILE" | sed 's/=.*/=…(set)/'
-else
-  echo "  MISSING QADBAK_INSTALL_SALT — run: sudo bash scripts/update-qadbak.sh"
-fi
+echo "==> Install fingerprint (license compliance — required on every server)"
+bash "$ROOT/scripts/ensure-install-salt.sh" || {
+  echo "  FAIL — could not set QADBAK_INSTALL_SALT" >&2
+  exit 1
+}
 
 echo ""
 echo "==> Heartbeat (refresh features + fingerprint from license server)"

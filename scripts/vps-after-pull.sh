@@ -18,6 +18,9 @@ if [[ -f "$ROOT/scripts/git-sync-origin.sh" ]]; then
   bash "$ROOT/scripts/git-sync-origin.sh"
 fi
 bash "$ROOT/scripts/fix-qadbak-ownership.sh"
+if [[ -f "$ROOT/.env.local" ]]; then
+  bash "$ROOT/scripts/ensure-install-salt.sh" --quiet || true
+fi
 sudo -u "$USER" bash -c "cd '$ROOT' && npm install && npm run build"
 bash "$ROOT/scripts/repair-terminal-ws.sh" 2>/dev/null || bash "$ROOT/scripts/ensure-terminal-deps.sh"
 bash "$ROOT/scripts/configure-panel-vhost-sudo.sh" 2>/dev/null || true

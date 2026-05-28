@@ -11,6 +11,9 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 cd "$QADBAK_DIR"
+if [[ -f "$QADBAK_DIR/.env.local" ]]; then
+  bash "$QADBAK_DIR/scripts/ensure-install-salt.sh" || true
+fi
 echo "==> git sync"
 bash "$QADBAK_DIR/scripts/reset-git-drift-before-pull.sh"
 bash "$QADBAK_DIR/scripts/git-sync-origin.sh"
