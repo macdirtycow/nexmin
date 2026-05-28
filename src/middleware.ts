@@ -33,6 +33,11 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+/** Billing integrations authenticate with Bearer API keys in route handlers. */
+function isApiV1Path(pathname: string): boolean {
+  return pathname === "/api/v1" || pathname.startsWith("/api/v1/");
+}
+
 function getSecret(): Uint8Array | null {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 16) return null;
@@ -53,6 +58,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
+    const res = NextResponse.next();
+    const tag = installFingerprintTag();
+    if (tag) res.headers.set("X-QB-Tag", tag);
+    return res;
+  }
+
+  if (isApiV1Path(pathname)) {
     const res = NextResponse.next();
     const tag = installFingerprintTag();
     if (tag) res.headers.set("X-QB-Tag", tag);

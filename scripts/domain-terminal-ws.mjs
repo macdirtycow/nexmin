@@ -176,10 +176,27 @@ function attachPty(ws, term) {
   });
 }
 
+const TERMINAL_WS_PROTOCOL = "qadbak-terminal";
+
+function extractWsToken(req) {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const query = url.searchParams.get("token");
+  if (query) return query;
+
+  const raw = req.headers["sec-websocket-protocol"];
+  if (!raw || typeof raw !== "string") return null;
+  const parts = raw.split(",").map((s) => s.trim());
+  const idx = parts.indexOf(TERMINAL_WS_PROTOCOL);
+  if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+  for (const p of parts) {
+    if (p.split(".").length === 3 && p.length > 40) return p;
+  }
+  return null;
+}
+
 function bindTerminalWss(wss, openSession) {
   wss.on("connection", async (ws, req) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const token = url.searchParams.get("token");
+    const token = extractWsToken(req);
     if (!token) {
       ws.close(4401, "Missing token");
       return;

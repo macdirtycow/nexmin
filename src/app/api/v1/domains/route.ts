@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto";
 import { auditLog } from "@/lib/audit";
-import { apiV1Actor, assertApiV1DomainAccess } from "@/lib/api-v1-domain";
+import {
+  assertApiV1DomainAccess,
+  filterDomainsForResellerKey,
+} from "@/lib/api-v1-domain";
 import { apiV1Error, requireApiV1 } from "@/lib/api-v1-auth";
 import { jsonOk } from "@/lib/api";
 import { getProvisioner } from "@/lib/provisioner";
@@ -12,14 +15,10 @@ function apiActor() {
 export async function GET() {
   try {
     const key = await requireApiV1("domains:read");
-    let domains = await getProvisioner().listDomains(apiActor());
-    if (key.resellerId) {
-      domains = domains.filter(
-        (d) =>
-          (d as { reseller?: string }).reseller === key.resellerId ||
-          (d as { parent?: string }).parent === key.resellerId,
-      );
-    }
+    const domains = filterDomainsForResellerKey(
+      await getProvisioner().listDomains(apiActor()),
+      key.resellerId,
+    );
     return jsonOk({ domains });
   } catch (err) {
     return apiV1Error(err);
@@ -52,6 +51,7 @@ export async function POST(request: Request) {
         pass,
         user: body.user?.trim(),
         plan: body.plan,
+        reseller: key.resellerId,
       },
       apiActor(),
     );

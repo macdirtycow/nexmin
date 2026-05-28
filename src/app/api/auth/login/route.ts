@@ -1,5 +1,7 @@
 import { auditLog } from "@/lib/audit";
+import { checkLoginRateLimit } from "@/lib/api-rate-limit";
 import { jsonError, jsonOk } from "@/lib/api";
+import { getClientIp } from "@/lib/client-ip";
 import {
   applySessionCookie,
   createSession,
@@ -14,6 +16,15 @@ export async function POST(request: Request) {
     };
     if (!body.username || !body.password) {
       return jsonError("Username and password are required.");
+    }
+
+    const clientIp = (await getClientIp()) ?? "unknown";
+    const loginRl = await checkLoginRateLimit(clientIp, body.username);
+    if (!loginRl.ok) {
+      return jsonError(
+        `Too many login attempts. Try again in ${loginRl.retryAfterSec ?? 900} seconds.`,
+        429,
+      );
     }
 
     const user = await findUserByUsername(body.username);

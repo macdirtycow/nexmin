@@ -13,6 +13,8 @@ export type NativeDomainRecord = {
   disabled?: boolean;
   plan?: string;
   disk_limit?: string;
+  parent?: string;
+  reseller?: string;
 };
 
 const REGISTRY = path.join(process.cwd(), "data", "native-domains.json");
@@ -34,6 +36,8 @@ export async function loadNativeDomainRegistry(): Promise<NativeDomainRecord[]> 
         disabled: Boolean(r.disabled),
         plan: String(r.plan ?? "Default"),
         disk_limit: r.disk_limit ? String(r.disk_limit) : undefined,
+        parent: r.parent ? String(r.parent) : undefined,
+        reseller: r.reseller ? String(r.reseller) : undefined,
       });
     }
     return out;
@@ -120,6 +124,8 @@ async function enrichDomainDisk(row: NativeDomainRecord): Promise<HostedDomain> 
     user: row.user,
     disk_used: used,
     disk_limit: limit,
+    ...(row.parent ? { parent: row.parent } : {}),
+    ...(row.reseller ? { reseller: row.reseller } : {}),
   };
 }
 

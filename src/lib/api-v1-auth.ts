@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { jsonError } from "./api";
 import { checkApiRateLimit } from "./api-rate-limit";
+import { getClientIp } from "./client-ip";
 import { verifyApiKey, type ApiKeyScope } from "./api-keys";
 
 export async function requireApiV1(scope: ApiKeyScope) {
@@ -10,10 +11,7 @@ export async function requireApiV1(scope: ApiKeyScope) {
   if (!token) {
     throw Object.assign(new Error("Missing Bearer API key."), { status: 401 });
   }
-  const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    undefined;
+  const ip = await getClientIp();
   const key = await verifyApiKey(token, scope, ip);
   if (!key) {
     throw Object.assign(new Error("Invalid API key or scope."), { status: 403 });

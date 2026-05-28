@@ -10,19 +10,29 @@ type SessionInfo = {
   available: boolean;
   token?: string;
   wsUrl?: string;
+  wsProtocols?: string[];
   unixUser?: string;
   shellUser?: string;
   domain?: string;
   error?: string;
 };
 
-function resolveWsUrl(session: SessionInfo, wsPath: string): string | null {
-  if (typeof window === "undefined") return session.wsUrl ?? null;
+function resolveWsTarget(
+  session: SessionInfo,
+  wsPath: string,
+): { url: string; protocols: string[] } | null {
   if (!session.token) return null;
+  const protocols =
+    session.wsProtocols?.length === 2
+      ? session.wsProtocols
+      : ["qadbak-terminal", session.token];
+  if (session.wsUrl) {
+    return { url: session.wsUrl, protocols };
+  }
+  if (typeof window === "undefined") return null;
   const url = new URL(wsPath, window.location.origin);
   url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  url.searchParams.set("token", session.token);
-  return url.toString();
+  return { url: url.toString(), protocols };
 }
 
 export function DomainTerminal({
@@ -55,8 +65,8 @@ export function DomainTerminal({
 
   const connect = useCallback(
     async (session: SessionInfo) => {
-      const wsUrl = resolveWsUrl(session, wsPath);
-      if (!wsUrl) return;
+      const target = resolveWsTarget(session, wsPath);
+      if (!target) return;
       await new Promise<void>((r) => {
         requestAnimationFrame(() => r());
       });
@@ -88,7 +98,7 @@ export function DomainTerminal({
       }
       fit.fit();
 
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(target.url, target.protocols);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -117,7 +127,7 @@ export function DomainTerminal({
 
       ws.onerror = () => {
         setError(
-          `WebSocket failed (${wsUrl.replace(/token=[^&]+/, "token=…")}). Check: sudo bash scripts/check-terminal-ws.sh`,
+          `WebSocket failed (${target.url}). Check: sudo bash scripts/check-terminal-ws.sh`,
         );
       };
 

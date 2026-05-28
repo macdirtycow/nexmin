@@ -8,6 +8,9 @@ tsconfig.tsbuildinfo
 data/branding.json
 data/branding/
 data/users.json
+data/api-keys.json
+data/cloud-credentials.json
+data/api-rate-buckets.json
 data/servers.json
 data/native-domains.json
 data/e2e-admin.pass

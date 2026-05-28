@@ -2,12 +2,14 @@ import { requireAdmin } from "@/lib/admin-api";
 import { handleApiError, jsonOk } from "@/lib/api";
 import {
   TERMINAL_SETUP_HINT,
+  TERMINAL_WS_PROTOCOL,
   createAdminTerminalWsToken,
   terminalAvailable,
   terminalBackendReady,
+  terminalWsUrl,
 } from "@/lib/terminal-ws";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (!terminalAvailable()) {
       return jsonOk({
@@ -32,6 +34,8 @@ export async function GET() {
       available: true,
       backendReady: true,
       token,
+      wsUrl: terminalWsUrl(request),
+      wsProtocols: [TERMINAL_WS_PROTOCOL, token],
       shellUser: "root",
       username: session.username,
     });

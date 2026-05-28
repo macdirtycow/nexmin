@@ -93,7 +93,8 @@ export async function verifyApiKey(
   const h = hashKey(bearer);
   const row = store.keys.find((k) => k.hash === h);
   if (!row || !row.scopes.includes(requiredScope)) return null;
-  if (row.ipAllowlist.length && clientIp) {
+  if (row.ipAllowlist.length > 0) {
+    if (!clientIp) return null;
     if (!row.ipAllowlist.some((ip) => ip === clientIp)) return null;
   }
   row.lastUsedAt = new Date().toISOString();

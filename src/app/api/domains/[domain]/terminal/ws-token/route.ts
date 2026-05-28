@@ -5,6 +5,7 @@ import {
   createTerminalWsToken,
   terminalAvailable,
   terminalBackendReady,
+  TERMINAL_WS_PROTOCOL,
   terminalWsUrl,
 } from "@/lib/terminal-ws";
 import { getProvisioner } from "@/lib/provisioner";
@@ -32,13 +33,14 @@ export async function GET(request: Request, { params }: Params) {
     const { domain, session } = await requireDomainApi((await params).domain);
     const unixUser = await getProvisioner().resolveDomainUnixUser(domain, session);
     const token = await createTerminalWsToken(domain, unixUser, session);
-    const wsUrl = terminalWsUrl(request, token);
+    const wsUrl = terminalWsUrl(request);
 
     return jsonOk({
       available: true,
       backendReady: true,
       token,
       wsUrl,
+      wsProtocols: [TERMINAL_WS_PROTOCOL, token],
       unixUser,
       domain,
     });

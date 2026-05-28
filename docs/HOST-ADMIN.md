@@ -44,6 +44,19 @@ sudo bash /opt/qadbak/scripts/diagnose-panel-access.sh panel.example.com
 
 See [CLOUDFLARE.md](./CLOUDFLARE.md) if HTTP works but HTTPS does not (or vice versa) behind Cloudflare.
 
+## API v1 (WHMCS / Blesta)
+
+`/api/v1/*` uses **Bearer API keys** (not panel cookies). Create keys in Admin → API keys.
+
+Nginx must pass the client IP for IP allowlists:
+
+```nginx
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Real-IP $remote_addr;
+```
+
+Panel login is rate-limited (10 attempts / 15 min per IP + username).
+
 Allowlisted units: `nginx`, `apache2`/`httpd`, `postfix`, `dovecot`, `named`/`bind9`, `mariadb`, PHP-FPM.
 
 Without sudo, service list/restart falls back to legacy hosting API `list-server-statuses` / `restart-server`.

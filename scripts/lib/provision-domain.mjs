@@ -134,6 +134,7 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     filePath: `/etc/nginx/sites-available/qadbak-customer-${name.replace(/\./g, "_")}.conf`,
   });
 
+  const resellerTag = String(opts.reseller || "").trim();
   rows.push({
     name,
     user,
@@ -141,6 +142,7 @@ export async function domainCreate(domain, pass, userOpt, extraJson) {
     plan,
     type,
     parent: parent || undefined,
+    ...(resellerTag ? { reseller: resellerTag } : {}),
     isDefault: rows.length === 0,
   });
   await saveRegistry(rows);

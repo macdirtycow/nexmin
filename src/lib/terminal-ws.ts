@@ -45,8 +45,11 @@ export async function createAdminTerminalWsToken(
     .sign(secretKey());
 }
 
-/** Build WebSocket URL from the incoming API request (prefer client-side builder in browser). */
-export function terminalWsUrl(request: Request, token: string): string {
+/** Subprotocol label — JWT is sent as the second protocol (not in the URL). */
+export const TERMINAL_WS_PROTOCOL = "qadbak-terminal";
+
+/** Build WebSocket URL (no credentials in query string — use TERMINAL_WS_PROTOCOL + token). */
+export function terminalWsUrl(request: Request): string {
   const reqUrl = new URL(request.url);
   const host =
     request.headers.get("x-forwarded-host") ??
@@ -57,8 +60,14 @@ export function terminalWsUrl(request: Request, token: string): string {
     forwarded ??
     (reqUrl.protocol === "https:" ? "https" : "http");
   const wsProto = proto === "https" ? "wss" : "ws";
-  const q = new URLSearchParams({ token });
-  return `${wsProto}://${host}/ws/domain-terminal?${q.toString()}`;
+  const path = reqUrl.pathname.includes("admin")
+    ? "/ws/admin-terminal"
+    : "/ws/domain-terminal";
+  return `${wsProto}://${host}${path}`;
+}
+
+export function terminalWsProtocols(token: string): string[] {
+  return [TERMINAL_WS_PROTOCOL, token];
 }
 
 export function terminalAvailable(): boolean {

@@ -20,17 +20,17 @@ async function save(data: BucketFile): Promise<void> {
   await fs.writeFile(BUCKET_DIR, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
-/** Simple fixed-window rate limit per API key id. */
-export async function checkApiRateLimit(
-  keyId: string,
-  limit = 120,
-  windowMs = 60_000,
+/** Simple fixed-window rate limit (API keys, login, etc.). */
+export async function checkRateLimit(
+  bucketKey: string,
+  limit: number,
+  windowMs: number,
 ): Promise<{ ok: boolean; retryAfterSec?: number }> {
   const now = Date.now();
   const data = await load();
-  const row = data.buckets[keyId];
+  const row = data.buckets[bucketKey];
   if (!row || now >= row.resetAt) {
-    data.buckets[keyId] = { count: 1, resetAt: now + windowMs };
+    data.buckets[bucketKey] = { count: 1, resetAt: now + windowMs };
     await save(data);
     return { ok: true };
   }
@@ -40,4 +40,26 @@ export async function checkApiRateLimit(
   row.count += 1;
   await save(data);
   return { ok: true };
+}
+
+/** Per API key id — default 120 req/min. */
+export async function checkApiRateLimit(
+  keyId: string,
+  limit = 120,
+  windowMs = 60_000,
+): Promise<{ ok: boolean; retryAfterSec?: number }> {
+  return checkRateLimit(`api:${keyId}`, limit, windowMs);
+}
+
+const LOGIN_LIMIT = 10;
+const LOGIN_WINDOW_MS = 15 * 60_000;
+
+/** Brute-force guard for panel sign-in (per IP + username). */
+export async function checkLoginRateLimit(
+  clientIp: string,
+  username: string,
+): Promise<{ ok: boolean; retryAfterSec?: number }> {
+  const user = username.trim().toLowerCase() || "unknown";
+  const ip = clientIp.trim() || "unknown";
+  return checkRateLimit(`login:${ip}:${user}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
 }

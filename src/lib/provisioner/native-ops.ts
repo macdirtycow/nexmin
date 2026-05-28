@@ -137,6 +137,7 @@ export async function createDomainNative(
     type,
     parent: input.parent,
     plan: input.plan,
+    reseller: input.reseller,
   });
   await runProvisioningHelper(
     "domain-create",
