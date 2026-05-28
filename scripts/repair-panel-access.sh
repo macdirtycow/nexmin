@@ -104,15 +104,6 @@ discover_from_home() {
   done
 }
 
-discover_from_nginx() {
-  local f host
-  for f in /etc/nginx/sites-enabled/qadbak-panel-*.conf; do
-    [[ -f "$f" ]] || continue
-    host="$(grep -m1 'server_name panel\.' "$f" 2>/dev/null | sed -E 's/.*server_name[[:space:]]+panel\.([^;[:space:]]+).*/\1/' || true)"
-    add_domain "$host"
-  done
-}
-
 for d in "${DOMAINS[@]}"; do add_domain "$d"; done
 
 AUTO_PANEL="$(read_env_local_key QADBAK_AUTO_PANEL_VHOSTS false)"
