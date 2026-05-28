@@ -36,7 +36,9 @@ sudo -u qadbak bash -c "cd '$QADBAK_DIR' && pm2 restart qadbak" 2>/dev/null || \
 
 sleep 2
 echo "==> Health (direct to Next.js, not nginx)"
-if curl -sf "http://127.0.0.1:3000/api/health" | head -c 200; then
+HEALTH_SNIP="$(curl -sf "http://127.0.0.1:3000/api/health" 2>/dev/null | head -c 200 || true)"
+if [[ -n "$HEALTH_SNIP" ]]; then
+  printf '%s\n' "$HEALTH_SNIP"
   echo ""
   echo "    OK — Next.js on :3000"
 else

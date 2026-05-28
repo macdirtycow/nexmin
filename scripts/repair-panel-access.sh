@@ -47,6 +47,15 @@ is_valid_domain() {
   [[ "$1" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$ ]]
 }
 
+# curl exit codes must not abort the script (set -e + command substitution).
+probe_http_code() {
+  local url="$1"
+  shift
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' "$@" "$url" 2>/dev/null)" || code="000"
+  echo "${code:-000}"
+}
+
 UNIQUE=()
 
 add_domain() {
@@ -64,7 +73,7 @@ discover_from_registry() {
   local reg="$QADBAK_DIR/data/native-domains.json"
   [[ -f "$reg" ]] || return 0
   if command -v jq &>/dev/null; then
-    while read -r d; do add_domain "$d"; done < <(jq -r '.[].name // empty' "$reg" 2>/dev/null)
+    while read -r d; do add_domain "$d"; done < <(jq -r '.[].name // empty' "$reg" 2>/dev/null || true)
   else
     while read -r d; do add_domain "$d"; done < <(
       node -e "
@@ -117,7 +126,9 @@ if sudo -u "$QADBAK_USER" pm2 list 2>/dev/null | grep -qE 'qadbak[[:space:]]'; t
 else
   echo "    WARN: pm2 process qadbak not listed" >&2
 fi
-if curl -sf "http://127.0.0.1:3000/api/health" | head -c 220; then
+HEALTH_SNIP="$(curl -sf "http://127.0.0.1:3000/api/health" 2>/dev/null | head -c 220 || true)"
+if [[ -n "$HEALTH_SNIP" ]]; then
+  printf '%s\n' "$HEALTH_SNIP"
   echo ""
   echo "    OK — /api/health"
 else
@@ -127,26 +138,28 @@ fi
 
 echo ""
 echo "==> 2) panel.<domain> reachability (before repair)"
-FAIL=0
+PRE_FAIL=0
 for d in "${UNIQUE[@]}"; do
   host="panel.${d}"
-  code_http="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $host" http://127.0.0.1/login 2>/dev/null)"
-  code_http="${code_http:-000}"
+  code_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $host")"
   echo "    $host HTTP → $code_http"
   if [[ ! "$code_http" =~ ^(200|301|302|307|308)$ ]]; then
-    FAIL=1
+    PRE_FAIL=1
   fi
 done
 if [[ -n "$MAIN_PANEL_HOST" ]]; then
-  code_main="$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $MAIN_PANEL_HOST" https://127.0.0.1/login 2>/dev/null || echo 000)"
-  code_main_http="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $MAIN_PANEL_HOST" http://127.0.0.1/login 2>/dev/null || echo 000)"
+  code_main="$(probe_http_code "https://127.0.0.1/login" -sk -H "Host: $MAIN_PANEL_HOST")"
+  code_main_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $MAIN_PANEL_HOST")"
   echo "    $MAIN_PANEL_HOST HTTPS → $code_main  HTTP → $code_main_http"
+fi
+if [[ "$PRE_FAIL" -eq 1 ]]; then
+  echo "    (some panel hosts unreachable before repair — continuing)"
 fi
 
 if [[ "$CHECK_ONLY" -eq 1 ]]; then
   echo ""
   echo "Check-only mode — no changes applied."
-  exit "$FAIL"
+  exit "$PRE_FAIL"
 fi
 
 echo ""
@@ -209,10 +222,8 @@ echo "==> 9) Verify (HTTP + HTTPS on origin)"
 FAIL=0
 for d in "${UNIQUE[@]}"; do
   host="panel.${d}"
-  code_http="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $host" http://127.0.0.1/login 2>/dev/null)"
-  code_http="${code_http:-000}"
-  code_https="$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" https://127.0.0.1/login 2>/dev/null)"
-  code_https="${code_https:-000}"
+  code_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $host")"
+  code_https="$(probe_http_code "https://127.0.0.1/login" -sk -H "Host: $host")"
   echo "    $host HTTP → $code_http  HTTPS → $code_https"
   if [[ "$code_http" =~ ^(200|301|302|307|308)$ ]]; then
     echo "    OK — http://$host/login (Cloudflare Flexible uses this)"
@@ -227,11 +238,11 @@ for d in "${UNIQUE[@]}"; do
   fi
 done
 
-code_alt="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PANEL_PORT}/login" 2>/dev/null || echo 000)"
+code_alt="$(probe_http_code "http://127.0.0.1:${PANEL_PORT}/login")"
 echo "    http://127.0.0.1:${PANEL_PORT}/login → $code_alt"
 
 if [[ -n "$MAIN_PANEL_HOST" ]]; then
-  code_main="$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $MAIN_PANEL_HOST" https://127.0.0.1/login 2>/dev/null || echo 000)"
+  code_main="$(probe_http_code "https://127.0.0.1/login" -sk -H "Host: $MAIN_PANEL_HOST")"
   echo "    https://$MAIN_PANEL_HOST/login (origin) → $code_main"
 fi
 
