@@ -1,6 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import type { PanelUser } from "./types";
+import { validatePanelPassword } from "./password-policy";
 import { loadUsers, saveUsers } from "./users";
 import { requirePremiumFeature } from "./premium/guard";
 
@@ -41,7 +42,9 @@ export async function createClientUser(opts: {
     }
     throw new Error(`Panel client already exists: ${name}`);
   }
-  const hash = await bcrypt.hash(opts.password, 10);
+  const pwErr = validatePanelPassword(opts.password);
+  if (pwErr) throw new Error(pwErr);
+  const hash = await bcrypt.hash(opts.password, 12);
   const user: PanelUser = {
     id: `client-${Date.now()}`,
     username: name,

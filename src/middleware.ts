@@ -7,6 +7,11 @@ import {
   clientRbacEnabled,
   isClientBlockedPath,
 } from "./middleware/client-rbac";
+import {
+  clientMutationBlocked,
+  csrfCheckFailed,
+} from "./middleware/request-security";
+import { applySecurityHeaders } from "./middleware/security-headers";
 
 const PUBLIC_EXACT = new Set([
   "/",
@@ -28,12 +33,10 @@ function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) return true;
   if (pathname.startsWith("/api/branding")) return true;
   if (pathname.startsWith("/_next")) return true;
-  // Marketing logos, favicons, etc. (must load without a session)
   if (pathname.startsWith("/assets/")) return true;
   return false;
 }
 
-/** Billing integrations authenticate with Bearer API keys in route handlers. */
 function isApiV1Path(pathname: string): boolean {
   return pathname === "/api/v1" || pathname.startsWith("/api/v1/");
 }
@@ -44,31 +47,48 @@ function getSecret(): Uint8Array | null {
   return new TextEncoder().encode(secret);
 }
 
+function finish(request: NextRequest, response: NextResponse): NextResponse {
+  const tag = installFingerprintTag();
+  if (tag) response.headers.set("X-QB-Tag", tag);
+  return applySecurityHeaders(request, response);
+}
+
 function clientForbiddenResponse(request: NextRequest, pathname: string) {
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json(
-      { error: "This action is only available to administrators." },
-      { status: 403 },
+    return finish(
+      request,
+      NextResponse.json(
+        { error: "This action is only available to administrators." },
+        { status: 403 },
+      ),
     );
   }
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  return finish(
+    request,
+    NextResponse.redirect(new URL("/dashboard", request.url)),
+  );
+}
+
+function csrfForbidden(request: NextRequest) {
+  return finish(
+    request,
+    NextResponse.json({ error: "Cross-site request blocked." }, { status: 403 }),
+  );
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (csrfCheckFailed(request)) {
+    return csrfForbidden(request);
+  }
+
   if (isPublicPath(pathname)) {
-    const res = NextResponse.next();
-    const tag = installFingerprintTag();
-    if (tag) res.headers.set("X-QB-Tag", tag);
-    return res;
+    return finish(request, NextResponse.next());
   }
 
   if (isApiV1Path(pathname)) {
-    const res = NextResponse.next();
-    const tag = installFingerprintTag();
-    if (tag) res.headers.set("X-QB-Tag", tag);
-    return res;
+    return finish(request, NextResponse.next());
   }
 
   let token: string | undefined;
@@ -80,30 +100,43 @@ export async function middleware(request: NextRequest) {
 
   if (!token || !secret) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Not logged in." }, { status: 401 });
+      return finish(
+        request,
+        NextResponse.json({ error: "Not logged in." }, { status: 401 }),
+      );
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return finish(
+      request,
+      NextResponse.redirect(new URL("/login", request.url)),
+    );
   }
 
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: "qadbak",
+      audience: "qadbak-panel",
+    });
     const role = String(payload.role ?? "");
-    if (
-      role === "client" &&
-      clientRbacEnabled() &&
-      isClientBlockedPath(pathname)
-    ) {
-      return clientForbiddenResponse(request, pathname);
+    if (role === "client" && clientRbacEnabled()) {
+      if (isClientBlockedPath(pathname)) {
+        return clientForbiddenResponse(request, pathname);
+      }
+      if (clientMutationBlocked(pathname, request.method)) {
+        return clientForbiddenResponse(request, pathname);
+      }
     }
-    const res = NextResponse.next();
-    const tag = installFingerprintTag();
-    if (tag) res.headers.set("X-QB-Tag", tag);
-    return res;
+    return finish(request, NextResponse.next());
   } catch {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Session expired." }, { status: 401 });
+      return finish(
+        request,
+        NextResponse.json({ error: "Session expired." }, { status: 401 }),
+      );
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return finish(
+      request,
+      NextResponse.redirect(new URL("/login", request.url)),
+    );
   }
 }
 

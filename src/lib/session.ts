@@ -4,6 +4,11 @@ import type { NextRequest, NextResponse } from "next/server";
 import type { SessionPayload } from "./types";
 
 import { installSalt } from "./install-salt";
+import {
+  sessionMaxAgeSec,
+  sessionSameSite,
+  sessionSecretMinLength,
+} from "./security-config";
 
 const LEGACY_COOKIE = "panel_session";
 
@@ -54,17 +59,31 @@ function sessionCookieSecure(request?: Request | NextRequest): boolean {
 
 function secretKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
+  const min = sessionSecretMinLength();
   if (!secret || secret.length < 16) {
-    throw new Error("SESSION_SECRET is missing or too short (min. 16 characters).");
+    throw new Error(
+      `SESSION_SECRET is missing or too short (min. 16 characters, ${min} recommended in production).`,
+    );
+  }
+  if (process.env.NODE_ENV === "production" && secret.length < min) {
+    throw new Error(
+      `SESSION_SECRET must be at least ${min} characters in production.`,
+    );
   }
   return new TextEncoder().encode(secret);
 }
 
+const JWT_ISSUER = "qadbak";
+const JWT_AUDIENCE = "qadbak-panel";
+
 export async function createSession(payload: SessionPayload): Promise<string> {
+  const maxAge = sessionMaxAgeSec();
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(JWT_ISSUER)
+    .setAudience(JWT_AUDIENCE)
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(`${maxAge}s`)
     .sign(secretKey());
 }
 
@@ -92,7 +111,10 @@ export async function verifySessionToken(
   token: string,
 ): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, secretKey());
+    const { payload } = await jwtVerify(token, secretKey(), {
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+    });
     return {
       userId: String(payload.userId),
       username: String(payload.username),
@@ -144,6 +166,16 @@ export function applySessionCookie(
     path: opts.path,
     maxAge: opts.maxAge,
   });
+  for (const legacy of ["panel_session"]) {
+    if (legacy === opts.name) continue;
+    response.cookies.set(legacy, "", {
+      httpOnly: true,
+      secure: opts.secure,
+      sameSite: opts.sameSite,
+      path: "/",
+      maxAge: 0,
+    });
+  }
   return response;
 }
 
@@ -163,6 +195,15 @@ export async function requireSession(): Promise<SessionPayload> {
   const session = await getSession();
   if (!session) {
     throw new Error("UNAUTHORIZED");
+  }
+  const { checkSessionApiRateLimit } = await import("./api-session-rate-limit");
+  const rl = await checkSessionApiRateLimit(session);
+  if (!rl.ok) {
+    const err = new Error(
+      `Too many requests. Retry in ${rl.retryAfterSec ?? 60}s.`,
+    );
+    (err as Error & { status?: number }).status = 429;
+    throw err;
   }
   return session;
 }

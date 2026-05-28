@@ -1,7 +1,8 @@
 import { APP_NAME, APP_SITE } from "@/lib/brand";
 import { installFingerprintTag } from "@/lib/install-salt";
-import { listEnabledNativeFeatures } from "@/lib/provisioner/native-features";
+import { healthMinimalPublic } from "@/lib/security-config";
 import { getProvisionerId } from "@/lib/provisioner";
+import { listEnabledNativeFeatures } from "@/lib/provisioner/native-features";
 import type { ProvisionerId } from "@/lib/provisioner/types";
 import { NextResponse } from "next/server";
 
@@ -12,6 +13,9 @@ function publicProvisionerId(id: ProvisionerId): string {
 
 /** Public liveness check for nginx/monitoring (no auth). */
 export async function GET() {
+  if (healthMinimalPublic()) {
+    return NextResponse.json({ ok: true });
+  }
   const mock = process.env.QADBAK_LEGACY_API_MOCK === "true";
   const fb = process.env.QADBAK_LEGACY_API_FALLBACK?.trim().toLowerCase();
   const fallback =

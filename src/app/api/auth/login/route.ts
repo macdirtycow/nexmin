@@ -9,7 +9,14 @@ import {
   verifyLoginTotpChallenge,
 } from "@/lib/session";
 import { verifyTotpCode } from "@/lib/totp";
+import { validatePanelPassword } from "@/lib/password-policy";
+import { requireAdminTotp } from "@/lib/security-config";
 import { findUserById, findUserByUsername, verifyPassword } from "@/lib/users";
+
+async function authFailureDelay(): Promise<void> {
+  const ms = 200 + Math.floor(Math.random() * 300);
+  await new Promise((r) => setTimeout(r, ms));
+}
 
 export async function POST(request: Request) {
   try {
@@ -66,8 +73,16 @@ export async function POST(request: Request) {
 
     const user = await findUserByUsername(body.username);
     if (!user || !(await verifyPassword(user, body.password))) {
+      await authFailureDelay();
       await auditLog(body.username, "login-failed", undefined, clientIp);
       return jsonError("Invalid credentials.", 401);
+    }
+
+    if (user.role === "admin" && requireAdminTotp() && !user.totpSecret) {
+      return jsonError(
+        "Administrator sign-in requires two-factor authentication. Enable TOTP under Account → Security.",
+        403,
+      );
     }
 
     if (user.totpSecret) {

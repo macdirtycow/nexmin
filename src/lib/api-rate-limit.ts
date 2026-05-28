@@ -51,8 +51,9 @@ export async function checkApiRateLimit(
   return checkRateLimit(`api:${keyId}`, limit, windowMs);
 }
 
-const LOGIN_LIMIT = 10;
+const LOGIN_LIMIT = Number(process.env.QADBAK_LOGIN_RATE_LIMIT ?? "8") || 8;
 const LOGIN_WINDOW_MS = 15 * 60_000;
+const LOGIN_IP_LIMIT = Number(process.env.QADBAK_LOGIN_RATE_LIMIT_PER_IP ?? "40") || 40;
 
 /** Brute-force guard for panel sign-in (per IP + username). */
 export async function checkLoginRateLimit(
@@ -61,5 +62,11 @@ export async function checkLoginRateLimit(
 ): Promise<{ ok: boolean; retryAfterSec?: number }> {
   const user = username.trim().toLowerCase() || "unknown";
   const ip = clientIp.trim() || "unknown";
+  const byIp = await checkRateLimit(
+    `login-ip:${ip}`,
+    LOGIN_IP_LIMIT,
+    LOGIN_WINDOW_MS,
+  );
+  if (!byIp.ok) return byIp;
   return checkRateLimit(`login:${ip}:${user}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
 }

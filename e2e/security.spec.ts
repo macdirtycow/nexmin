@@ -15,6 +15,16 @@ async function loginApi(
   return res;
 }
 
+test.describe("CSRF protection", () => {
+  test("blocks mutating API without Origin", async ({ request }) => {
+    await loginApi(request, ADMIN.user, ADMIN.pass);
+    const res = await request.post("/api/domains", {
+      data: { domain: "evil.test", pass: "longpassword123" },
+    });
+    expect(res.status()).toBe(403);
+  });
+});
+
 test.describe("domain access (mock)", () => {
   test("client cannot list mailboxes on unassigned domain", async ({ request }) => {
     await loginApi(request, CLIENT.user, CLIENT.pass);

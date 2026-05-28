@@ -24,6 +24,10 @@ export function handleApiError(err: unknown) {
     return jsonError(err.message, 502);
   }
   if (err instanceof Error) {
+    const status = (err as Error & { status?: number }).status;
+    if (status === 429) {
+      return jsonError(err.message, 429);
+    }
     if (err.message.includes("not found")) {
       return jsonError(err.message, 404);
     }
