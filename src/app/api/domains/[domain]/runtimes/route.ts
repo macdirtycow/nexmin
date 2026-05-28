@@ -2,6 +2,7 @@ import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
 import { getProvisioner } from "@/lib/provisioner";
+import { runProvisioningHelper } from "@/lib/provisioner/native-exec";
 
 type Params = { params: Promise<{ domain: string }> };
 
@@ -52,8 +53,18 @@ export async function POST(request: Request, { params }: Params) {
         result = await getProvisioner().installDockerRuntime(domain, name, session);
         await auditLog(session.username, "runtimes-docker", domain, name);
         break;
+      case "docker-start":
+      case "docker-stop":
+      case "docker-logs":
+        result = await runProvisioningHelper(
+          "runtimes-docker-action",
+          domain,
+          name,
+          body.action.replace("docker-", ""),
+        );
+        break;
       default:
-        return jsonError("Unknown action. Use node, python, or docker.");
+        return jsonError("Unknown action. Use node, python, docker, docker-start, …");
     }
     return jsonOk({ ok: true, result });
   } catch (err) {

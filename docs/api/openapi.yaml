@@ -38,9 +38,54 @@ paths:
                   type: string
                 pass:
                   type: string
+                limits:
+                  type: object
+                  properties:
+                    disk:
+                      type: string
+                    bandwidth:
+                      type: string
+                    mailboxes:
+                      type: string
+                    databases:
+                      type: string
       responses:
         "200":
           description: Created
+  /plans:
+    get:
+      summary: List hosting plans
+      operationId: listPlans
+      security:
+        - bearerAuth: [plans:read]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create or update a plan template
+      operationId: upsertPlan
+      security:
+        - bearerAuth: [limits:write]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                disk:
+                  type: string
+                bandwidth:
+                  type: string
+                mailboxes:
+                  type: string
+                databases:
+                  type: string
+      responses:
+        "200":
+          description: OK
   /domains/{domain}:
     get:
       summary: Get domain
@@ -72,6 +117,189 @@ paths:
       responses:
         "200":
           description: Deleted
+  /domains/{domain}/suspend:
+    post:
+      summary: Enable or suspend domain
+      operationId: suspendDomain
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [domains:write]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: OK
+  /domains/{domain}/backups:
+    get:
+      summary: List local and remote backups
+      operationId: listBackups
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [backups:read]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create backup or pull from S3
+      operationId: backupActions
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [backups:write]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [pull-remote, pull-remote-restore]
+                remoteKey:
+                  type: string
+                testRestore:
+                  type: boolean
+      responses:
+        "200":
+          description: OK
+  /domains/{domain}/mail:
+    get:
+      summary: List mailboxes
+      operationId: listMail
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [mail:read]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create mailbox
+      operationId: createMailbox
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [mail:write]
+      responses:
+        "200":
+          description: OK
+  /domains/{domain}/dns:
+    get:
+      summary: List DNS records
+      operationId: getDns
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [dns:read]
+      responses:
+        "200":
+          description: OK
+  /domains/{domain}/limits:
+    get:
+      summary: Get domain resource limits
+      operationId: getLimits
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [limits:read]
+      responses:
+        "200":
+          description: OK
+    patch:
+      summary: Apply plan or patch limits
+      operationId: patchLimits
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [limits:write]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan:
+                  type: string
+                disk:
+                  type: string
+                bandwidth:
+                  type: string
+                mailboxes:
+                  type: string
+                databases:
+                  type: string
+      responses:
+        "200":
+          description: OK
+  /domains/{domain}/ssl:
+    get:
+      summary: List SSL certificates
+      operationId: listSsl
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [ssl:read]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Issue Let's Encrypt certificate
+      operationId: issueSsl
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: [ssl:write]
+      responses:
+        "200":
+          description: OK
 components:
   securitySchemes:
     bearerAuth:

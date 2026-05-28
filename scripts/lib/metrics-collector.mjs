@@ -32,6 +32,24 @@ export async function metricsSnapshot() {
   const uptimeSec = Number.parseFloat(uptimeRaw.split(/\s+/)[0] ?? "0");
   const dfLine = dfOut.split("\n")[1]?.split(/\s+/) ?? [];
   const diskUsedPct = Number.parseInt(String(dfLine[4] ?? "0").replace("%", ""), 10) || 0;
+  let postfixQueue = 0;
+  try {
+    const { stdout: q } = await exec("postqueue", ["-p"], { timeout: 10_000 });
+    postfixQueue = Math.max(0, (q.match(/^\w/g) || []).length - 1);
+  } catch {
+    postfixQueue = 0;
+  }
+  let failedUnits = 0;
+  try {
+    const { stdout: su } = await exec(
+      "systemctl",
+      ["--failed", "--no-legend", "--no-pager"],
+      { timeout: 10_000 },
+    );
+    failedUnits = su.split("\n").filter((l) => l.trim()).length;
+  } catch {
+    failedUnits = 0;
+  }
   const row = {
     ts: new Date().toISOString(),
     load1: load[0] ?? 0,
@@ -41,6 +59,8 @@ export async function metricsSnapshot() {
     memUsedKb: mem.usedKb,
     memTotalKb: mem.totalKb,
     diskRootUsePct: diskUsedPct,
+    postfixQueue,
+    failedUnits,
   };
   await mkdir(path.dirname(HISTORY), { recursive: true });
   await appendFile(HISTORY, `${JSON.stringify(row)}\n`, "utf8");

@@ -33,6 +33,9 @@ export function ScriptsManager({
   const [loading, setLoading] = useState(false);
   const [installScript, setInstallScript] = useState("");
   const [installPath, setInstallPath] = useState("public_html");
+  const [forceOverwrite, setForceOverwrite] = useState(false);
+  const [postInstall, setPostInstall] = useState<string[]>([]);
+  const [lastJournalId, setLastJournalId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
 
@@ -52,11 +55,41 @@ export function ScriptsManager({
       const res = await fetch(`/api/domains/${enc}/scripts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ script: installScript, path: installPath }),
+        body: JSON.stringify({
+          script: installScript,
+          path: installPath,
+          forceOverwrite,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Install failed.");
-      setSuccess(`${installScript} installed.`);
+      setPostInstall((data.postInstall as string[]) ?? []);
+      setLastJournalId(String(data.journalId ?? ""));
+      setSuccess(
+        data.adminUrl
+          ? `${installScript} installed — ${data.adminUrl}`
+          : `${installScript} installed.`,
+      );
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function rollback(script: string, rollbackId?: string | null) {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/scripts`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ script, rollbackId: rollbackId ?? "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Rollback failed");
+      setSuccess(`Rolled back ${script}.`);
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");
@@ -126,9 +159,21 @@ export function ScriptsManager({
                   </p>
                 </div>
                 {isAdmin && (
-                  <Button variant="danger" onClick={() => setDeleteTarget(s.name)}>
-                    Delete
-                  </Button>
+                  <div className="flex gap-2">
+                    {(s as { rollbackId?: string }).rollbackId && (
+                      <Button
+                        variant="ghost"
+                        onClick={() =>
+                          rollback(s.name, (s as { rollbackId?: string }).rollbackId)
+                        }
+                      >
+                        Rollback
+                      </Button>
+                    )}
+                    <Button variant="danger" onClick={() => setDeleteTarget(s.name)}>
+                      Delete
+                    </Button>
+                  </div>
                 )}
               </li>
             ))}
@@ -165,10 +210,36 @@ export function ScriptsManager({
                 onChange={(e) => setInstallPath(e.target.value)}
               />
             </div>
+            <label className="flex items-center gap-2 text-sm text-panel-muted sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={forceOverwrite}
+                onChange={(e) => setForceOverwrite(e.target.checked)}
+              />
+              Force overwrite existing index.html in target folder
+            </label>
             <Button type="submit" disabled={loading}>
               {loading ? "Working…" : "Install"}
             </Button>
           </form>
+          {postInstall.length > 0 && (
+            <Card className="mt-4 border-panel-accent/30">
+              <h3 className="text-sm font-medium text-white">Post-install checklist</h3>
+              <ul className="mt-2 list-disc pl-5 text-sm text-panel-muted">
+                {postInstall.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              {lastJournalId && (
+                <p className="mt-2 text-xs text-panel-muted">
+                  Journal:{" "}
+                  <a href={`/admin/journal`} className="text-panel-link hover:underline">
+                    {lastJournalId}
+                  </a>
+                </p>
+              )}
+            </Card>
+          )}
         </Card>
       )}
 

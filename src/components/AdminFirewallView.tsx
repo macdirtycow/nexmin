@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 export function AdminFirewallView() {
   const [status, setStatus] = useState("");
   const [rules, setRules] = useState<string[]>([]);
+  const [fail2ban, setFail2ban] = useState("");
   const [port, setPort] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,8 +19,17 @@ export function AdminFirewallView() {
     setRules((data.rules as string[]) ?? []);
   }
 
+  async function loadFail2ban() {
+    const res = await fetch("/api/admin/fail2ban");
+    if (res.ok) {
+      const data = await res.json();
+      setFail2ban(String(data.raw ?? ""));
+    }
+  }
+
   useEffect(() => {
     load().catch((e) => setError(e instanceof Error ? e.message : "Error"));
+    loadFail2ban();
   }, []);
 
   async function act(action: "allow" | "deny") {
@@ -72,6 +82,14 @@ export function AdminFirewallView() {
           Deny
         </Button>
       </Card>
+      {fail2ban && (
+        <Card>
+          <h2 className="text-lg font-medium text-white">Fail2ban</h2>
+          <pre className="mt-2 max-h-40 overflow-auto text-xs text-panel-muted whitespace-pre-wrap">
+            {fail2ban}
+          </pre>
+        </Card>
+      )}
     </div>
   );
 }

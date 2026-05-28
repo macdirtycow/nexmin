@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFile, access } from "node:fs/promises";
+import { readFile, access, mkdir, rm, stat } from "node:fs/promises";
 import { promisify } from "node:util";
 import path from "node:path";
 import {
@@ -8,6 +8,7 @@ import {
   resolveDomainUser,
   readDomainConfigJson,
   writeDomainConfigJson,
+  domainConfigDir,
   QADBAK_DIR,
 } from "./provisioning-common.mjs";
 
@@ -48,24 +49,42 @@ async function loadCatalog() {
   }));
 }
 
-async function assertSafeSubpath(home, sub) {
+async function assertSafeSubpath(home, sub, forceOverwrite) {
   const clean = String(sub || "public_html").replace(/^\//, "");
   if (clean.includes("..")) fail("Invalid install path");
   const full = path.join(home, clean);
   const index = path.join(full, "index.html");
+  if (forceOverwrite === "true" || forceOverwrite === true || forceOverwrite === "1") {
+    return clean;
+  }
   try {
     await access(index);
     const { stdout } = await exec("head", ["-c", "2048", index], { maxBuffer: 8192 });
     const body = stdout.trim().toLowerCase();
     if (body.length > 1024 && !body.includes("hosted on qadbak") && !body.includes("hello")) {
       fail(
-        "index.html looks like real site content — choose a subfolder or confirm overwrite in panel",
+        "index.html looks like real site content — choose a subfolder or enable force overwrite",
       );
     }
   } catch {
     /* no index — ok */
   }
   return clean;
+}
+
+async function snapshotInstallDir(domain, home, sub, scriptName) {
+  const target = path.join(home, sub);
+  try {
+    await access(target);
+  } catch {
+    return null;
+  }
+  const snapDir = path.join(domainConfigDir(domain), "script-snapshots");
+  await mkdir(snapDir, { recursive: true });
+  const id = `${scriptName}-${Date.now()}`;
+  const archive = path.join(snapDir, `${id}.tar.gz`);
+  await exec("tar", ["-czf", archive, "-C", home, sub], { timeout: 300_000 });
+  return { id, archive };
 }
 
 export async function scriptAvailable(_domain) {
@@ -79,36 +98,79 @@ export async function scriptList(domain) {
   emit({ ok: true, installed, source: "qadbak-domain-config" });
 }
 
-export async function scriptInstall(domain, scriptName, installPath) {
+export async function scriptInstall(domain, scriptName, installPath, forceOverwrite) {
   const { user, home } = await resolveDomainUser(domain);
   const name = String(scriptName || "").trim().toLowerCase();
   const installer = INSTALLERS[name];
   if (!installer) fail(`Unknown script: ${name}`);
-  const sub = await assertSafeSubpath(home, installPath);
+  const sub = await assertSafeSubpath(home, installPath, forceOverwrite);
+  const snapshot = await snapshotInstallDir(domain, home, sub, name);
   const runner = path.join(QADBAK_DIR, "scripts", "lib", installer);
-  await exec("sudo", ["-u", user, "bash", runner, home, sub], {
-    timeout: 600_000,
-    maxBuffer: 8 * 1024 * 1024,
-  });
-  const installed = await readDomainConfigJson(domain, "scripts.json", []);
-  if (!installed.some((s) => s.name === name)) {
-    installed.push({
-      name,
-      path: sub,
-      installedAt: new Date().toISOString(),
+  try {
+    await exec("sudo", ["-u", user, "bash", runner, home, sub], {
+      timeout: 600_000,
+      maxBuffer: 8 * 1024 * 1024,
     });
-    await writeDomainConfigJson(domain, "scripts.json", installed);
+  } catch (e) {
+    if (snapshot?.archive) {
+      await scriptRollback(domain, name, snapshot.id).catch(() => {});
+    }
+    throw e;
   }
+  const installed = await readDomainConfigJson(domain, "scripts.json", []);
+  const row = {
+    name,
+    path: sub,
+    installedAt: new Date().toISOString(),
+    rollbackId: snapshot?.id ?? null,
+    adminUrl:
+      sub === "public_html" || sub === ""
+        ? `https://${domain}/`
+        : `https://${domain}/${sub.replace(/^public_html\/?/, "")}/`,
+  };
+  const idx = installed.findIndex((s) => s.name === name);
+  if (idx >= 0) installed[idx] = row;
+  else installed.push(row);
+  await writeDomainConfigJson(domain, "scripts.json", installed);
   emit({
     ok: true,
     script: name,
     path: sub,
+    rollbackId: snapshot?.id ?? null,
+    adminUrl: row.adminUrl,
     postInstall: [
-      "Issue or verify SSL for the site hostname",
-      "Complete CMS web installer if applicable",
-      "Remove install wizard directories when the app recommends it",
+      `Verify SSL: https://${domain}/`,
+      `Open site: ${row.adminUrl}`,
+      "Complete CMS web installer (admin user + database)",
+      "Remove install/upgrade directories when the CMS recommends it",
     ],
   });
+}
+
+export async function scriptRollback(domain, scriptName, rollbackId) {
+  const { user, home } = await resolveDomainUser(domain);
+  const name = String(scriptName || "").trim().toLowerCase();
+  const installed = await readDomainConfigJson(domain, "scripts.json", []);
+  const row = installed.find((s) => s.name === name);
+  const id = rollbackId || row?.rollbackId;
+  if (!id) fail("No rollback snapshot for this install");
+  const archive = path.join(domainConfigDir(domain), "script-snapshots", `${id}.tar.gz`);
+  try {
+    await stat(archive);
+  } catch {
+    fail(`Snapshot not found: ${id}`);
+  }
+  const sub = row?.path || "public_html";
+  const target = path.join(home, sub);
+  await rm(target, { recursive: true, force: true }).catch(() => {});
+  await mkdir(target, { recursive: true });
+  await exec("tar", ["-xzf", archive, "-C", home], { timeout: 300_000 });
+  await exec("chown", ["-R", `${user}:${user}`, target], { timeout: 120_000 });
+  emit({ ok: true, rolledBack: name, rollbackId: id, path: sub });
+}
+
+export async function scriptRollbackCmd(domain, scriptName, rollbackId) {
+  await scriptRollback(domain, scriptName, rollbackId);
 }
 
 export async function scriptDelete(domain, scriptName) {

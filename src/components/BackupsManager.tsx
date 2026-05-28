@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import type { ScheduledBackup } from "@/lib/provisioner";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 
 export function BackupsManager({
@@ -61,6 +61,14 @@ export function BackupsManager({
   const [partialPath, setPartialPath] = useState("");
   const [offsiteEnabled, setOffsiteEnabled] = useState(false);
   const [providerId, setProviderId] = useState("default");
+  const [remoteBackups, setRemoteBackups] = useState<
+    { key: string; size: string; modified: string }[]
+  >([]);
+  const [restoreDbName, setRestoreDbName] = useState("");
+
+  useEffect(() => {
+    if (nativeMode && isAdmin) void loadOffsitePolicy();
+  }, [nativeMode, isAdmin, enc]);
 
   const scheduleRow = useMemo(
     () => scheduled.find((s) => s.id === "schedule"),
@@ -123,6 +131,95 @@ export function BackupsManager({
       setError(e instanceof Error ? e.message : "Error.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function importRemote(key: string, restore: boolean) {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/backups/remote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: restore ? "pull-restore" : "pull",
+          remoteKey: key,
+          testRestore: false,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Import failed");
+      setSuccess(
+        restore
+          ? `Restored from remote: ${key}`
+          : `Imported to ~/backups: ${data.file ?? key}`,
+      );
+      await refreshList();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadRemoteBackups() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/backups/remote`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+      setRemoteBackups(data.remote ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function restoreDatabase() {
+    if (!browseArchive.trim() || !restoreDbName.trim()) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/domains/${enc}/backups/archive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "restore-database",
+          name: browseArchive.trim(),
+          database: restoreDbName.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Restore failed");
+      setSuccess(`Database restored: ${data.database ?? restoreDbName}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openArchiveEntry(entry: { path: string; type: string }) {
+    if (entry.type === "dir") {
+      const next = entry.path.endsWith("/") ? entry.path : `${entry.path}/`;
+      setBrowsePrefix(next);
+      setLoading(true);
+      try {
+        const q = new URLSearchParams({
+          name: browseArchive.trim(),
+          prefix: next,
+        });
+        const res = await fetch(`/api/domains/${enc}/backups/archive?${q}`);
+        const data = await res.json();
+        if (res.ok) setBrowseEntries(data.entries ?? []);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setPartialPath(entry.path);
     }
   }
 
@@ -390,7 +487,37 @@ export function BackupsManager({
             <Button variant="ghost" disabled={loading} onClick={loadOffsitePolicy}>
               Reload policy
             </Button>
+            <Button variant="secondary" disabled={loading} onClick={loadRemoteBackups}>
+              List remote backups
+            </Button>
           </div>
+          {remoteBackups.length > 0 && (
+            <ul className="mt-4 text-sm text-panel-muted divide-y divide-panel-border">
+              {remoteBackups.map((r) => (
+                <li key={r.key} className="py-2 flex flex-wrap justify-between gap-2">
+                  <span>
+                    {r.key} · {r.size} · {r.modified}
+                  </span>
+                  <span className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      disabled={loading}
+                      onClick={() => importRemote(r.key, false)}
+                    >
+                      Import
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={loading}
+                      onClick={() => importRemote(r.key, true)}
+                    >
+                      Import & restore
+                    </Button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       )}
 
@@ -430,10 +557,12 @@ export function BackupsManager({
                 <li key={e.path} className="py-1">
                   <button
                     type="button"
-                    className="hover:text-white"
-                    onClick={() => setPartialPath(e.path)}
+                    className="hover:text-white text-left"
+                    onClick={() => openArchiveEntry(e)}
                   >
-                    {e.path}
+                    {e.type === "dir" ? "📁 " : "📄 "}
+                    {e.name}
+                    <span className="text-panel-muted"> ({e.path})</span>
                   </button>
                 </li>
               ))}
@@ -456,6 +585,32 @@ export function BackupsManager({
           >
             Restore file only
           </Button>
+          {isAdmin && (
+            <div className="mt-6 pt-4 border-t border-panel-border">
+              <h3 className="text-sm font-medium text-white">Restore database (admin)</h3>
+              <p className="mt-1 text-xs text-panel-muted">
+                Restores mysql/<em>dbname</em>.sql from the selected archive (domain-owned DB only).
+              </p>
+              <div className="mt-3">
+                <Label htmlFor="restore-db">Database name</Label>
+                <Input
+                  id="restore-db"
+                  className="mt-1 max-w-xs font-mono"
+                  placeholder="user_wp"
+                  value={restoreDbName}
+                  onChange={(e) => setRestoreDbName(e.target.value)}
+                />
+              </div>
+              <Button
+                className="mt-3"
+                variant="danger"
+                disabled={loading || !browseArchive.trim() || !restoreDbName.trim()}
+                onClick={restoreDatabase}
+              >
+                Restore database only
+              </Button>
+            </div>
+          )}
         </Card>
       )}
 

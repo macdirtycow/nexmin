@@ -2,10 +2,11 @@
 
 ## Delivered
 
-- REST API v1: `GET/POST /api/v1/domains`, `GET/DELETE /api/v1/domains/[domain]`
-- API keys: `src/lib/api-keys.ts`, admin UI `/admin/api-keys`
+- REST API v1: domains, suspend, mail, DNS, SSL, backups (incl. remote pull/restore)
+- API keys with scopes + rate limit + reseller domain filter
 - OpenAPI: `docs/api/openapi.yaml`
-- Starter integrations: `integrations/whmcs/`, `integrations/blesta/`
+- WHMCS module: create, terminate, suspend, unsuspend
+- Starter Blesta: `integrations/blesta/`
 
 ## Auth
 

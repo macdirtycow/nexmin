@@ -38,7 +38,21 @@ export function AdminApiKeysView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           label,
-          scopes: ["domains:read", "domains:write", "backups:read"],
+          scopes: [
+            "domains:read",
+            "domains:write",
+            "mail:read",
+            "mail:write",
+            "dns:read",
+            "dns:write",
+            "ssl:read",
+            "ssl:write",
+            "backups:read",
+            "backups:write",
+            "limits:read",
+            "limits:write",
+            "plans:read",
+          ],
         }),
       });
       const data = await res.json();

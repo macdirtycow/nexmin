@@ -9,8 +9,15 @@ export type ApiKeyScope =
   | "domains:write"
   | "mail:read"
   | "mail:write"
+  | "dns:read"
+  | "dns:write"
+  | "ssl:read"
+  | "ssl:write"
   | "backups:read"
-  | "backups:write";
+  | "backups:write"
+  | "limits:read"
+  | "limits:write"
+  | "plans:read";
 
 export interface ApiKeyRecord {
   id: string;

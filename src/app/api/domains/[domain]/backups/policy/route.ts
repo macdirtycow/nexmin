@@ -1,6 +1,7 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireDomainApi } from "@/lib/domain-api";
+import { isPremiumFeatureEnabled } from "@/lib/premium/server";
 import { runProvisioningHelper } from "@/lib/provisioner/native-exec";
 
 type Params = { params: Promise<{ domain: string }> };
@@ -25,6 +26,9 @@ export async function PATCH(request: Request, { params }: Params) {
       offsite?: boolean;
       providerId?: string;
     };
+    if (body.offsite && !(await isPremiumFeatureEnabled("offsite-backup"))) {
+      return jsonError("Offsite backups require Premium (offsite-backup feature).", 402);
+    }
     await runProvisioningHelper(
       "backup-policy-set",
       domain,

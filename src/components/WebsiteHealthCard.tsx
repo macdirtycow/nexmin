@@ -25,6 +25,11 @@ type Health = {
     issues: string[];
     dnsChecklist: string[];
   };
+  stack?: {
+    phpFpmSocket?: string;
+    sslDaysLeft?: number | null;
+    backupAgeDays?: number | null;
+  };
 };
 
 export function WebsiteHealthCard({
@@ -197,6 +202,36 @@ export function WebsiteHealthCard({
               cd /opt/qadbak && git pull && sudo bash scripts/configure-domain-repair-sudo.sh
             </code>
           </Alert>
+        </div>
+      )}
+
+      {health?.stack && !loading && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm text-panel-muted">
+          {health.stack.phpFpmSocket && (
+            <p>
+              PHP-FPM: <code className="text-white">{health.stack.phpFpmSocket}</code>
+            </p>
+          )}
+          {health.stack.sslDaysLeft != null && (
+            <p>
+              SSL:{" "}
+              <span className={health.stack.sslDaysLeft < 14 ? "text-amber-300" : "text-emerald-400"}>
+                {health.stack.sslDaysLeft} days left
+              </span>
+            </p>
+          )}
+          {health.stack.backupAgeDays != null && (
+            <p>
+              Last backup:{" "}
+              <span
+                className={
+                  health.stack.backupAgeDays > 7 ? "text-amber-300" : "text-emerald-400"
+                }
+              >
+                {health.stack.backupAgeDays} day(s) ago
+              </span>
+            </p>
+          )}
         </div>
       )}
 

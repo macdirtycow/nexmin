@@ -1,7 +1,11 @@
 import { execFile } from "child_process";
+import { readdir, readFile } from "fs/promises";
+import path from "path";
 import { promisify } from "util";
 import { getHostMetrics } from "./host-metrics";
 import { loadAlertSettings } from "./alert-rules";
+import { runProvisioningHelper } from "./provisioner/native-exec";
+import { nativeFeatureEnabled } from "./provisioner/native-features";
 
 const execFileAsync = promisify(execFile);
 
@@ -46,6 +50,18 @@ export async function evaluateAlerts(): Promise<{ fired: string[] }> {
     } else if (rule.metric === "load") {
       hit = metrics.loadAvg[0] >= rule.threshold;
       msg = `Load ${metrics.loadAvg[0]} (threshold ${rule.threshold})`;
+    } else if (rule.metric === "ssl_expiry") {
+      const days = await minSslDaysLeft();
+      if (days !== null) {
+        hit = days <= rule.threshold;
+        msg = `SSL expires in ${days} day(s) (threshold ${rule.threshold})`;
+      }
+    } else if (rule.metric === "backup_age" && nativeFeatureEnabled("backup")) {
+      const age = await maxBackupAgeDays();
+      if (age !== null) {
+        hit = age >= rule.threshold;
+        msg = `Oldest recent backup is ${age} day(s) old (threshold ${rule.threshold})`;
+      }
     }
     if (!hit) continue;
     fired.push(`${rule.id}: ${msg}`);
@@ -60,4 +76,61 @@ export async function evaluateAlerts(): Promise<{ fired: string[] }> {
     }
   }
   return { fired };
+}
+
+async function minSslDaysLeft(): Promise<number | null> {
+  try {
+    const domainsDir = path.join(process.cwd(), "data", "domains");
+    const names = await readdir(domainsDir).catch(() => []);
+    let min: number | null = null;
+    for (const d of names) {
+      try {
+        const certs = await runProvisioningHelper("ssl-list", d);
+        for (const c of (certs.certs as { expiry?: string }[]) ?? []) {
+          if (!c.expiry) continue;
+          const days = Math.ceil(
+            (new Date(c.expiry).getTime() - Date.now()) / 86_400_000,
+          );
+          if (min === null || days < min) min = days;
+        }
+      } catch {
+        /* skip domain */
+      }
+    }
+    return min;
+  } catch {
+    return null;
+  }
+}
+
+async function maxBackupAgeDays(): Promise<number | null> {
+  try {
+    const reg = await readFile(
+      path.join(process.cwd(), "data", "native-domains.json"),
+      "utf8",
+    ).catch(() => "[]");
+    const domains = JSON.parse(reg) as { name: string }[];
+    let maxAge = 0;
+    let any = false;
+    for (const { name } of domains) {
+      try {
+        const bl = await runProvisioningHelper("backup-list", name);
+        const files = (bl.backups as { modified?: string }[]) ?? [];
+        if (!files.length) continue;
+        const newest = files.sort((a, b) =>
+          String(b.modified).localeCompare(String(a.modified)),
+        )[0];
+        const age = Math.floor(
+          (Date.now() - new Date(String(newest.modified)).getTime()) / 86_400_000,
+        );
+        if (age > maxAge) maxAge = age;
+        any = true;
+      } catch {
+        /* skip */
+      }
+    }
+    return any ? maxAge : null;
+  } catch {
+    return null;
+  }
 }

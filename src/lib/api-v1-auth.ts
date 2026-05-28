@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { jsonError } from "./api";
+import { checkApiRateLimit } from "./api-rate-limit";
 import { verifyApiKey, type ApiKeyScope } from "./api-keys";
 
 export async function requireApiV1(scope: ApiKeyScope) {
@@ -16,6 +17,13 @@ export async function requireApiV1(scope: ApiKeyScope) {
   const key = await verifyApiKey(token, scope, ip);
   if (!key) {
     throw Object.assign(new Error("Invalid API key or scope."), { status: 403 });
+  }
+  const rl = await checkApiRateLimit(key.id);
+  if (!rl.ok) {
+    throw Object.assign(
+      new Error(`Rate limit exceeded. Retry in ${rl.retryAfterSec ?? 60}s.`),
+      { status: 429 },
+    );
   }
   return key;
 }

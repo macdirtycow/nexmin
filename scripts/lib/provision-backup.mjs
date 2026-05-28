@@ -538,6 +538,23 @@ export async function backupScheduleToggle(domain, enabled) {
 
 const POLICY_CFG = "backup-policy.json";
 
+export async function backupListRemote(domain) {
+  const { listRemoteBackups } = await import("./backup-offsite.mjs");
+  await listRemoteBackups(domain);
+}
+
+export async function backupPullRemote(domain, remoteKey) {
+  const { pullRemoteBackupToLocal } = await import("./backup-offsite.mjs");
+  await pullRemoteBackupToLocal(domain, remoteKey);
+}
+
+export async function backupPullRemoteAndRestore(domain, remoteKey, testOnly) {
+  const { pullRemoteBackupToLocal } = await import("./backup-offsite.mjs");
+  await pullRemoteBackupToLocal(domain, remoteKey);
+  const fname = path.basename(String(remoteKey || ""));
+  await backupRestore(domain, fname, testOnly ? "true" : "false");
+}
+
 export async function backupPolicyGet(domain) {
   await resolveDomainUser(domain);
   const policy = await readDomainConfigJson(domain, POLICY_CFG, {

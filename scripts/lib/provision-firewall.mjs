@@ -30,6 +30,15 @@ export async function firewallAllow(port, proto) {
   emit({ ok: true, port: p, protocol });
 }
 
+export async function fail2banStatus() {
+  try {
+    const { stdout } = await exec("fail2ban-client", ["status"], { timeout: 15_000 });
+    emit({ ok: true, raw: stdout });
+  } catch (e) {
+    emit({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
 export async function firewallDeny(port) {
   const p = String(port || "").replace(/\D/g, "");
   if (!p) fail("Invalid port");

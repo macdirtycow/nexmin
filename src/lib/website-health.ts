@@ -7,6 +7,8 @@ import { promisify } from "node:util";
 import { repairAvailable } from "./domain-repair";
 import { domainUnixUser } from "./domain-files";
 import { getProvisioner } from "./provisioner";
+import { nativeFeatureEnabled } from "./provisioner/native-features";
+import { runProvisioningHelper } from "./provisioner/native-exec";
 import type { Role } from "./types";
 
 const execFileAsync = promisify(execFile);
@@ -33,6 +35,11 @@ export interface WebsiteHealthReport {
   cloudflare: {
     issues: string[];
     dnsChecklist: string[];
+  };
+  stack?: {
+    phpFpmSocket?: string;
+    sslDaysLeft?: number | null;
+    backupAgeDays?: number | null;
   };
 }
 
@@ -417,6 +424,44 @@ export async function getWebsiteHealth(
     "SSL/TLS: Flexible if origin is HTTP only; Full after Let's Encrypt on the server.",
   ];
 
+  const stack: WebsiteHealthReport["stack"] = {};
+  if (nativeFeatureEnabled("runtimes")) {
+    try {
+      const rt = await runProvisioningHelper("runtimes-get", domain);
+      stack.phpFpmSocket = String(rt.phpFpmSocket ?? "");
+    } catch {
+      /* optional */
+    }
+  }
+  if (actor.role === "admin") {
+    try {
+      const certs = await getProvisioner().listSslCerts(domain, actor);
+      const primary = certs.find((c) => c.host === domain || c.id === domain);
+      if (primary?.expiry) {
+        const exp = new Date(primary.expiry).getTime();
+        stack.sslDaysLeft = Math.ceil((exp - Date.now()) / 86_400_000);
+      }
+    } catch {
+      stack.sslDaysLeft = null;
+    }
+    if (nativeFeatureEnabled("backup")) {
+      try {
+        const bl = await runProvisioningHelper("backup-list", domain);
+        const files =
+          (bl.backups as { modified?: string }[])?.filter((f) => f.modified) ?? [];
+        if (files.length) {
+          const newest = files.sort((a, b) =>
+            String(b.modified).localeCompare(String(a.modified)),
+          )[0];
+          const ageMs = Date.now() - new Date(String(newest.modified)).getTime();
+          stack.backupAgeDays = Math.floor(ageMs / 86_400_000);
+        }
+      } catch {
+        stack.backupAgeDays = null;
+      }
+    }
+  }
+
   return {
     domain,
     originIp,
@@ -428,5 +473,6 @@ export async function getWebsiteHealth(
       issues: buildIssues(localProbe, publicProbe, validation),
       dnsChecklist,
     },
+    stack,
   };
 }

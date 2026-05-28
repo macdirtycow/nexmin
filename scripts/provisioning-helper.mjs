@@ -30,6 +30,9 @@ import {
   backupScheduleGet,
   backupScheduleSet,
   backupScheduleToggle,
+  backupListRemote,
+  backupPullRemote,
+  backupPullRemoteAndRestore,
   backupPolicyGet,
   backupPolicySet,
   backupArchiveList,
@@ -40,12 +43,25 @@ import {
   firewallStatus,
   firewallAllow,
   firewallDeny,
+  fail2banStatus,
 } from "./lib/provision-firewall.mjs";
 import { malwareScanDomain } from "./lib/provision-malware.mjs";
 import {
   modsecurityStatus,
   modsecurityToggle,
+  modsecurityLogs,
+  modsecurityCrsCheck,
 } from "./lib/provision-modsecurity.mjs";
+import {
+  planGet,
+  planApplyToDomain,
+  planUpsert,
+} from "./lib/provision-plans.mjs";
+import {
+  malwareStatus,
+  malwareScheduleSet,
+  malwareListQuarantine,
+} from "./lib/provision-malware.mjs";
 import { metricsSnapshot } from "./lib/metrics-collector.mjs";
 import { cronList, cronCreate, cronDelete } from "./lib/provision-cron.mjs";
 import { aliasList, aliasCreate, aliasDelete } from "./lib/provision-aliases.mjs";
@@ -106,6 +122,7 @@ import {
   scriptAvailable,
   scriptList,
   scriptInstall,
+  scriptRollbackCmd,
   scriptDelete,
 } from "./lib/provision-scripts.mjs";
 import {
@@ -113,6 +130,7 @@ import {
   runtimesNodeInstall,
   runtimesPythonInstall,
   runtimesDockerInstall,
+  runtimesDockerAction,
 } from "./lib/provision-runtimes.mjs";
 import {
   cloudCredentialsList,
@@ -430,7 +448,10 @@ async function main() {
       await scriptList(args[0]);
       break;
     case "script-install":
-      await scriptInstall(args[0], args[1], args[2]);
+      await scriptInstall(args[0], args[1], args[2], args[3]);
+      break;
+    case "script-rollback":
+      await scriptRollbackCmd(args[0], args[1], args[2]);
       break;
     case "app-install-wordpress":
       await appInstallWordpress(args[0], args[1], args[2], args[3], args[4]);
@@ -450,6 +471,12 @@ async function main() {
     case "runtimes-docker-install":
       await runtimesDockerInstall(args[0], args[1]);
       break;
+    case "runtimes-docker-action":
+      await runtimesDockerAction(args[0], args[1], args[2]);
+      break;
+    case "fail2ban-status":
+      await fail2banStatus();
+      break;
     case "cloud-credentials-list":
       await cloudCredentialsList();
       break;
@@ -464,6 +491,15 @@ async function main() {
         args[6],
         args[7],
       );
+      break;
+    case "backup-list-remote":
+      await backupListRemote(args[0]);
+      break;
+    case "backup-pull-remote":
+      await backupPullRemote(args[0], args[1]);
+      break;
+    case "backup-pull-remote-restore":
+      await backupPullRemoteAndRestore(args[0], args[1], args[2]);
       break;
     case "backup-policy-get":
       await backupPolicyGet(args[0]);
@@ -492,11 +528,35 @@ async function main() {
     case "malware-scan":
       await malwareScanDomain(args[0]);
       break;
+    case "malware-status":
+      await malwareStatus(args[0]);
+      break;
+    case "malware-schedule-set":
+      await malwareScheduleSet(args[0], args[1]);
+      break;
+    case "malware-quarantine-list":
+      await malwareListQuarantine(args[0]);
+      break;
+    case "plan-get":
+      await planGet(args[0]);
+      break;
+    case "plan-apply":
+      await planApplyToDomain(args[0], args[1]);
+      break;
+    case "plan-upsert":
+      await planUpsert(args[0], args[1]);
+      break;
     case "modsecurity-status":
       await modsecurityStatus(args[0]);
       break;
     case "modsecurity-toggle":
       await modsecurityToggle(args[0], args[1]);
+      break;
+    case "modsecurity-logs":
+      await modsecurityLogs(args[0], args[1], args[2]);
+      break;
+    case "modsecurity-crs-check":
+      await modsecurityCrsCheck();
       break;
     case "metrics-snapshot":
       await metricsSnapshot();

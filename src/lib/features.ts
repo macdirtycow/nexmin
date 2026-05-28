@@ -288,8 +288,8 @@ export const DOMAIN_FEATURES: DomainFeature[] = [
   {
     id: "scripts",
     phase: 5,
-    label: "Scripts",
-    description: "WordPress and other installers",
+    label: "Apps",
+    description: "One-click CMS installers (WordPress, Joomla, Drupal, …)",
     path: "scripts",
     programs: {
       admin: [

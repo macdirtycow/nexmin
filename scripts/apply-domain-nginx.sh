@@ -85,6 +85,15 @@ write_site_server() {
   echo "    index index.html index.htm index.php;"
   echo "    client_max_body_size 100g;"
 
+  MODSEC_JSON="$QADBAK_DIR/data/domain-config/${DOMAIN}/modsecurity.json"
+  MODSEC_RULES="$QADBAK_DIR/data/domain-config/${DOMAIN}/modsecurity-nginx.conf"
+  if [[ -f "$MODSEC_JSON" ]] && [[ -f "$MODSEC_RULES" ]] && command -v jq &>/dev/null; then
+    if jq -e '.enabled == true' "$MODSEC_JSON" &>/dev/null; then
+      echo "    modsecurity on;"
+      echo "    modsecurity_rules_file ${MODSEC_RULES};"
+    fi
+  fi
+
   if [[ -f "$PROXY_JSON" ]] && command -v jq &>/dev/null; then
     while IFS=$'\t' read -r ppath pdest; do
       [[ -z "$ppath" || -z "$pdest" ]] && continue

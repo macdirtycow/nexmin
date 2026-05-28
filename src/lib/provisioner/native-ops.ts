@@ -145,6 +145,9 @@ export async function createDomainNative(
     input.user?.trim() || "",
     extra,
   );
+  if (input.plan?.trim()) {
+    await runProvisioningHelper("plan-apply", input.domain, input.plan.trim());
+  }
 }
 
 export async function deleteDomainNative(

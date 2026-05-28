@@ -8,25 +8,26 @@ type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const key = await requireApiV1("domains:read");
+    const key = await requireApiV1("ssl:read");
     const domain = (await params).domain;
     await assertApiV1DomainAccess(key, domain);
-    const domains = await getProvisioner().listDomains(apiV1Actor());
-    const row = domains.find((d) => d.name === domain);
-    return jsonOk({ domain: row });
+    const certs = await getProvisioner().listSslCerts(domain, apiV1Actor());
+    return jsonOk({ domain, certs });
   } catch (err) {
     return apiV1Error(err);
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   try {
-    const key = await requireApiV1("domains:write");
+    const key = await requireApiV1("ssl:write");
     const domain = (await params).domain;
     await assertApiV1DomainAccess(key, domain);
-    await getProvisioner().deleteDomain(domain, apiV1Actor());
-    await auditLog(`api:${key.id}`, "api-v1-delete-domain", domain);
-    return jsonOk({ ok: true });
+    const body = (await request.json()) as { host?: string };
+    const host = body.host?.trim() || domain;
+    await getProvisioner().requestLetsEncrypt(domain, host, apiV1Actor());
+    await auditLog(`api:${key.id}`, "api-v1-ssl-issue", domain, host);
+    return jsonOk({ ok: true, host });
   } catch (err) {
     return apiV1Error(err);
   }

@@ -173,6 +173,27 @@ async function upsertProxy(domain, loc, dest) {
   });
 }
 
+export async function runtimesDockerAction(domain, name, action) {
+  const { user, home } = await resolveDomainUser(domain);
+  const appName = String(name || "stack").replace(/[^a-z0-9-]/gi, "");
+  const compose = path.join(home, "apps", appName, "docker-compose.yml");
+  const act = String(action || "status").toLowerCase();
+  const args =
+    act === "start"
+      ? ["compose", "-f", compose, "up", "-d"]
+      : act === "stop"
+        ? ["compose", "-f", compose, "down"]
+        : act === "logs"
+          ? ["compose", "-f", compose, "logs", "--tail", "80"]
+          : ["compose", "-f", compose, "ps"];
+  const { stdout } = await exec("sudo", ["-u", user, "docker", ...args], {
+    cwd: path.dirname(compose),
+    timeout: 120_000,
+    maxBuffer: 2 * 1024 * 1024,
+  });
+  emit({ ok: true, action: act, output: stdout.slice(-8000) });
+}
+
 async function fileExists(p) {
   try {
     await access(p);
