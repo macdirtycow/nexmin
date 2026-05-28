@@ -21,6 +21,8 @@ const INSTALLERS = {
   phpmyadmin: "install-app-phpmyadmin.sh",
   nextcloud: "install-app-nextcloud.sh",
   matomo: "install-app-matomo.sh",
+  prestashop: "install-app-prestashop.sh",
+  ghost: "install-app-ghost.sh",
 };
 
 async function loadCatalog() {

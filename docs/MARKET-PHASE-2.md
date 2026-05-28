@@ -15,7 +15,7 @@
 
 ## Apps (intent install)
 
-WordPress (full wp-config), Joomla, Drupal, Nextcloud, phpMyAdmin, Matomo.
+WordPress (full wp-config), Joomla, Drupal, Nextcloud, phpMyAdmin, Matomo, PrestaShop, Ghost (Node 18+).
 
 ## Enable native scripts
 

@@ -14,6 +14,10 @@ const POST_INSTALL: Record<string, string> = {
     "Sign in with an existing MySQL user (often the domain's database user). Do not expose this URL publicly without extra protection.",
   matomo:
     "Run the Matomo setup wizard at your site URL. Choose MySQL and paste the database credentials below.",
+  prestashop:
+    "Open your shop URL and complete the PrestaShop installer. Use the MySQL credentials below when asked.",
+  ghost:
+    "Ghost installs with SQLite by default. SSH as the domain user: cd into the install folder, run ghost config url https://your-domain, then ghost setup and ghost start. Proxy port 2368 (Domains → Runtimes or nginx). To use MySQL instead, edit config.production.json after setup.",
 };
 
 function makeStrongPassword(): string {
@@ -26,6 +30,7 @@ function makeStrongPassword(): string {
 function defaultInstallPath(entry: AppCatalogEntry): string {
   if (entry.id === "phpmyadmin") return "public_html/phpmyadmin";
   if (entry.id === "matomo") return "public_html/matomo";
+  if (entry.id === "ghost") return "ghost";
   if (entry.id === "nextcloud") return "public_html";
   return "public_html";
 }

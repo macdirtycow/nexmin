@@ -96,28 +96,30 @@
     "id": "prestashop",
     "name": "prestashop",
     "label": "PrestaShop",
-    "desc": "E-commerce store — coming soon",
-    "version": "8",
+    "desc": "E-commerce — PrestaShop 8 web installer",
+    "version": "8.2",
     "minPhp": "8.1",
     "requiresDb": true,
     "category": "ecommerce",
     "icon": "🛒",
     "tagline": "Online shop on your VPS",
-    "comingSoon": true,
-    "intentMode": "domain-only"
+    "featured": true,
+    "intentMode": "full",
+    "installer": "install-app-prestashop.sh",
+    "etaSeconds": 120
   },
   {
     "id": "ghost",
     "name": "ghost",
     "label": "Ghost",
-    "desc": "Modern publishing platform — coming soon",
+    "desc": "Publishing platform — Node.js 18+ (ghost-cli, SQLite default)",
     "version": "5",
-    "minPhp": "8.0",
-    "requiresDb": true,
+    "requiresDb": false,
     "category": "cms",
     "icon": "👻",
     "tagline": "Newsletter-first blogging",
-    "comingSoon": true,
-    "intentMode": "domain-only"
+    "intentMode": "full",
+    "installer": "install-app-ghost.sh",
+    "etaSeconds": 180
   }
 ]

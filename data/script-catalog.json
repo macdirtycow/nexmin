@@ -51,5 +51,22 @@
     "requiresDb": true,
     "icon": "📊",
     "category": "analytics"
+  },
+  {
+    "name": "prestashop",
+    "label": "PrestaShop",
+    "desc": "PrestaShop 8 e-commerce",
+    "version": "8.2",
+    "requiresDb": true,
+    "icon": "🛒",
+    "category": "ecommerce"
+  },
+  {
+    "name": "ghost",
+    "label": "Ghost",
+    "desc": "Ghost publishing (Node.js 18+)",
+    "version": "5",
+    "icon": "👻",
+    "category": "cms"
   }
 ]
