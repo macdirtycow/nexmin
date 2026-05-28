@@ -23,7 +23,9 @@ export async function GET(request: Request, { params }: Params) {
       return jsonError("Backup download requires native backup mode.", 501);
     }
     const name = new URL(request.url).searchParams.get("name")?.trim();
-    if (!name) return jsonError("name is required.");
+    if (!name || name.includes("/") || name.includes("..")) {
+      return jsonError("Invalid backup name.");
+    }
 
     const resolved = await runProvisioningHelper("backup-resolve", domain, name);
     const fileName = String(resolved.fileName ?? name);

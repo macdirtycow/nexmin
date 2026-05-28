@@ -13,6 +13,7 @@ export { PanelError } from "./errors";
 import { parseDomainsListRows } from "./hosting-api-parse";
 import { PanelError } from "./errors";
 import { hostingRemoteFetch } from "./hosting-remote-http";
+import { normalizeLegacyPanelRedirect } from "./legacy-panel-embed";
 import { rewriteLegacyPanelLoginUrlForEmbed } from "./legacy-panel-embed-url";
 import { LEGACY_UPSTREAM } from "./legacy-upstream-keys";
 import { sanitizeUserFacingMessage } from "./user-facing-errors";
@@ -897,11 +898,13 @@ export async function createDomainLegacyLoginLink(
   actor: { role: Role; domains: string[] },
   options?: { redirectUrl?: string; preferAccountPanel?: boolean },
 ): Promise<string> {
-  const redirect = options?.redirectUrl
-    ? options.redirectUrl.startsWith("/")
+  let redirect: string | undefined;
+  if (options?.redirectUrl) {
+    const raw = options.redirectUrl.startsWith("/")
       ? options.redirectUrl
-      : `/${options.redirectUrl}`
-    : undefined;
+      : `/${options.redirectUrl}`;
+    redirect = normalizeLegacyPanelRedirect(raw);
+  }
   const unixUser = await resolveDomainUnixUser(domain, actor);
 
   if (!options?.preferAccountPanel) {

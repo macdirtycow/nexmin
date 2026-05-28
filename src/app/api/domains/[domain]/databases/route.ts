@@ -1,15 +1,13 @@
 import { auditLog } from "@/lib/audit";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { requireSession } from "@/lib/session";
+import { requireDomainApi } from "@/lib/domain-api";
 import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const databases = await getProvisioner().listDatabases(domain, session);
     return jsonOk({ databases });
   } catch (err) {
@@ -19,9 +17,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as {
       name?: string;
       pass?: string;
@@ -46,9 +42,7 @@ export async function POST(request: Request, { params }: Params) {
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { name?: string; pass?: string };
     if (!body.name || !body.pass) {
       return jsonError("Database name and password are required.");

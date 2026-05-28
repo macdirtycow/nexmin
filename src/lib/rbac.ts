@@ -15,6 +15,22 @@ const DOMAIN_OPTIONAL_PROGRAMS = [
   ...ADMIN_CLOUD_PROGRAMS,
 ];
 
+/** Enforce client domain allowlist (admin bypass). Use for native/API paths without a hosting program name. */
+export function assertActorDomainAccess(
+  actor: { role: Role; domains: string[] },
+  domain: string,
+): void {
+  if (actor.role === "admin") return;
+  const normalized = domain.trim().toLowerCase();
+  if (!normalized) {
+    throw new Error("Domain parameter is missing.");
+  }
+  const allowed = actor.domains.map((d) => d.toLowerCase());
+  if (!allowed.includes(normalized)) {
+    throw new Error("No access to this domain.");
+  }
+}
+
 export function assertDomainAccess(
   role: Role,
   allowedDomains: string[],

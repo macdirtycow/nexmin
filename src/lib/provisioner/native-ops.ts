@@ -6,55 +6,81 @@ import type {
   SslCert,
   CreateDomainInput,
 } from "../hosting-remote";
-import { runProvisioningHelper } from "./native-exec";
+import { assertActorDomainAccess } from "../rbac";
+import { runProvisioningHelper, type HelperResult } from "./native-exec";
 
 type Actor = { role: Role; domains: string[] };
 
+function requireAdminActor(actor: Actor): void {
+  if (actor.role !== "admin") {
+    throw new Error("Only administrators may perform this action.");
+  }
+}
+
+async function runDomainHelper(
+  actor: Actor,
+  domain: string,
+  cmd: string,
+  ...args: string[]
+): Promise<HelperResult> {
+  assertActorDomainAccess(actor, domain);
+  return runProvisioningHelper(cmd, domain, ...args);
+}
+
+async function runAdminHelper(
+  actor: Actor,
+  cmd: string,
+  ...args: string[]
+): Promise<HelperResult> {
+  requireAdminActor(actor);
+  return runProvisioningHelper(cmd, ...args);
+}
+
 export async function listSslCertsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<SslCert[]> {
-  const r = await runProvisioningHelper("ssl-list", domain);
+  const r = await runDomainHelper(actor, domain, "ssl-list");
   return (r.certs as SslCert[]) ?? [];
 }
 
 export async function requestLetsEncryptNative(
   domain: string,
   host: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("ssl-issue", domain, host || domain);
+  await runDomainHelper(actor, domain, "ssl-issue", host || domain);
 }
 
 export async function getDnsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ records: DnsRecord[]; raw: unknown }> {
-  const r = await runProvisioningHelper("dns-get", domain);
+  const r = await runDomainHelper(actor, domain, "dns-get");
   return { records: (r.records as DnsRecord[]) ?? [], raw: r };
 }
 
 export async function addDnsRecordNative(
   domain: string,
   record: DnsRecord,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("dns-add", domain, JSON.stringify(record));
+  await runDomainHelper(actor, domain, "dns-add", JSON.stringify(record));
 }
 
 export async function deleteDnsRecordNative(
   domain: string,
   record: DnsRecord,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("dns-del", domain, JSON.stringify(record));
+  await runDomainHelper(actor, domain, "dns-del", JSON.stringify(record));
 }
 
 export async function listMailboxesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<HostedMailbox[]> {
-  const r = await runProvisioningHelper("mail-list", domain);
+  const r = await runDomainHelper(actor, domain, "mail-list");
   return (
     (r.mailboxes as { user: string; real?: string; quota?: string; quotaUsedMb?: string }[]) ??
     []
@@ -72,11 +98,10 @@ export async function createMailboxNative(
   user: string,
   pass: string,
   real: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper(
+  await runDomainHelper(actor, domain,
     "mail-create",
-    domain,
     user,
     pass,
     real ?? "",
@@ -87,24 +112,24 @@ export async function updateMailboxPasswordNative(
   domain: string,
   user: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("mail-pass", domain, user, pass);
+  await runDomainHelper(actor, domain, "mail-pass", user, pass);
 }
 
 export async function deleteMailboxNative(
   domain: string,
   user: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("mail-delete", domain, user);
+  await runDomainHelper(actor, domain, "mail-delete", user);
 }
 
 export async function listDatabasesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<HostedDatabase[]> {
-  const r = await runProvisioningHelper("db-list", domain);
+  const r = await runDomainHelper(actor, domain, "db-list");
   return (r.databases as HostedDatabase[]) ?? [];
 }
 
@@ -113,23 +138,23 @@ export async function createDatabaseNative(
   name: string,
   pass: string,
   _type: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("db-create", domain, name, pass);
+  await runDomainHelper(actor, domain, "db-create", name, pass);
 }
 
 export async function updateDatabasePasswordNative(
   domain: string,
   name: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("db-pass", domain, name, pass);
+  await runDomainHelper(actor, domain, "db-pass", name, pass);
 }
 
 export async function createDomainNative(
   input: CreateDomainInput,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
   const type =
     input.type ?? (input.alias ? "alias" : input.subdom ? "sub" : "top");
@@ -139,23 +164,22 @@ export async function createDomainNative(
     plan: input.plan,
     reseller: input.reseller,
   });
-  await runProvisioningHelper(
+  await runDomainHelper(actor, input.domain,
     "domain-create",
-    input.domain,
     input.pass,
     input.user?.trim() || "",
     extra,
   );
   if (input.plan?.trim()) {
-    await runProvisioningHelper("plan-apply", input.domain, input.plan.trim());
+    await runDomainHelper(actor, input.domain, "plan-apply", input.plan.trim());
   }
 }
 
 export async function deleteDomainNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("domain-delete", domain);
+  await runDomainHelper(actor, domain, "domain-delete");
 }
 
 function formatBytes(n: number): string {
@@ -166,9 +190,9 @@ function formatBytes(n: number): string {
 
 export async function listScheduledBackupsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<ScheduledBackup[]> {
-  const r = await runProvisioningHelper("backup-list", domain);
+  const r = await runDomainHelper(actor, domain, "backup-list");
   const files =
     (r.backups as {
       name: string;
@@ -209,9 +233,9 @@ export async function listScheduledBackupsNative(
 
 export async function startBackupNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ file?: string; components?: string[] }> {
-  const r = await runProvisioningHelper("backup-create", domain, "full");
+  const r = await runDomainHelper(actor, domain, "backup-create", "full");
   return {
     file: r.file as string | undefined,
     components: r.components as string[] | undefined,
@@ -222,7 +246,7 @@ export async function restoreDomainNative(
   domain: string,
   source: string,
   opts: { test?: boolean; allFeatures?: boolean },
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{
   restored?: string[];
   preview?: string[];
@@ -232,9 +256,8 @@ export async function restoreDomainNative(
   components?: string[];
   settingsFiles?: string[];
 }> {
-  const r = await runProvisioningHelper(
+  const r = await runDomainHelper(actor, domain,
     "backup-restore",
-    domain,
     source,
     opts.test ? "true" : "false",
   );
@@ -253,12 +276,11 @@ export async function modifyScheduledBackupNative(
   domain: string,
   id: string,
   opts: { enabled?: boolean },
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
   if (id === "schedule") {
-    await runProvisioningHelper(
-      "backup-schedule-toggle",
-      domain,
+    await runDomainHelper(actor, domain,
+    "backup-schedule-toggle",
       opts.enabled ? "true" : "false",
     );
     return;
@@ -269,28 +291,27 @@ export async function modifyScheduledBackupNative(
 export async function deleteBackupNative(
   domain: string,
   name: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("backup-delete", domain, name);
+  await runDomainHelper(actor, domain, "backup-delete", name);
 }
 
 export async function setBackupScheduleNative(
   domain: string,
   schedule: { schedule?: string; enabled?: boolean; retain?: number },
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper(
+  await runDomainHelper(actor, domain,
     "backup-schedule-set",
-    domain,
     JSON.stringify(schedule),
   );
 }
 
 export async function listCronJobsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<CronJob[]> {
-  const r = await runProvisioningHelper("cron-list", domain);
+  const r = await runDomainHelper(actor, domain, "cron-list");
   return ((r.jobs as { schedule: string; command: string }[]) ?? []).map(
     (j, i) => ({
       id: String(i),
@@ -306,24 +327,24 @@ export async function createCronJobNative(
   schedule: string,
   command: string,
   _user: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("cron-create", domain, schedule, command);
+  await runDomainHelper(actor, domain, "cron-create", schedule, command);
 }
 
 export async function deleteCronJobNative(
   domain: string,
   id: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("cron-delete", domain, id);
+  await runDomainHelper(actor, domain, "cron-delete", id);
 }
 
 export async function listAliasesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ from: string; to: string }[]> {
-  const r = await runProvisioningHelper("alias-list", domain);
+  const r = await runDomainHelper(actor, domain, "alias-list");
   return (r.aliases as { from: string; to: string }[]) ?? [];
 }
 
@@ -331,24 +352,24 @@ export async function createAliasNative(
   domain: string,
   from: string,
   to: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("alias-create", domain, from, to);
+  await runDomainHelper(actor, domain, "alias-create", from, to);
 }
 
 export async function deleteAliasNative(
   domain: string,
   from: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("alias-delete", domain, from);
+  await runDomainHelper(actor, domain, "alias-delete", from);
 }
 
 export async function listRedirectsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ path: string; dest: string; type?: string }[]> {
-  const r = await runProvisioningHelper("redirect-list", domain);
+  const r = await runDomainHelper(actor, domain, "redirect-list");
   return (r.redirects as { path: string; dest: string; type?: string }[]) ?? [];
 }
 
@@ -357,24 +378,24 @@ export async function createRedirectNative(
   path: string,
   dest: string,
   type: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("redirect-create", domain, path, dest, type || "301");
+  await runDomainHelper(actor, domain, "redirect-create", path, dest, type || "301");
 }
 
 export async function deleteRedirectNative(
   domain: string,
   path: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("redirect-delete", domain, path);
+  await runDomainHelper(actor, domain, "redirect-delete", path);
 }
 
 export async function listDomainFeaturesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ feature: string; enabled: boolean; label?: string }[]> {
-  const r = await runProvisioningHelper("feature-list", domain);
+  const r = await runDomainHelper(actor, domain, "feature-list");
   return (r.features as { feature: string; enabled: boolean; label?: string }[]) ?? [];
 }
 
@@ -382,42 +403,42 @@ export async function setDomainFeatureNative(
   domain: string,
   feature: string,
   enabled: boolean,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("feature-set", domain, feature, enabled ? "true" : "false");
+  await runDomainHelper(actor, domain, "feature-set", feature, enabled ? "true" : "false");
 }
 
 export async function getWebsiteLogsNative(
   domain: string,
   logType: "access" | "error",
-  _actor: Actor,
+  actor: Actor,
 ): Promise<string> {
-  const r = await runProvisioningHelper("logs-tail", domain, logType);
+  const r = await runDomainHelper(actor, domain, "logs-tail", logType);
   return String(r.log ?? "");
 }
 
 export async function listPhpVersionsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ version: string; id?: string }[]> {
-  const r = await runProvisioningHelper("php-versions", domain);
+  const r = await runDomainHelper(actor, domain, "php-versions");
   return (r.versions as { version: string; id?: string }[]) ?? [];
 }
 
 export async function listPhpDirectoriesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ dir: string; version?: string; mode?: string }[]> {
-  const r = await runProvisioningHelper("php-directories", domain);
+  const r = await runDomainHelper(actor, domain, "php-directories");
   return (r.directories as { dir: string; version?: string; mode?: string }[]) ?? [];
 }
 
 export async function listPhpIniNative(
   domain: string,
   version: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ name: string; value: string }[]> {
-  const r = await runProvisioningHelper("php-ini", domain, version ?? "");
+  const r = await runDomainHelper(actor, domain, "php-ini", version ?? "");
   return (r.ini as { name: string; value: string }[]) ?? [];
 }
 
@@ -425,9 +446,9 @@ export async function setPhpDirectoryNative(
   domain: string,
   dir: string,
   version: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("php-set-directory", domain, dir, version);
+  await runDomainHelper(actor, domain, "php-set-directory", dir, version);
 }
 
 export async function modifyPhpIniNative(
@@ -435,11 +456,10 @@ export async function modifyPhpIniNative(
   name: string,
   value: string,
   version: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper(
+  await runDomainHelper(actor, domain,
     "php-modify-ini",
-    domain,
     name,
     value,
     version ?? "",
@@ -449,16 +469,16 @@ export async function modifyPhpIniNative(
 export async function deletePhpDirectoryNative(
   domain: string,
   dir: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("php-delete-directory", domain, dir);
+  await runDomainHelper(actor, domain, "php-delete-directory", dir);
 }
 
 export async function listFtpAccountsSafeNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ user: string; dir?: string; quota?: string }[]> {
-  const r = await runProvisioningHelper("ftp-list", domain);
+  const r = await runDomainHelper(actor, domain, "ftp-list");
   return (r.accounts as { user: string; dir?: string; quota?: string }[]) ?? [];
 }
 
@@ -466,38 +486,38 @@ export async function createFtpAccountNative(
   domain: string,
   user: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("ftp-create", domain, user, pass);
+  await runDomainHelper(actor, domain, "ftp-create", user, pass);
 }
 
 export async function updateFtpPasswordNative(
   domain: string,
   user: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("ftp-pass", domain, user, pass);
+  await runDomainHelper(actor, domain, "ftp-pass", user, pass);
 }
 
 export async function deleteFtpAccountNative(
   domain: string,
   user: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("ftp-delete", domain, user);
+  await runDomainHelper(actor, domain, "ftp-delete", user);
 }
 
 export async function getDomainLimitsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{
   disk?: string;
   bandwidth?: string;
   mailboxes?: string;
   databases?: string;
 }> {
-  const r = await runProvisioningHelper("limits-get", domain);
+  const r = await runDomainHelper(actor, domain, "limits-get");
   return (r.limits as {
     disk?: string;
     bandwidth?: string;
@@ -514,27 +534,28 @@ export async function updateDomainLimitsNative(
     mailboxes?: string;
     databases?: string;
   },
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("limits-set", domain, JSON.stringify(limits));
+  await runDomainHelper(actor, domain, "limits-set", JSON.stringify(limits));
 }
 
 export async function setDomainEnabledNative(
   domain: string,
   enabled: boolean,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper(
-    enabled ? "domain-enable" : "domain-disable",
+  await runDomainHelper(
+    actor,
     domain,
+    enabled ? "domain-enable" : "domain-disable",
   );
 }
 
 export async function validateDomainNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ valid: boolean; messages: string[] }> {
-  const r = await runProvisioningHelper("domain-validate", domain);
+  const r = await runDomainHelper(actor, domain, "domain-validate");
   return {
     valid: Boolean(r.valid),
     messages: (r.messages as string[]) ?? [],
@@ -544,18 +565,18 @@ export async function validateDomainNative(
 export async function searchMailLogsNative(
   domain: string,
   query: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<string[]> {
-  const r = await runProvisioningHelper("mail-logs-search", domain, query);
+  const r = await runDomainHelper(actor, domain, "mail-logs-search", query);
   return (r.lines as string[]) ?? [];
 }
 
 export async function listImapMailboxesNative(
   domain: string,
   user: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ user: string; folder: string; messages?: string; size?: string }[]> {
-  const r = await runProvisioningHelper("imap-list", domain, user ?? "");
+  const r = await runDomainHelper(actor, domain, "imap-list", user ?? "");
   return (r.mailboxes as { user: string; folder: string; messages?: string; size?: string }[]) ?? [];
 }
 
@@ -563,42 +584,42 @@ export async function copyMailboxNative(
   domain: string,
   from: string,
   to: string,
-  _actor: Actor,
+  actor: Actor,
   mailboxUser?: string,
 ): Promise<void> {
-  await runProvisioningHelper("imap-copy", domain, from, to, mailboxUser ?? "");
+  await runDomainHelper(actor, domain, "imap-copy", from, to, mailboxUser ?? "");
 }
 
 export async function listProtectedDirectoriesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ path: string; id?: string }[]> {
-  const r = await runProvisioningHelper("protected-list", domain);
+  const r = await runDomainHelper(actor, domain, "protected-list");
   return (r.directories as { path: string; id?: string }[]) ?? [];
 }
 
 export async function createProtectedDirectoryNative(
   domain: string,
   dirPath: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("protected-create", domain, dirPath);
+  await runDomainHelper(actor, domain, "protected-create", dirPath);
 }
 
 export async function deleteProtectedDirectoryNative(
   domain: string,
   dirPath: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("protected-delete", domain, dirPath);
+  await runDomainHelper(actor, domain, "protected-delete", dirPath);
 }
 
 export async function listProtectedUsersNative(
   domain: string,
   dirPath: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ user: string; path?: string }[]> {
-  const r = await runProvisioningHelper("protected-users-list", domain, dirPath);
+  const r = await runDomainHelper(actor, domain, "protected-users-list", dirPath);
   return (r.users as { user: string }[]) ?? [];
 }
 
@@ -607,24 +628,24 @@ export async function createProtectedUserNative(
   dirPath: string,
   user: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("protected-user-create", domain, dirPath, user, pass);
+  await runDomainHelper(actor, domain, "protected-user-create", dirPath, user, pass);
 }
 
 export async function deleteProtectedUserNative(
   domain: string,
   dirPath: string,
   user: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("protected-user-delete", domain, dirPath, user);
+  await runDomainHelper(actor, domain, "protected-user-delete", dirPath, user);
 }
 
 export async function resendEmailNative(
   _domain: string,
   messageId: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
   throw new Error(
     `Resend (${messageId}) is not available in native mail mode. Use your mail client, or requeue from the server with postqueue/postfix.`,
@@ -633,9 +654,9 @@ export async function resendEmailNative(
 
 export async function listSharedAddressesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ address: string; users: string }[]> {
-  const r = await runProvisioningHelper("shared-list", domain);
+  const r = await runDomainHelper(actor, domain, "shared-list");
   return (r.addresses as { address: string; users: string }[]) ?? [];
 }
 
@@ -643,28 +664,28 @@ export async function createSharedAddressNative(
   domain: string,
   address: string,
   users: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("shared-create", domain, address, users);
+  await runDomainHelper(actor, domain, "shared-create", address, users);
 }
 
 export async function deleteSharedAddressNative(
   domain: string,
   address: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("shared-delete", domain, address);
+  await runDomainHelper(actor, domain, "shared-delete", address);
 }
 
 export async function getMailSettingsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{
   catchAll?: string;
   autoresponder?: string;
   autoresponderEnabled?: boolean;
 }> {
-  const r = await runProvisioningHelper("mail-settings-get", domain);
+  const r = await runDomainHelper(actor, domain, "mail-settings-get");
   return (r.settings as {
     catchAll?: string;
     autoresponder?: string;
@@ -679,16 +700,16 @@ export async function updateMailSettingsNative(
     autoresponder?: string;
     autoresponderEnabled?: boolean;
   },
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("mail-settings-set", domain, JSON.stringify(settings));
+  await runDomainHelper(actor, domain, "mail-settings-set", JSON.stringify(settings));
 }
 
 export async function listProxiesNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ path: string; dest: string; type?: string }[]> {
-  const r = await runProvisioningHelper("proxy-list", domain);
+  const r = await runDomainHelper(actor, domain, "proxy-list");
   return (r.proxies as { path: string; dest: string; type?: string }[]) ?? [];
 }
 
@@ -696,32 +717,32 @@ export async function createProxyNative(
   domain: string,
   path: string,
   dest: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("proxy-create", domain, path, dest, "proxy");
+  await runDomainHelper(actor, domain, "proxy-create", path, dest, "proxy");
 }
 
 export async function deleteProxyNative(
   domain: string,
   path: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("proxy-delete", domain, path);
+  await runDomainHelper(actor, domain, "proxy-delete", path);
 }
 
 export async function listAvailableScriptsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ name: string; desc?: string; version?: string }[]> {
-  const r = await runProvisioningHelper("script-available", domain);
+  const r = await runDomainHelper(actor, domain, "script-available");
   return (r.available as { name: string; desc?: string; version?: string }[]) ?? [];
 }
 
 export async function listInstalledScriptsNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ name: string; version?: string; path?: string; url?: string }[]> {
-  const r = await runProvisioningHelper("script-list", domain);
+  const r = await runDomainHelper(actor, domain, "script-list");
   return ((r.installed as { name: string; path?: string }[]) ?? []).map((s) => ({
     name: s.name,
     path: s.path,
@@ -733,21 +754,21 @@ export async function installScriptNative(
   domain: string,
   script: string,
   installPath: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("script-install", domain, script, installPath ?? "public_html");
+  await runDomainHelper(actor, domain, "script-install", script, installPath ?? "public_html");
 }
 
 export async function deleteInstalledScriptNative(
   domain: string,
   script: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("script-delete", domain, script);
+  await runDomainHelper(actor, domain, "script-delete", script);
 }
 
-export async function getRuntimesNative(domain: string, _actor: Actor) {
-  const r = await runProvisioningHelper("runtimes-get", domain);
+export async function getRuntimesNative(domain: string, actor: Actor) {
+  const r = await runDomainHelper(actor, domain, "runtimes-get");
   return {
     runtimes: (r.runtimes as { apps?: unknown[] }) ?? { apps: [] },
     phpFpmSocket: String(r.phpFpmSocket ?? ""),
@@ -759,11 +780,12 @@ export async function installNodeRuntimeNative(
   name: string,
   port: number,
   subpath: string | undefined,
-  _actor: Actor,
+  actor: Actor,
 ) {
-  return runProvisioningHelper(
-    "runtimes-node-install",
+  return runDomainHelper(
+    actor,
     domain,
+    "runtimes-node-install",
     name,
     String(port),
     subpath ?? "/",
@@ -774,82 +796,88 @@ export async function installPythonRuntimeNative(
   domain: string,
   name: string,
   port: number,
-  _actor: Actor,
+  actor: Actor,
 ) {
-  return runProvisioningHelper("runtimes-python-install", domain, name, String(port));
+  return runDomainHelper(
+    actor,
+    domain,
+    "runtimes-python-install",
+    name,
+    String(port),
+  );
 }
 
 export async function installDockerRuntimeNative(
   domain: string,
   name: string,
-  _actor: Actor,
+  actor: Actor,
 ) {
-  return runProvisioningHelper("runtimes-docker-install", domain, name);
+  return runDomainHelper(actor, domain, "runtimes-docker-install", name);
 }
 
 export async function getMailSecurityNative(
   domain: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ spamEnabled?: boolean; dkimEnabled?: boolean }> {
-  const r = await runProvisioningHelper("security-get", domain);
+  const r = await runDomainHelper(actor, domain, "security-get");
   return (r.settings as { spamEnabled?: boolean; dkimEnabled?: boolean }) ?? {};
 }
 
 export async function setSpamFilterNative(
   domain: string,
   enabled: boolean,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("security-spam", domain, enabled ? "true" : "false");
+  await runDomainHelper(actor, domain, "security-spam", enabled ? "true" : "false");
 }
 
 export async function setDkimNative(
   domain: string,
   enabled: boolean,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("security-dkim", domain, enabled ? "true" : "false");
+  await runDomainHelper(actor, domain, "security-dkim", enabled ? "true" : "false");
 }
 
 export async function listResellersNative(
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ name: string; domains?: string; limit?: string }[]> {
-  const r = await runProvisioningHelper("reseller-list");
+  const r = await runAdminHelper(actor, "reseller-list");
   return (r.resellers as { name: string; domains?: string; limit?: string }[]) ?? [];
 }
 
 export async function createResellerNative(
   name: string,
   pass: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("reseller-create", name, pass);
+  await runAdminHelper(actor, "reseller-create", name, pass);
 }
 
 export async function deleteResellerNative(
   name: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("reseller-delete", name);
+  await runAdminHelper(actor, "reseller-delete", name);
 }
 
 export async function listPlansNative(
-  _actor: Actor,
+  actor: Actor,
 ): Promise<{ name: string; id?: string; quota?: string }[]> {
-  const r = await runProvisioningHelper("plan-list");
+  const r = await runAdminHelper(actor, "plan-list");
   return (r.plans as { name: string; id?: string; quota?: string }[]) ?? [];
 }
 
 export async function createPlanNative(
   name: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("plan-create", name);
+  await runAdminHelper(actor, "plan-create", name);
 }
 
 export async function deletePlanNative(
   name: string,
-  _actor: Actor,
+  actor: Actor,
 ): Promise<void> {
-  await runProvisioningHelper("plan-delete", name);
+  await runAdminHelper(actor, "plan-delete", name);
 }

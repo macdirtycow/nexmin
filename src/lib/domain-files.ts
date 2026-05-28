@@ -223,6 +223,16 @@ export function normalizeDir(dir: string): string {
   return dir.replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
+/** Reject path traversal in panel-relative paths (live file manager). */
+export function assertSafePanelPath(panelPath: string): string {
+  const rel = panelPath.replace(/^\/+/, "");
+  const parts = rel.split("/").filter((p) => p.length > 0);
+  if (parts.some((p) => p === "..")) {
+    throw new PanelError("Invalid path.");
+  }
+  return parts.join("/");
+}
+
 function safeFileName(name: string): string {
   const base = name.replace(/[/\\]/g, "").trim();
   if (!base || base === "." || base === "..") {

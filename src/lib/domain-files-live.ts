@@ -7,6 +7,7 @@ import {
   isTextFileName,
   languageForFile,
   mimeForFile,
+  assertSafePanelPath,
   normalizeDir,
   resolveMoveDestination,
 } from "./domain-files";
@@ -90,7 +91,7 @@ export async function listDomainFilesLive(
   actor: { role: Role; domains: string[] },
 ): Promise<DomainFileEntry[]> {
   const unixUser = await resolveUnixUser(domain, actor);
-  const cwd = normalizeDir(dir);
+  const cwd = normalizeDir(assertSafePanelPath(dir));
   const abs = absDirFromPanel(unixUser, cwd);
   const data = await runHelper("list", abs);
   const raw = (data.entries ?? []) as Array<{
@@ -123,12 +124,13 @@ export async function readDomainFileLive(
   panelPath: string,
   actor: { role: Role; domains: string[] },
 ): Promise<DomainFileContent> {
+  const safePath = assertSafePanelPath(panelPath);
   const unixUser = await resolveUnixUser(domain, actor);
-  const abs = absFileFromPanel(unixUser, panelPath);
+  const abs = absFileFromPanel(unixUser, safePath);
   const data = await runHelper("read", abs);
-  const name = panelPath.split("/").pop() ?? panelPath;
-  const parent = panelPath.includes("/")
-    ? panelPath.replace(/\/[^/]+$/, "")
+  const name = safePath.split("/").pop() ?? safePath;
+  const parent = safePath.includes("/")
+    ? safePath.replace(/\/[^/]+$/, "")
     : "";
   const encoding = data.encoding === "base64" ? "base64" : "text";
   return {
@@ -146,13 +148,14 @@ export async function writeDomainFileLive(
   content: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
+  const safePath = assertSafePanelPath(panelPath);
   const unixUser = await resolveUnixUser(domain, actor);
-  const abs = absFileFromPanel(unixUser, panelPath);
-  if (!isTextFileName(panelPath.split("/").pop() ?? "")) {
+  const abs = absFileFromPanel(unixUser, safePath);
+  if (!isTextFileName(safePath.split("/").pop() ?? "")) {
     throw new PanelError("You cannot edit this file type as text.");
   }
-  const parent = panelPath.includes("/")
-    ? panelPath.replace(/\/[^/]+$/, "")
+  const parent = safePath.includes("/")
+    ? safePath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
     throw new PanelError("This directory is read-only.");
@@ -189,14 +192,15 @@ export async function uploadDomainFileFromTempLive(
   actor: { role: Role; domains: string[] },
   options?: { overwrite?: boolean; fileBytes?: number },
 ): Promise<number> {
-  const parent = panelPath.includes("/")
-    ? panelPath.replace(/\/[^/]+$/, "")
+  const safePath = assertSafePanelPath(panelPath);
+  const parent = safePath.includes("/")
+    ? safePath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
     throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
-  const abs = absFileFromPanel(unixUser, panelPath);
+  const abs = absFileFromPanel(unixUser, safePath);
   const { sizeBytes } = await runDomainFsInstallUpload(abs, tempPath, maxBytes, options);
   markLiveFilesystemReady();
   return sizeBytes;
@@ -213,14 +217,15 @@ export async function uploadDomainFileLive(
   if (data.byteLength > cap) {
     throw new PanelError(`File exceeds upload limit (${cap} bytes).`);
   }
-  const parent = panelPath.includes("/")
-    ? panelPath.replace(/\/[^/]+$/, "")
+  const safePath = assertSafePanelPath(panelPath);
+  const parent = safePath.includes("/")
+    ? safePath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
     throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
-  const abs = absFileFromPanel(unixUser, panelPath);
+  const abs = absFileFromPanel(unixUser, safePath);
   const base64 = Buffer.from(data).toString("base64");
   await runHelper("write-bytes", abs, { base64, maxBytes: cap });
 }
@@ -233,8 +238,10 @@ export async function moveDomainPathLive(
   actor: { role: Role; domains: string[] },
   options?: { overwrite?: boolean },
 ): Promise<string> {
-  const srcNorm = sourcePath.replace(/^\/+/, "");
-  const destPanelPath = resolveMoveDestination(srcNorm, destDir, newName);
+  const srcNorm = assertSafePanelPath(sourcePath);
+  const destPanelPath = assertSafePanelPath(
+    resolveMoveDestination(srcNorm, assertSafePanelPath(destDir), newName),
+  );
   const srcParent = srcNorm.includes("/") ? srcNorm.replace(/\/[^/]+$/, "") : "";
   const destParent = normalizeDir(destDir);
 
@@ -263,14 +270,15 @@ export async function deleteDomainFileLive(
   panelPath: string,
   actor: { role: Role; domains: string[] },
 ): Promise<void> {
-  const parent = panelPath.includes("/")
-    ? panelPath.replace(/\/[^/]+$/, "")
+  const safePath = assertSafePanelPath(panelPath);
+  const parent = safePath.includes("/")
+    ? safePath.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
     throw new PanelError("This path is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
-  const abs = absFileFromPanel(unixUser, panelPath);
+  const abs = absFileFromPanel(unixUser, safePath);
   await runHelper("unlink", abs);
 }
 
@@ -280,20 +288,21 @@ export async function extractArchiveLive(
   destDir: string,
   actor: { role: Role; domains: string[] },
 ): Promise<{ destDir: string; format: string }> {
-  const parent = archivePath.includes("/")
-    ? archivePath.replace(/\/[^/]+$/, "")
+  const safeArchive = assertSafePanelPath(archivePath);
+  const parent = safeArchive.includes("/")
+    ? safeArchive.replace(/\/[^/]+$/, "")
     : "";
   if (!isDirWritable(parent)) {
     throw new PanelError("This directory is read-only.");
   }
   const unixUser = await resolveUnixUser(domain, actor);
-  const absArchive = absFileFromPanel(unixUser, archivePath);
-  const destNorm = normalizeDir(destDir);
+  const absArchive = absFileFromPanel(unixUser, safeArchive);
+  const destNorm = normalizeDir(assertSafePanelPath(destDir));
   const payload: Record<string, unknown> = {};
   if (destNorm) {
     payload.destAbs = absDirFromPanel(unixUser, destNorm);
   } else {
-    const base = archivePath.split("/").pop() ?? "archive";
+    const base = safeArchive.split("/").pop() ?? "archive";
     payload.destName = base.replace(/\.(tar\.gz|tgz|zip|tar)$/i, "");
   }
   const data = await runHelper("archive-extract", absArchive, payload, {

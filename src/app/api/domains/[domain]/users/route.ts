@@ -5,16 +5,14 @@ import {
   consumeLastJournalSteps,
   runWithJournalStore,
 } from "@/lib/provisioner/native-exec";
-import { requireSession } from "@/lib/session";
+import { requireDomainApi } from "@/lib/domain-api";
 import { getProvisioner } from "@/lib/provisioner";
 
 type Params = { params: Promise<{ domain: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const users = await getProvisioner().listMailboxes(domain, session);
     return jsonOk({ users });
   } catch (err) {
@@ -26,9 +24,7 @@ export async function POST(request: Request, { params }: Params) {
   return runWithJournalStore(async () => {
     let journal: ReturnType<typeof beginJournal> | undefined;
     try {
-      const session = await requireSession();
-      const { domain: encoded } = await params;
-      const domain = decodeURIComponent(encoded);
+      const { session, domain } = await requireDomainApi((await params).domain);
       const body = (await request.json()) as {
         user?: string;
         pass?: string;
@@ -71,9 +67,7 @@ export async function POST(request: Request, { params }: Params) {
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { user?: string; pass?: string };
     if (!body.user || !body.pass) {
       return jsonError("User and new password are required.");
@@ -88,9 +82,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   try {
-    const session = await requireSession();
-    const { domain: encoded } = await params;
-    const domain = decodeURIComponent(encoded);
+    const { session, domain } = await requireDomainApi((await params).domain);
     const body = (await request.json()) as { user?: string };
     if (!body.user) {
       return jsonError("Username is required.");
