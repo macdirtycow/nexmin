@@ -404,11 +404,13 @@ export const IMPLEMENTED_PHASE: FeaturePhase = 8;
 /** Primary server admin — no server admin embed menus (phase 4). */
 export const ADMIN_NAV = [
   { path: "/admin", label: "Overview" },
+  { path: "/admin/privacy", label: "Privacy & data" },
   { path: "/admin/terminal", label: "Terminal" },
   { path: "/admin/updates", label: "Updates", premium: "admin-updates" as const },
   { path: "/admin/status", label: "Status" },
   { path: "/admin/health", label: "Health" },
   { path: "/admin/journal", label: "Journal" },
+  { path: "/admin/audit", label: "Activity log" },
   { path: "/admin/apps", label: "Apps" },
   { path: "/admin/nodes", label: "Nodes" },
   { path: "/admin/server", label: "Services" },
