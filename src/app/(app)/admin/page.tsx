@@ -5,10 +5,24 @@ import Link from "next/link";
 
 export default function AdminOverviewPage() {
   const items = adminNavItems().filter((n) => n.path !== "/admin");
+  const privacy = items.find((n) => n.path === "/admin/privacy");
+  const rest = items.filter((n) => n.path !== "/admin/privacy");
+
   return (
     <div className="space-y-8">
+      {privacy && (
+        <Link href={privacy.path}>
+          <Card className="border-panel-accent/50 bg-panel-accent/5 transition hover:border-panel-accent">
+            <h2 className="text-lg font-medium text-white">{privacy.label}</h2>
+            <p className="mt-2 text-sm text-panel-muted">
+              What stays on your VPS, outbound license heartbeat, audit export, and
+              hardening links — local-first by design.
+            </p>
+          </Card>
+        </Link>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
+        {rest.map((item) => (
           <Link key={item.path} href={item.path}>
             <Card className="transition hover:border-panel-accent">
               <h2 className="font-medium text-white">{item.label}</h2>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import { useEffect, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
@@ -206,6 +207,24 @@ export function SecurityManager({
       />
       {error && <Alert>{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
+
+      {isAdmin && (
+        <Card className="border-panel-accent/30 bg-panel-accent/5">
+          <h2 className="text-sm font-medium text-white">Privacy on this domain</h2>
+          <p className="mt-2 text-sm text-panel-muted">
+            WAF logs, malware scans, and mail filters run locally on your VPS — nothing is
+            sent to Qadbak cloud. Review panel-wide data flows in{" "}
+            <Link href="/admin/privacy" className="text-panel-link hover:underline">
+              Privacy &amp; data
+            </Link>{" "}
+            or sign-in attempts in{" "}
+            <Link href="/admin/audit" className="text-panel-link hover:underline">
+              Activity log
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
 
       <Card className="space-y-4">
         <h2 className="text-lg font-medium text-white">Mail</h2>

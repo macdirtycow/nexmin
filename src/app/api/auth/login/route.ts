@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     const clientIp = (await getClientIp()) ?? "unknown";
     const loginRl = await checkLoginRateLimit(clientIp, body.username);
     if (!loginRl.ok) {
+      await auditLog(body.username, "login-rate-limited", undefined, clientIp);
       return jsonError(
         `Too many login attempts. Try again in ${loginRl.retryAfterSec ?? 900} seconds.`,
         429,
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
 
     const user = await findUserByUsername(body.username);
     if (!user || !(await verifyPassword(user, body.password))) {
+      await auditLog(body.username, "login-failed", undefined, clientIp);
       return jsonError("Invalid credentials.", 401);
     }
 

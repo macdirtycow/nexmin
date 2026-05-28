@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
 import type {
   LicenseActivationRow,
@@ -154,7 +155,15 @@ export function AdminLicensePanel({
         </Alert>
       )}
       <Card>
-        <h2 className="text-lg font-medium text-white">Qadbak license</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-medium text-white">Qadbak license</h2>
+          <Link
+            href="/admin/privacy"
+            className="text-sm text-panel-link hover:underline"
+          >
+            Privacy &amp; data →
+          </Link>
+        </div>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-sm text-panel-muted">Type</dt>
