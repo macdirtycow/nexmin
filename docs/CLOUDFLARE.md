@@ -74,6 +74,34 @@ nc -zv YOUR_VPS_IP 80 443
 
 If local curl works but Cloudflare still shows 523, the origin IP in Cloudflare or the provider firewall is wrong.
 
+## Error 520 — Web server returned an unknown error
+
+Cloudflare reaches your VPS but the origin returns an **empty or invalid** response. Common after `update-qadbak.sh` / phase-8 nginx changes when `panel.<domain>` vhosts were not re-applied.
+
+### Fix on the VPS (root)
+
+```bash
+cd /opt/qadbak
+sudo bash scripts/repair-panel-access.sh
+# or one customer domain:
+sudo bash scripts/repair-panel-access.sh siccamanagement.nl
+```
+
+This script checks pm2 + `:3000/api/health`, recreates `panel.<domain>` nginx vhosts, refreshes the main panel on `:11000`, opens firewall ports 80/443, and restarts pm2.
+
+`update-qadbak.sh` runs the same repair automatically at the end of each update.
+
+### Cloudflare SSL
+
+Same as [502](#error-502--bad-gateway): use **Flexible** if the origin has no cert on `panel.<domain>` yet; use **Full** after Let's Encrypt (the repair script runs certbot when DNS points at the server).
+
+### Diagnose only
+
+```bash
+sudo bash scripts/repair-panel-access.sh --check-only
+curl -sI -H "Host: panel.example.com" http://127.0.0.1/login | head -8
+```
+
 ## Error 502 — Bad gateway
 
 Cloudflare **does** reach your VPS, but the response from the origin is invalid (often nginx cannot proxy to Apache, or Cloudflare uses **HTTPS** to the origin while only HTTP on port 80 is configured).

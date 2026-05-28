@@ -28,6 +28,14 @@ sudo -u qadbak npm install && sudo -u qadbak npm run build
 
 Or use one command: `sudo bash /opt/qadbak/scripts/update-qadbak.sh`
 
+After an update, if `panel.<domain>` or Cloudflare shows **520**, run:
+
+```bash
+sudo bash /opt/qadbak/scripts/repair-panel-access.sh
+```
+
+(`update-qadbak.sh` runs this automatically; re-run manually if needed.)
+
 Allowlisted units: `nginx`, `apache2`/`httpd`, `postfix`, `dovecot`, `named`/`bind9`, `mariadb`, PHP-FPM.
 
 Without sudo, service list/restart falls back to legacy hosting API `list-server-statuses` / `restart-server`.

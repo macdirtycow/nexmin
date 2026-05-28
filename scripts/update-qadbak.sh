@@ -124,6 +124,11 @@ if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/configure-bind-native.sh" ]]; 
   echo "==> BIND9 (native DNS)"
   bash "$ROOT/scripts/configure-bind-native.sh" 2>/dev/null || true
 fi
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/repair-panel-access.sh" ]]; then
+  echo ""
+  echo "==> Panel access (panel.<domain> vhosts + :11000)"
+  bash "$ROOT/scripts/repair-panel-access.sh" || echo "    WARN: repair-panel-access.sh failed (see above)" >&2
+fi
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/repair-panel-webmail.sh" ]]; then
   echo ""
   echo "==> Webmail (IMAP / Dovecot)"
