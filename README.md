@@ -58,6 +58,14 @@ Three prompts (hostname, admin password, Let's Encrypt email) and you're done.
 | **Backups** | Downloadable archives: files, **all mailboxes**, panel settings, DNS zone, certs, crontab. |
 | **Operations** | Action journal, undo (mail/DNS), health checks, WordPress install flow. |
 | **Cron** | Scheduled jobs with plain-language editor. |
+| **Security** | ModSecurity WAF toggle, ClamAV scans, admin firewall UI. |
+| **Runtimes** | Node, Python, Docker compose beside PHP-FPM per domain. |
+| **Apps** | One-click catalog installs into `public_html`. |
+| **Backups+** | Offsite S3/B2/GCS, browse archive, restore single files or DB. |
+| **Monitoring** | Metrics history, alert rules (email / Slack / Telegram). |
+| **API v1** | Bearer keys with scopes — domains, mail, DNS, SSL, suspend, backups. |
+| **Billing** | WHMCS module + Blesta starter in `integrations/`. |
+| **Panel URLs** | `panel.<domain>` vhosts + Cloudflare Flexible/Full — [CLOUDFLARE.md](docs/CLOUDFLARE.md). |
 
 ### Premium (license key)
 
@@ -69,8 +77,9 @@ Three prompts (hostname, admin password, Let's Encrypt email) and you're done.
 | **White-label** | Logo, colours, product name. |
 | **License admin** | View activations, move VPS, heartbeat status. |
 | **Admin updates** | Pull and rebuild panel from the UI. |
+| **Offsite backups** | Encrypted cloud credentials + per-domain upload policy. |
 
-Panel tour: `/fases` · Website: [qadbak.com](https://qadbak.com)
+Website: [qadbak.com](https://qadbak.com) · Market features: [docs/MARKET-FEATURES.md](docs/MARKET-FEATURES.md)
 
 ## Pricing
 
@@ -157,6 +166,13 @@ sudo bash /opt/qadbak/install/qadbak-install-resume.sh
 cd /opt/qadbak && sudo bash scripts/update-qadbak.sh
 ```
 
+Panel unreachable after update (Cloudflare **520** or `panel.<domain>`):
+
+```bash
+sudo bash /opt/qadbak/scripts/fix-panel-now.sh
+sudo bash /opt/qadbak/scripts/diagnose-panel-access.sh panel.example.com
+```
+
 That's the whole update flow for both Core and Premium customers. The
 panel is **open-core**: Premium source lives in this repo and is gated
 purely by `isPremiumFeatureEnabled()` against the license server's
@@ -226,6 +242,10 @@ marketing-site/   static HTML for qadbak.com + legal pages
 | [docs/PHASE-8-INDEPENDENT.md](docs/PHASE-8-INDEPENDENT.md) | Independent native mode |
 | [docs/E2E-CHECKLIST.md](docs/E2E-CHECKLIST.md) | Sign-off checklist |
 | [docs/PHASES.md](docs/PHASES.md) | Feature phases |
+| [docs/MARKET-FEATURES.md](docs/MARKET-FEATURES.md) | Market competition phases 1–8 |
+| [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) | Cloudflare 502/520 + panel SSL |
+| [docs/integrations/WHMCS-INTEGRATION.md](docs/integrations/WHMCS-INTEGRATION.md) | WHMCS + API v1 |
+| [docs/api/openapi.yaml](docs/api/openapi.yaml) | REST API v1 OpenAPI |
 | [docs/HOSTING-NGINX.md](docs/HOSTING-NGINX.md) | nginx + Apache for sites |
 | [docs/TERMINAL-NATIVE.md](docs/TERMINAL-NATIVE.md) | In-panel terminal |
 | [docs/MIGRATE-FROM-LEGACY-HOSTING.md](docs/MIGRATE-FROM-LEGACY-HOSTING.md) | Migrate from another panel |

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO="${GITHUB_REPO:-macdirtycow/qadbak}"
-DESC="${QADBAK_GITHUB_DESCRIPTION:-Self-hosted hosting control panel for your VPS — nginx, mail, DNS, SSL, files, databases. Premium from €2.50/mo.}"
+DESC="${QADBAK_GITHUB_DESCRIPTION:-Self-hosted hosting panel (Ubuntu) — native mail/DNS/SSL, API v1, WHMCS, WAF, offsite backups. Premium from €2.50.}"
 HOME="${QADBAK_GITHUB_HOMEPAGE:-https://qadbak.com}"
 
 # Discoverability — keep concise and SEO-relevant.

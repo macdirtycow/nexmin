@@ -36,6 +36,14 @@ sudo bash /opt/qadbak/scripts/fix-panel-now.sh
 
 (`update-qadbak.sh` runs this automatically; re-run manually if needed.)
 
+Diagnose one customer panel host:
+
+```bash
+sudo bash /opt/qadbak/scripts/diagnose-panel-access.sh panel.example.com
+```
+
+See [CLOUDFLARE.md](./CLOUDFLARE.md) if HTTP works but HTTPS does not (or vice versa) behind Cloudflare.
+
 Allowlisted units: `nginx`, `apache2`/`httpd`, `postfix`, `dovecot`, `named`/`bind9`, `mariadb`, PHP-FPM.
 
 Without sudo, service list/restart falls back to legacy hosting API `list-server-statuses` / `restart-server`.

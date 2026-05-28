@@ -6,7 +6,7 @@
     <title>Qadbak — Self-hosted hosting control panel for Ubuntu</title>
     <meta
       name="description"
-      content="Open-source hosting panel for your VPS: domains, mail, DNS, SSL, databases, backups, and optional Premium for resellers, webmail, and white-label."
+      content="Open-source hosting panel for Ubuntu VPS: domains, mail, DNS, SSL, API v1, WHMCS, security suite, offsite backups. Premium for resellers and webmail."
     />
     <meta name="theme-color" content="#0f1419" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -20,7 +20,7 @@
     <meta property="og:title" content="Qadbak — Hosting control panel" />
     <meta
       property="og:description"
-      content="Run your own panel on Ubuntu. Core is open source; Premium adds multi-tenant hosting, webmail, and full backups."
+      content="Run your own panel on Ubuntu. Core is open source; Premium adds multi-tenant hosting, webmail, and white-label panel URLs."
     />
     <meta property="og:url" content="https://qadbak.com" />
   </head>
@@ -34,6 +34,7 @@
           </a>
           <nav class="nav-links" aria-label="Main">
             <a href="#platform">Platform</a>
+            <a href="#integrations">Integrations</a>
             <a href="#premium">Premium</a>
             <a href="#pricing">Pricing</a>
             <a href="#install">Install</a>
@@ -51,6 +52,7 @@
         </div>
         <div class="mobile-menu" aria-label="Mobile">
           <a href="#platform">Platform</a>
+          <a href="#integrations">Integrations</a>
           <a href="#premium">Premium</a>
           <a href="#pricing">Pricing</a>
           <a href="#install">Install</a>
@@ -83,13 +85,13 @@
             </ul>
           </div>
           <aside class="hero-aside">
-            <h2>What’s new in v1</h2>
+            <h2>What’s new</h2>
             <ul>
-              <li>Full backups — all mailboxes, panel settings, DNS &amp; TLS snapshot</li>
-              <li>Built-in webmail (IMAP) for clients and admins</li>
-              <li>License activations visible in Server admin</li>
-              <li>White-label branding for your hosting brand</li>
-              <li>Action journal with undo on safe mail/DNS changes</li>
+              <li>REST API v1 + scoped API keys (WHMCS / Blesta starters)</li>
+              <li><code>panel.&lt;domain&gt;</code> URLs — Cloudflare Flexible or Full HTTPS</li>
+              <li>Offsite backups (S3 / B2 / GCS) and granular file/DB restore</li>
+              <li>ModSecurity WAF + ClamAV scans per domain</li>
+              <li>Node / Python / Docker runtimes + one-click app catalog</li>
             </ul>
           </aside>
         </div>
@@ -126,7 +128,44 @@
             </article>
             <article class="card">
               <h3>Backups</h3>
-              <p>Downloadable archives: site files, all maildirs, panel config, DNS zone, certificates, crontab.</p>
+              <p>Downloadable archives: site files, all maildirs, panel config, DNS zone, certificates, crontab. Offsite upload and single-file restore.</p>
+            </article>
+            <article class="card">
+              <h3>Security</h3>
+              <p>Per-domain ModSecurity toggle, scheduled ClamAV scans, host firewall rules from admin — with audit journal entries.</p>
+            </article>
+            <article class="card">
+              <h3>Runtimes</h3>
+              <p>Node, Python, and Docker compose helpers beside classic PHP-FPM — one pool per customer unix user.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="integrations">
+        <div class="container">
+          <p class="section-label">Integrations</p>
+          <h2 class="section-title">Sell hosting with your existing billing stack</h2>
+          <p class="section-lead">
+            Provision and suspend domains from WHMCS or Blesta using Bearer tokens.
+            OpenAPI spec and integration guides ship in the public repository.
+          </p>
+          <div class="grid-2">
+            <article class="card">
+              <h3>REST API v1</h3>
+              <p>Domains, mail, DNS, SSL, backups, suspend — rate-limited keys with scopes. Admin → API keys.</p>
+            </article>
+            <article class="card">
+              <h3>WHMCS module</h3>
+              <p>Create, terminate, suspend, and unsuspend accounts against your panel origin — see <code>docs/integrations/WHMCS-INTEGRATION.md</code> on GitHub.</p>
+            </article>
+            <article class="card">
+              <h3>Cloudflare-ready panels</h3>
+              <p><code>panel.customer.com</code> vhosts work with Flexible or Full SSL; repair script fixes post-update 520 errors.</p>
+            </article>
+            <article class="card">
+              <h3>Monitoring</h3>
+              <p>Metrics history on the status dashboard plus alert rules (email, Slack, Telegram webhooks).</p>
             </article>
           </div>
         </div>
@@ -152,6 +191,14 @@
             <article class="card">
               <h3>WordPress install</h3>
               <p>One guided flow: domain, database, download, config — logged as a single journal entry.</p>
+            </article>
+            <article class="card">
+              <h3>App catalog</h3>
+              <p>Install common apps into <code>public_html</code> from the Scripts screen — logged like any other change.</p>
+            </article>
+            <article class="card">
+              <h3>Website health</h3>
+              <p>Public probe plus origin checks — hints for Cloudflare 502/523 and one-click repair on the server.</p>
             </article>
           </div>
         </div>
@@ -208,6 +255,16 @@
                 <td>In-panel admin updates</td>
                 <td>—</td>
                 <td><span class="tag">Premium</span></td>
+              </tr>
+              <tr>
+                <td>Offsite backup credentials (S3 / B2 / GCS)</td>
+                <td>—</td>
+                <td><span class="tag">Premium</span></td>
+              </tr>
+              <tr>
+                <td>REST API v1 + billing modules (open source in repo)</td>
+                <td><span class="tag tag-free">Included</span></td>
+                <td>—</td>
               </tr>
             </tbody>
           </table>
@@ -352,6 +409,13 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="faq-a">Deactivate on the old panel (or remove the activation in Server admin), then activate on the new server with the same key. One active VPS per license by default.</div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Cloudflare and panel.<span class="code">domain</span>?
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="faq-a">Point <span class="code">panel</span> A-record to your VPS. Use SSL mode <strong>Flexible</strong> until Let's Encrypt succeeds, then <strong>Full</strong>. After updates run <span class="code">sudo bash scripts/fix-panel-now.sh</span> on the server — see <a href="https://github.com/macdirtycow/qadbak/blob/main/docs/CLOUDFLARE.md" rel="noopener">docs/CLOUDFLARE.md</a>.</div>
             </div>
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">

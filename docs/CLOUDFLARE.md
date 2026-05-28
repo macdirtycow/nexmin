@@ -99,6 +99,22 @@ This script checks pm2 + `:3000/api/health`, recreates `panel.<domain>` nginx vh
 
 Same as [502](#error-502--bad-gateway): use **Flexible** if the origin has no cert on `panel.<domain>` yet; use **Full** after Let's Encrypt (the repair script runs certbot when DNS points at the server). Avoid **Full (strict)** until the origin certificate is valid.
 
+### HTTP works but HTTPS does not (or the opposite)
+
+| What you see | Typical cause | Fix |
+|--------------|---------------|-----|
+| `http://panel.example.com` OK, `https://` fails | Cloudflare **Flexible** + origin had only HTTP, or no LE cert on `:443` yet | Run `sudo bash scripts/fix-panel-now.sh example.com`; set CF SSL to **Flexible** until certbot succeeds |
+| `https://` OK after repair, earlier only HTTP worked | LE cert issued on origin `:443`; CF mode **Full** now valid | Set Cloudflare SSL to **Full** (not strict until cert is valid) |
+| Both fail via Cloudflare, origin OK locally | Wrong DNS, blocked port 80/443, or stale 520 from old redirect | [fix-panel-now.sh](../scripts/fix-panel-now.sh), open ports 80+443, `diagnose-panel-access.sh` |
+
+Re-apply vhosts after pull:
+
+```bash
+cd /opt/qadbak && sudo bash scripts/git-sync-origin.sh
+sudo bash scripts/fix-panel-now.sh YOUR-DOMAIN.TLD
+sudo bash scripts/diagnose-panel-access.sh panel.YOUR-DOMAIN.TLD
+```
+
 ### Diagnose only
 
 ```bash
