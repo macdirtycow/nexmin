@@ -7,6 +7,8 @@ export const ALL_PREMIUM_FEATURES = [
   "admin-updates",
   "php-fpm-isolation",
   "dashboard-panel-control",
+  "offsite-backup",
+  "webmail-ui",
 ] as const;
 
 export type PremiumFeatureId = (typeof ALL_PREMIUM_FEATURES)[number];

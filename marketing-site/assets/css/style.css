@@ -237,8 +237,20 @@ a:hover {
   color: var(--muted);
   font-size: 1.125rem;
   max-width: 34rem;
-  margin: 0 0 2rem;
+  margin: 0 0 1rem;
   line-height: 1.65;
+}
+
+.hero-note {
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 36rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent, #3b82f6);
+  background: rgba(59, 130, 246, 0.06);
+  border-radius: 0 6px 6px 0;
 }
 
 .hero-cta {

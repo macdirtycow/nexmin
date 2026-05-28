@@ -1,5 +1,9 @@
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { getDomainFile, isPanelFilesMode } from "@/lib/domain-files";
+import {
+  assertSafePanelPath,
+  getDomainFile,
+  isPanelFilesMode,
+} from "@/lib/domain-files";
 import {
   liveFilesEnabled,
   readDomainFileLive,
@@ -14,9 +18,10 @@ export async function GET(request: Request, { params }: Params) {
     const url = new URL(request.url);
     const path = url.searchParams.get("path");
     if (!path) return jsonError("Path is required.");
+    const safePath = assertSafePanelPath(path);
 
     if (isPanelFilesMode()) {
-      return jsonOk(getDomainFile(path));
+      return jsonOk(getDomainFile(safePath));
     }
 
     if (!liveFilesEnabled()) {
@@ -26,7 +31,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const file = await readDomainFileLive(domain, path, session);
+    const file = await readDomainFileLive(domain, safePath, session);
     return jsonOk(file);
   } catch (err) {
     return handleApiError(err);

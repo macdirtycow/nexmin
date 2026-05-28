@@ -74,9 +74,14 @@
             <p class="eyebrow">Open-core · Ubuntu 22.04 / 24.04 · Netherlands</p>
             <h1>Hosting control panel you run on your own VPS.</h1>
             <p class="hero-lead">
-              Qadbak replaces cPanel-style workflows with a single admin and client UI:
-              sites, mail, DNS, TLS, databases, one-click apps, offsite backups, and
-              operator security tools — all on your VPS, without sending customer data to us.
+              Qadbak replaces cPanel-style workflows on your VPS: sites, mail, DNS, TLS,
+              databases, local backups, a curated app store, and operator security tools —
+              without sending customer site data to us.
+            </p>
+            <p class="hero-note">
+              <strong>Free core:</strong> one administrator runs everything.
+              <strong>Premium</strong> (from €2.50/mo) when you need separate client logins,
+              built-in webmail, offsite backups (S3 / B2 / GCS), and white-label.
             </p>
             <div class="hero-cta">
               <a href="https://license.omiiba.dev/buy" class="btn btn-primary btn-lg" rel="noopener">Premium from €2.50/mo</a>
@@ -95,7 +100,7 @@
               <li><strong>Privacy &amp; trust</strong> — TOTP 2FA, activity log, admin privacy center (data stays on your server)</li>
               <li>REST API v1 + scoped API keys (WHMCS / Blesta starters)</li>
               <li><code>panel.&lt;domain&gt;</code> URLs — Cloudflare Flexible or Full HTTPS</li>
-              <li>Offsite backups (S3 / B2 / GCS) + granular file/DB restore wizard</li>
+              <li>Local backups + restore wizard (offsite upload → Premium)</li>
               <li>ModSecurity WAF, ClamAV, fail2ban, metrics &amp; alert webhooks</li>
             </ul>
           </aside>
@@ -108,7 +113,9 @@
           <h2 class="section-title">Day-to-day hosting operations</h2>
           <p class="section-lead">
             Core features ship in the public repository. Install once on a fresh VPS and
-            manage everything from the browser — as root operator or scoped client.
+            manage everything from the browser as the <strong>panel administrator</strong>.
+            Scoped <strong>client logins</strong> (RBAC) are a Premium module — the free
+            tier is built for a single operator or internal team, not a full reseller panel.
           </p>
           <div class="grid-3">
             <article class="card">
@@ -133,7 +140,7 @@
             </article>
             <article class="card">
               <h3>Backups</h3>
-              <p>Downloadable archives: site files, maildirs, panel config, DNS zone, certificates, crontab. Offsite to S3, B2, or GCS with encrypted policy and per-file restore.</p>
+              <p>Downloadable archives: site files, maildirs, panel config, DNS zone, certificates, crontab. Offsite upload to S3, B2, or GCS is Premium; local backup/restore is in core.</p>
             </article>
             <article class="card">
               <h3>Security</h3>
@@ -163,6 +170,11 @@
             Real installers on your VPS — not placeholders. Browse by category in
             <strong>Server admin → App store</strong>, or pick an app on any domain’s
             <strong>Apps</strong> tab. MySQL is created when needed; every install is journaled.
+          </p>
+          <p class="section-lead app-store-honesty">
+            <strong>Scope:</strong> 16 maintained apps (CMS, shops, collaboration, education) —
+            not a Softaculous-scale catalog of hundreds of scripts. We add installers after they
+            pass on real Ubuntu VPS installs; use SSH or your own scripts for anything else.
           </p>
           <div class="app-store-hero">
             <div>
@@ -309,6 +321,8 @@
           <p class="section-lead">
             Premium is a <strong>Stripe subscription</strong> (monthly through 3-year). You get a
             <span class="code">QAD-…</span> key by email, activate once in the panel, and renewals extend access automatically until you cancel.
+            Without Premium you still run hosting as <strong>one admin</strong>; you do not get
+            per-customer panel accounts, built-in webmail, or offsite backup credentials.
           </p>
           <table class="split-table">
             <thead>
@@ -450,7 +464,7 @@
                 <tr><td>Client + admin UI</td><td class="yes">Native</td><td>WHM + cPanel</td><td>Yes</td><td>Yes</td></tr>
                 <tr><td>Full backup export</td><td class="yes">Yes</td><td>Add-ons</td><td>Add-ons</td><td>Basic</td></tr>
                 <tr><td>Action journal + undo</td><td class="yes">Mail, DNS</td><td>No</td><td>Limited</td><td>No</td></tr>
-                <tr><td>App store (one-click)</td><td class="yes">16 apps</td><td>Softaculous</td><td>Catalog</td><td>Limited</td></tr>
+                <tr><td>App store (one-click)</td><td class="yes">16 curated apps</td><td>Softaculous (400+)</td><td>Catalog</td><td>Limited</td></tr>
                 <tr><td>Admin 2FA + privacy report</td><td class="yes">TOTP + local log</td><td>Add-ons</td><td>Varies</td><td>No</td></tr>
               </tbody>
             </table>
@@ -506,7 +520,21 @@
                 Do I need a license to try Qadbak?
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
               </button>
-              <div class="faq-a">No. Clone the repo, run the installer, and use core features without payment. Premium unlocks reseller modules, webmail, white-label, and related features.</div>
+              <div class="faq-a">No. Clone the repo, run the installer, and use core features without payment. Premium unlocks client logins (RBAC), built-in webmail, offsite backups, white-label, and related modules.</div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Can customers log in on the free core?
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="faq-a">Not as separate panel users. The free tier is meant for <strong>one administrator</strong> (you or your team) managing all domains. To give each customer their own login, scoped domain access, and optional <span class="code">panel.domain</span> URL, activate Premium (<span class="code">multi-tenant-clients</span> and <span class="code">client-rbac</span>).</div>
+            </div>
+            <div class="faq-item">
+              <button type="button" class="faq-q" aria-expanded="false">
+                Why only 16 apps — not like Softaculous?
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="faq-a">Softaculous bundles hundreds of third-party installers; Qadbak ships a <strong>small, tested set</strong> (WordPress, Joomla, Drupal, Nextcloud, Moodle, shops, wiki, forums, surveys, phpMyAdmin, Adminer, …) with real shell installers and journal/rollback on your VPS. That keeps support predictable. Need more? Install manually via SSH, Docker, or your own scripts — the panel still handles the site, mail, and TLS around it.</div>
             </div>
             <div class="faq-item">
               <button type="button" class="faq-q" aria-expanded="false">
