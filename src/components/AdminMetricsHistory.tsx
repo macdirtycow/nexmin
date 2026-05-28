@@ -124,6 +124,8 @@ export function AdminMetricsHistory() {
       await load(h);
     } catch {
       if (seq === loadSeq.current) setLoadError("Snapshot failed.");
+    } finally {
+      if (seq === loadSeq.current) setLoading(false);
     }
   }
 
@@ -184,8 +186,8 @@ export function AdminMetricsHistory() {
                 <div
                   key={`d-${h.ts}-${i}`}
                   className="flex-1 bg-brand/70 min-w-[2px]"
-                  style={{ height: `${(h.diskRootUsePct / maxDisk) * 100}%` }}
-                  title={`${h.ts}: ${h.diskRootUsePct}%`}
+                  style={{ height: `${(diskPct(h) / maxDisk) * 100}%` }}
+                  title={`${h.ts}: ${diskPct(h)}%`}
                 />
               ))}
             </div>

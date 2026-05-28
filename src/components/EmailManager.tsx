@@ -40,6 +40,13 @@ export function EmailManager({
   const [mailHost, setMailHost] = useState("");
 
   useEffect(() => {
+    setUsers(initialUsers);
+    setError(initialError);
+    setSuccess("");
+    setDeleteTarget(null);
+    setResetUser(null);
+    setResetPass("");
+    setShowCreate(false);
     void (async () => {
       try {
         const res = await fetch(`/api/domains/${enc}/mail-dns`);
@@ -51,7 +58,7 @@ export function EmailManager({
         /* optional */
       }
     })();
-  }, [enc]);
+  }, [domain, enc, initialUsers, initialError]);
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/users`);

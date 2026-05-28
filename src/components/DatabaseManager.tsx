@@ -10,7 +10,7 @@ import {
 } from "@/components/ui";
 import type { HostedDatabase } from "@/lib/types";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function DatabaseManager({
   domain,
@@ -33,6 +33,14 @@ export function DatabaseManager({
   const [passTarget, setPassTarget] = useState<string | null>(null);
   const [newDbPass, setNewDbPass] = useState("");
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useEffect(() => {
+    setDatabases(initialDatabases);
+    setError(initialError);
+    setSuccess("");
+    setPassTarget(null);
+    setShowCreate(false);
+  }, [domain, enc, initialDatabases, initialError]);
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/databases`);

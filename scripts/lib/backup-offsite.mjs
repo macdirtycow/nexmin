@@ -19,6 +19,10 @@ async function sleep(ms) {
 }
 
 export async function listRemoteBackups(domain) {
+  if (!(await isPremiumOffsiteEnabled())) {
+    emit({ ok: true, remote: [], reason: "offsite-backup premium inactive" });
+    return;
+  }
   const policy = await readDomainConfigJson(domain, "backup-policy.json", {
     offsite: false,
     providerId: "default",
@@ -106,6 +110,9 @@ export async function maybeUploadBackupOffsite(domain, archivePath, archiveName)
 }
 
 export async function pullRemoteBackupToLocal(domain, remoteKey) {
+  if (!(await isPremiumOffsiteEnabled())) {
+    fail("Offsite backups require Premium (offsite-backup feature).");
+  }
   const policy = await readDomainConfigJson(domain, "backup-policy.json", {
     offsite: false,
     providerId: "default",

@@ -9,7 +9,7 @@ import {
   Label,
 } from "@/components/ui";
 import type { AvailableScript, InstalledScript } from "@/lib/provisioner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DomainPageHeader } from "./DomainPageHeader";
 import { DomainAppsPicker } from "./DomainAppsPicker";
 
@@ -39,6 +39,14 @@ export function ScriptsManager({
   const [lastJournalId, setLastJournalId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [confirmTyped, setConfirmTyped] = useState("");
+
+  useEffect(() => {
+    setInstalled(initialInstalled);
+    setError(initialError);
+    setSuccess("");
+    setDeleteTarget(null);
+    setPostInstall([]);
+  }, [domain, enc, initialInstalled, initialError]);
 
   async function refresh() {
     const res = await fetch(`/api/domains/${enc}/scripts`);

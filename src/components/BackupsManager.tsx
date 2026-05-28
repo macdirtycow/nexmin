@@ -181,6 +181,14 @@ export function BackupsManager({
   }
 
   async function importRemote(key: string, restore: boolean) {
+    if (
+      restore &&
+      !window.confirm(
+        `Import and restore "${key}"? This overwrites the live website, mail, and databases for ${domain}.`,
+      )
+    ) {
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -226,8 +234,16 @@ export function BackupsManager({
 
   async function restoreDatabase() {
     if (!browseArchive.trim() || !restoreDbName.trim()) return;
+    if (
+      !window.confirm(
+        `Restore database "${restoreDbName}" from ${browseArchive}? Existing data will be overwritten.`,
+      )
+    ) {
+      return;
+    }
     setLoading(true);
     setError("");
+    setSuccess("");
     try {
       const res = await fetch(`/api/domains/${enc}/backups/archive`, {
         method: "POST",
@@ -275,6 +291,13 @@ export function BackupsManager({
 
   async function restorePartialFile() {
     if (!browseArchive.trim() || !partialPath.trim()) return;
+    if (
+      !window.confirm(
+        `Overwrite ${partialPath} on ${domain} from archive ${browseArchive}?`,
+      )
+    ) {
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -377,7 +400,7 @@ export function BackupsManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed.");
-      setScheduled(data.scheduled ?? []);
+      await refreshList();
       setSuccess("Backup schedule saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");
@@ -434,7 +457,7 @@ export function BackupsManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Delete failed.");
-      setScheduled(data.scheduled ?? []);
+      await refreshList();
       setSuccess(`Deleted ${name}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error.");

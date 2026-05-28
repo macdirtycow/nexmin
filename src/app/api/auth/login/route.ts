@@ -1,5 +1,8 @@
 import { auditLog } from "@/lib/audit";
-import { checkLoginRateLimit } from "@/lib/api-rate-limit";
+import {
+  checkLoginRateLimit,
+  recordLoginRateLimitFailure,
+} from "@/lib/api-rate-limit";
 import { jsonError, jsonOk } from "@/lib/api";
 import { getClientIp } from "@/lib/client-ip";
 import {
@@ -81,6 +84,7 @@ export async function POST(request: Request) {
 
     const user = await findUserByUsername(body.username);
     if (!user || !(await verifyPassword(user, body.password))) {
+      await recordLoginRateLimitFailure(clientIp, body.username);
       await authFailureDelay();
       await auditLog(body.username, "login-failed", undefined, clientIp);
       return jsonError("Invalid credentials.", 401);

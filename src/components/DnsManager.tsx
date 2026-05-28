@@ -34,6 +34,11 @@ export function DnsManager({
   }
 
   useEffect(() => {
+    setRecords(initialRecords);
+    setError(initialError);
+    setSuccess("");
+    setDeleteRecord(null);
+    setConfirmTyped("");
     (async () => {
       try {
         const res = await fetch(`/api/domains/${enc}/website-health`);
@@ -43,7 +48,7 @@ export function DnsManager({
         /* ignore */
       }
     })();
-  }, [enc]);
+  }, [enc, initialRecords, initialError]);
 
   async function removeRecord() {
     if (!deleteRecord) return;
