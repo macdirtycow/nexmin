@@ -25,7 +25,7 @@ See [docs/QADBAK-NATIVE-INSTALL.md](../docs/QADBAK-NATIVE-INSTALL.md).
 sudo bash /opt/qadbak/scripts/update-qadbak.sh
 
 # Panel unreachable (Cloudflare 520) after update:
-sudo bash /opt/qadbak/scripts/repair-panel-access.sh
+sudo bash /opt/qadbak/scripts/fix-panel-now.sh
 curl -s http://127.0.0.1:3000/api/health
 bash /opt/qadbak/scripts/audit-vm-dependency.sh
 ```

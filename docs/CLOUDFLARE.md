@@ -82,10 +82,12 @@ Cloudflare reaches your VPS but the origin returns an **empty or invalid** respo
 
 ```bash
 cd /opt/qadbak
-sudo bash scripts/repair-panel-access.sh
+sudo bash scripts/fix-panel-now.sh
 # or one customer domain:
-sudo bash scripts/repair-panel-access.sh siccamanagement.nl
+sudo bash scripts/fix-panel-now.sh siccamanagement.nl
 ```
+
+(`fix-panel-now.sh` is the same as `repair-panel-access.sh`.)
 
 This script checks pm2 + `:3000/api/health`, recreates `panel.<domain>` nginx vhosts, refreshes the main panel on `:11000`, opens firewall ports 80/443, and restarts pm2.
 

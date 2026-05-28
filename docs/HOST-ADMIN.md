@@ -31,7 +31,7 @@ Or use one command: `sudo bash /opt/qadbak/scripts/update-qadbak.sh`
 After an update, if `panel.<domain>` or Cloudflare shows **520**, run:
 
 ```bash
-sudo bash /opt/qadbak/scripts/repair-panel-access.sh
+sudo bash /opt/qadbak/scripts/fix-panel-now.sh
 ```
 
 (`update-qadbak.sh` runs this automatically; re-run manually if needed.)

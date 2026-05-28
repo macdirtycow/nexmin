@@ -120,6 +120,13 @@ fi
 echo "==> Restart (load .env.local into pm2)"
 run_as_qadbak "cd '$ROOT' && bash scripts/pm2-restart-qadbak.sh"
 
+if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/repair-panel-access.sh" ]]; then
+  echo ""
+  echo "==> Panel access (panel.<domain> + main host — fixes Cloudflare 520)"
+  bash "$ROOT/scripts/repair-panel-access.sh" || \
+    echo "    WARN: repair-panel-access.sh failed — run: sudo bash $ROOT/scripts/fix-panel-now.sh" >&2
+fi
+
 if [[ -f "$ROOT/data/license.json" ]]; then
   echo "==> License heartbeat (open-core: no artifact sync needed)"
   run_as_qadbak "cd '$ROOT' && node scripts/qadbak-license-cli.mjs heartbeat" || \
@@ -144,11 +151,6 @@ if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/configure-bind-native.sh" ]]; 
   echo ""
   echo "==> BIND9 (native DNS)"
   bash "$ROOT/scripts/configure-bind-native.sh" 2>/dev/null || true
-fi
-if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/repair-panel-access.sh" ]]; then
-  echo ""
-  echo "==> Panel access (panel.<domain> vhosts + :11000)"
-  bash "$ROOT/scripts/repair-panel-access.sh" || echo "    WARN: repair-panel-access.sh failed (see above)" >&2
 fi
 if [[ "$(id -u)" -eq 0 ]] && [[ -f "$ROOT/scripts/repair-panel-webmail.sh" ]]; then
   echo ""
