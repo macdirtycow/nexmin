@@ -265,14 +265,24 @@ marketing-site/   static HTML for qadbak.com + legal pages
 
 ## Marketing site (qadbak.com)
 
-The Next.js app serves `qadbak.com` directly. For a static fallback (mirrors,
-CDN-only hosts) build a zip:
+Pricing and legal copy live in `marketing-site/`. The panel serves them at `/` via
+`npm run build` (runs `scripts/sync-landing-public.sh` for CSS/JS assets).
+
+**After changing prices or terms**, redeploy so qadbak.com updates:
+
+```bash
+cd /opt/qadbak && git pull && sudo -u qadbak npm run build
+sudo bash scripts/pm2-restart-qadbak.sh
+```
+
+Static-only host (no Next.js): rebuild and upload the zip:
 
 ```bash
 bash scripts/build-marketing-zip.sh   # dist/qadbak-site-upload.zip
 ```
 
-Static pages included: landing, about, privacy, terms, refund.
+Static pages included: landing, about, privacy, terms, refund. Checkout prices
+always come from `license.omiiba.dev/buy` (license-server repo).
 
 ## Contributing
 
