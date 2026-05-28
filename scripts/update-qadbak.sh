@@ -12,10 +12,31 @@ run_as_qadbak() {
   fi
 }
 
+bootstrap_env_git_branch() {
+  local env_file="$ROOT/.env.local"
+  [[ -f "$env_file" ]] || return 0
+  local branch
+  branch="$(grep -E '^[[:space:]]*QADBAK_GIT_BRANCH=' "$env_file" | tail -1 | cut -d= -f2- | tr -d ' "'\''" || true)"
+  [[ -n "$branch" ]] || return 0
+  cd "$ROOT"
+  git fetch --prune origin 2>/dev/null || true
+  if ! git show-ref --quiet "refs/remotes/origin/$branch"; then
+    return 0
+  fi
+  local current
+  current="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
+  if [[ "$current" == "$branch" ]]; then
+    return 0
+  fi
+  echo "==> Bootstrap checkout $branch (QADBAK_GIT_BRANCH; before git-sync)"
+  git checkout -B "$branch" "origin/$branch"
+}
+
 echo "==> Sync git $ROOT"
 if [[ "$(id -u)" -eq 0 ]]; then
   # Pull as root is common on VPS; fix ownership before npm run as qadbak.
   cd "$ROOT"
+  bootstrap_env_git_branch || true
   bash "$ROOT/scripts/reset-git-drift-before-pull.sh"
   bash "$ROOT/scripts/git-sync-origin.sh"
   bash "$ROOT/scripts/fix-qadbak-ownership.sh"
