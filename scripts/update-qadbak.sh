@@ -16,7 +16,7 @@ bootstrap_env_git_branch() {
   local env_file="$ROOT/.env.local"
   [[ -f "$env_file" ]] || return 0
   local branch
-  branch="$(grep -E '^[[:space:]]*QADBAK_GIT_BRANCH=' "$env_file" | tail -1 | cut -d= -f2- | tr -d ' "'\''" || true)"
+  branch="$(grep -E '^[[:space:]]*QADBAK_GIT_BRANCH=' "$env_file" | tail -1 | cut -d= -f2- | tr -d " \"'" || true)"
   [[ -n "$branch" ]] || return 0
   cd "$ROOT"
   git fetch --prune origin 2>/dev/null || true
