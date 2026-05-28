@@ -159,7 +159,11 @@ export function CreateDomainForm({
         </div>
         {type === "top" && premiumMultiTenant && (
           <div className="space-y-3 rounded-lg border border-panel-border bg-panel-bg/50 p-4">
-            <p className="text-sm font-medium text-white">Client panel access</p>
+            <p className="text-sm font-medium text-white">Client login (optional)</p>
+            <p className="text-xs text-panel-muted">
+              Most hosts use one panel URL for everyone (e.g. qadbak.com). You only need
+              the options below for white-label <code className="text-xs">panel.[domain]</code> URLs.
+            </p>
             <label className="flex cursor-pointer items-start gap-2 text-sm text-panel-muted">
               <input
                 type="checkbox"
@@ -169,8 +173,7 @@ export function CreateDomainForm({
               />
               <span>
                 Create client account in <code className="text-xs">users.json</code>{" "}
-                (username from domain; panel password is generated automatically and
-                shown after create — no extra field needed)
+                (they sign in on the main panel — password shown after create)
               </span>
             </label>
             <label className="flex cursor-pointer items-start gap-2 text-sm text-panel-muted">
@@ -182,8 +185,8 @@ export function CreateDomainForm({
                 disabled={!createClientAccount}
               />
               <span>
-                Nginx vhost <code className="text-xs">panel.[domain]</code> → this panel
-                (requires sudo rule: configure-panel-vhost-sudo.sh)
+                Also add <code className="text-xs">panel.[domain]</code> nginx vhost
+                (optional white-label URL — off by default)
               </span>
             </label>
           </div>

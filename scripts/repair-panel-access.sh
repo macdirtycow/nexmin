@@ -1,23 +1,33 @@
 #!/usr/bin/env bash
 # Repair Qadbak panel reachability after git update / phase-8 nginx changes.
-# Fixes Cloudflare 520 (empty origin), broken panel.<domain> vhosts, and :11000 alt port.
+# By default only fixes the MAIN panel host (QADBAK_PUBLIC_HOST) and :11000 — not panel.<every-domain>.
 #
 # Usage (on VPS as root):
 #   sudo bash scripts/repair-panel-access.sh
-#   sudo bash scripts/fix-panel-now.sh siccamanagement.nl
+#   sudo bash scripts/repair-panel-access.sh example.com          # also repair panel.example.com
+#   sudo bash scripts/repair-panel-access.sh --with-client-panels # all domains (old behaviour)
+#   QADBAK_AUTO_PANEL_VHOSTS=true in .env.local                   # same as --with-client-panels
 #   sudo bash scripts/repair-panel-access.sh --check-only
 set -euo pipefail
 
 QADBAK_DIR="${QADBAK_DIR:-/opt/qadbak}"
 QADBAK_USER="${QADBAK_USER:-qadbak}"
 CHECK_ONLY=0
+WITH_CLIENT_PANELS=0
 DOMAINS=()
+
+env_bool_true() {
+  local v="${1,,}"
+  [[ "$v" == "1" || "$v" == "true" || "$v" == "yes" ]]
+}
 
 for arg in "$@"; do
   case "$arg" in
     --check-only|-n) CHECK_ONLY=1 ;;
+    --with-client-panels|--all-client-panels) WITH_CLIENT_PANELS=1 ;;
     -h|--help)
-      sed -n '2,14p' "$0"
+      sed -n '2,16p' "$0"
+      echo "Remove unwanted panel.* vhosts: sudo bash scripts/remove-client-panel-vhosts.sh"
       exit 0
       ;;
     *)
@@ -56,17 +66,17 @@ probe_http_code() {
   echo "${code:-000}"
 }
 
-UNIQUE=()
+CLIENT_PANELS=()
 
 add_domain() {
   local d="${1,,}"
   [[ -z "$d" ]] && return 0
   is_valid_domain "$d" || return 0
   local existing
-  for existing in "${UNIQUE[@]}"; do
+  for existing in "${CLIENT_PANELS[@]}"; do
     [[ "$existing" == "$d" ]] && return 0
   done
-  UNIQUE+=("$d")
+  CLIENT_PANELS+=("$d")
 }
 
 discover_from_registry() {
@@ -104,20 +114,23 @@ discover_from_nginx() {
 }
 
 for d in "${DOMAINS[@]}"; do add_domain "$d"; done
-if [[ ${#UNIQUE[@]} -eq 0 ]]; then
+
+AUTO_PANEL="$(read_env_local_key QADBAK_AUTO_PANEL_VHOSTS false)"
+if [[ ${#CLIENT_PANELS[@]} -eq 0 ]] && { [[ "$WITH_CLIENT_PANELS" -eq 1 ]] || env_bool_true "$AUTO_PANEL"; }; then
   discover_from_registry
   discover_from_home
-  discover_from_nginx
 fi
 
 echo "==> Qadbak panel access repair"
-if [[ ${#UNIQUE[@]} -eq 0 ]]; then
-  echo "    WARN: no customer domains found — pass: sudo bash $0 siccamanagement.nl" >&2
-else
-  echo "    Customer panel hosts: $(printf 'panel.%s ' "${UNIQUE[@]}")"
-fi
 echo "    Main panel host: $MAIN_PANEL_HOST"
 echo "    Alt panel port: $PANEL_PORT"
+if [[ ${#CLIENT_PANELS[@]} -gt 0 ]]; then
+  echo "    Optional panel.<domain> hosts: $(printf 'panel.%s ' "${CLIENT_PANELS[@]}")"
+else
+  echo "    Per-domain panel.* vhosts: skipped (default — one panel for all clients)"
+  echo "    To enable for one site: sudo bash $0 example.com"
+  echo "    To remove existing: sudo bash scripts/remove-client-panel-vhosts.sh"
+fi
 
 echo ""
 echo "==> 1) Application (pm2 + Next.js :3000)"
@@ -136,24 +149,29 @@ else
   echo "    Try: sudo -u $QADBAK_USER bash -c 'cd $QADBAK_DIR && npm run build && bash scripts/pm2-restart-qadbak.sh'" >&2
 fi
 
-echo ""
-echo "==> 2) panel.<domain> reachability (before repair)"
 PRE_FAIL=0
-for d in "${UNIQUE[@]}"; do
-  host="panel.${d}"
-  code_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $host")"
-  echo "    $host HTTP → $code_http"
-  if [[ ! "$code_http" =~ ^(200|301|302|307|308)$ ]]; then
-    PRE_FAIL=1
+if [[ ${#CLIENT_PANELS[@]} -eq 0 ]]; then
+  echo ""
+  echo "==> 2) panel.<domain> reachability — skipped (no client panel hosts in this run)"
+else
+  echo ""
+  echo "==> 2) panel.<domain> reachability (before repair)"
+  for d in "${CLIENT_PANELS[@]}"; do
+    host="panel.${d}"
+    code_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $host")"
+    echo "    $host HTTP → $code_http"
+    if [[ ! "$code_http" =~ ^(200|301|302|307|308)$ ]]; then
+      PRE_FAIL=1
+    fi
+  done
+  if [[ "$PRE_FAIL" -eq 1 ]]; then
+    echo "    (some panel hosts unreachable before repair — continuing)"
   fi
-done
+fi
 if [[ -n "$MAIN_PANEL_HOST" ]]; then
   code_main="$(probe_http_code "https://127.0.0.1/login" -sk -H "Host: $MAIN_PANEL_HOST")"
   code_main_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $MAIN_PANEL_HOST")"
   echo "    $MAIN_PANEL_HOST HTTPS → $code_main  HTTP → $code_main_http"
-fi
-if [[ "$PRE_FAIL" -eq 1 ]]; then
-  echo "    (some panel hosts unreachable before repair — continuing)"
 fi
 
 if [[ "$CHECK_ONLY" -eq 1 ]]; then
@@ -173,18 +191,23 @@ if [[ -f "$QADBAK_DIR/scripts/dedupe-nginx-panel-vhosts.sh" && -n "$MAIN_PANEL_H
   bash "$QADBAK_DIR/scripts/dedupe-nginx-panel-vhosts.sh" "$MAIN_PANEL_HOST" || true
 fi
 
-echo ""
-echo "==> 4) Client panel vhosts (panel.<domain> → :3000)"
 VHOST_FAIL=0
-for d in "${UNIQUE[@]}"; do
-  echo "    apply-client-panel-vhost.sh $d"
-  if ! bash "$QADBAK_DIR/scripts/apply-client-panel-vhost.sh" "$d"; then
-    echo "    WARN: panel.$d vhost failed (see above)" >&2
-    VHOST_FAIL=1
+if [[ ${#CLIENT_PANELS[@]} -eq 0 ]]; then
+  echo ""
+  echo "==> 4) Client panel vhosts — skipped (use main panel only)"
+else
+  echo ""
+  echo "==> 4) Client panel vhosts (panel.<domain> → :3000)"
+  for d in "${CLIENT_PANELS[@]}"; do
+    echo "    apply-client-panel-vhost.sh $d"
+    if ! bash "$QADBAK_DIR/scripts/apply-client-panel-vhost.sh" "$d"; then
+      echo "    WARN: panel.$d vhost failed (see above)" >&2
+      VHOST_FAIL=1
+    fi
+  done
+  if [[ -f "$QADBAK_DIR/scripts/lib/sanitize-nginx-panel-vhosts.sh" ]]; then
+    bash "$QADBAK_DIR/scripts/lib/sanitize-nginx-panel-vhosts.sh" 2>/dev/null || true
   fi
-done
-if [[ -f "$QADBAK_DIR/scripts/lib/sanitize-nginx-panel-vhosts.sh" ]]; then
-  bash "$QADBAK_DIR/scripts/lib/sanitize-nginx-panel-vhosts.sh" 2>/dev/null || true
 fi
 
 echo ""
@@ -223,7 +246,7 @@ sudo -u "$QADBAK_USER" bash -c "cd '$QADBAK_DIR' && bash scripts/pm2-restart-qad
 echo ""
 echo "==> 9) Verify (HTTP + HTTPS on origin)"
 FAIL=0
-for d in "${UNIQUE[@]}"; do
+for d in "${CLIENT_PANELS[@]}"; do
   host="panel.${d}"
   code_http="$(probe_http_code "http://127.0.0.1/login" -H "Host: $host")"
   code_https="$(probe_http_code "https://127.0.0.1/login" -sk -H "Host: $host")"
@@ -261,11 +284,14 @@ fi
 
 ORIGIN_IP="$(curl -4 -fsS --max-time 3 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
 echo "OK — panel access repaired."
-echo "  Customer: https://panel.<your-domain>/login"
-echo "  Main:     https://${MAIN_PANEL_HOST}/login"
-echo "  Direct:   http://${ORIGIN_IP}:${PANEL_PORT}/login"
-echo ""
-echo "Cloudflare (panel.siccamanagement.nl etc.):"
-echo "  1) DNS A-record: panel → ${ORIGIN_IP} (proxied orange cloud OK)"
-echo "  2) SSL/TLS mode: Flexible (HTTP to origin) or Full (with Let's Encrypt on panel.*)"
-echo "  3) Do NOT use Full (strict) unless origin cert is valid for panel.<domain>"
+echo "  Main panel:  https://${MAIN_PANEL_HOST}/login"
+echo "  Direct port: http://${ORIGIN_IP}:${PANEL_PORT}/login"
+if [[ ${#CLIENT_PANELS[@]} -gt 0 ]]; then
+  echo "  Optional:   https://panel.<domain>/login (only for domains configured in step 4)"
+  echo ""
+  echo "Cloudflare (panel.<domain> only if you use per-domain panels):"
+  echo "  1) DNS A-record: panel → ${ORIGIN_IP}"
+  echo "  2) SSL/TLS: Flexible or Full with Let's Encrypt on panel.<domain>"
+else
+  echo "  All clients: same URL as main panel (no panel.<domain> required)."
+fi
